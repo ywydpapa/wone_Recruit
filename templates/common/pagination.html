@@ -1,0 +1,22 @@
+{% if pagination and pagination.total_pages > 1 %}
+<nav aria-label="페이지 탐색" class="mt-4">
+    <ul class="pagination justify-content-center mb-0">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="?{{ base_qs }}&page={{ pagination.page - 1 }}" aria-label="이전 페이지">이전</a>
+        </li>
+        {% for p in pagination.page_range %}
+            {% if p == '...' %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% else %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link" href="?{{ base_qs }}&page={{ p }}" {% if p == pagination.page %}aria-current="page"{% endif %}>{{ p }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="?{{ base_qs }}&page={{ pagination.page + 1 }}" aria-label="다음 페이지">다음</a>
+        </li>
+    </ul>
+    <p class="text-center text-muted small mt-2">총 {{ pagination.total }}건</p>
+</nav>
+{% endif %}

@@ -1,1 +1,14 @@
 .env
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.md
+!README.md
+.pytest_cache/
+.idea/
+docs/
+test_main.http
+.DS_Store
+.dev/
+static/uploads/

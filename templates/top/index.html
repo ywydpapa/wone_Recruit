@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+
+{% include "common/topbar.html" %}
+
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-briefcase me-2"></i>채용 대시보드</h2>
+        <p>안녕하세요, {{ user_name }} 님. WONE Recruit에 오신 것을 환영합니다.</p>
+    </div>
+</div>
+
+<div class="list-section">
+    <div class="container">
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon bg-blue-light">
+                        <i class="fas fa-file-alt" style="color: #0056b3;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ job_count }}</h3>
+                        <p>채용 공고</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon bg-green-light">
+                        <i class="fas fa-users" style="color: #28a745;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ app_count }}</h3>
+                        <p>지원서</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon bg-purple-light">
+                        <i class="fas fa-user-tie" style="color: #7b1fa2;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ talent_count }}</h3>
+                        <p>인재 풀</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-clipboard-list me-2 text-primary"></i>최근 채용 공고</span>
+                        <span class="badge bg-primary rounded-pill">{{ job_count }}</span>
+                    </div>
+                    {% if recent_jobs %}
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>공고명</th>
+                                <th>부서</th>
+                                <th>고용형태</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in recent_jobs %}
+                            <tr>
+                                <td class="fw-600">{{ job['title'] }}</td>
+                                <td class="text-muted small">{{ job['department'] }}</td>
+                                <td class="text-muted small">{{ job['employment_type'] }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ job['status'] }}">
+                                        {% if job['status'] == 'open' %}모집중
+                                        {% elif job['status'] == 'closed' %}마감
+                                        {% else %}{{ job['status'] }}{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted text-center py-3">등록된 채용 공고가 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-inbox me-2 text-success"></i>최근 지원 현황</span>
+                        <span class="badge bg-success rounded-pill">{{ app_count }}</span>
+                    </div>
+                    {% if recent_apps %}
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>지원자</th>
+                                <th>이메일</th>
+                                <th>상태</th>
+                                <th>지원일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in recent_apps %}
+                            <tr>
+                                <td class="fw-600">{{ app['applicant_name'] }}</td>
+                                <td class="text-muted small">{{ app['applicant_email'] }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ app['status'] }}">
+                                        {% if app['status'] == 'pending' %}검토중
+                                        {% elif app['status'] == 'reviewed' %}검토완료
+                                        {% elif app['status'] == 'accepted' %}합격
+                                        {% elif app['status'] == 'rejected' %}불합격
+                                        {% else %}{{ app['status'] }}{% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">{{ app['applied_at'][:10] if app['applied_at'] else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted text-center py-3">아직 지원서가 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-database me-2 text-purple"></i>인재 풀 요약</span>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <div class="stat-icon bg-blue-light mx-auto mb-2" style="width:50px;height:50px;font-size:1.4rem;">
+                                    <i class="fas fa-user-check" style="color:#0056b3;"></i>
+                                </div>
+                                <div class="fw-bold fs-5">{{ talent_count }}</div>
+                                <div class="text-muted small">전체 등록 인재</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <div class="stat-icon bg-green-light mx-auto mb-2" style="width:50px;height:50px;font-size:1.4rem;">
+                                    <i class="fas fa-check-circle" style="color:#28a745;"></i>
+                                </div>
+                                <div class="fw-bold fs-5">{{ app_count }}</div>
+                                <div class="text-muted small">총 지원 건수</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <div class="stat-icon bg-yellow-light mx-auto mb-2" style="width:50px;height:50px;font-size:1.4rem;">
+                                    <i class="fas fa-hourglass-half" style="color:#f57f17;"></i>
+                                </div>
+                                <div class="fw-bold fs-5">{{ job_count }}</div>
+                                <div class="text-muted small">활성 공고</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <div class="stat-icon bg-purple-light mx-auto mb-2" style="width:50px;height:50px;font-size:1.4rem;">
+                                    <i class="fas fa-star" style="color:#7b1fa2;"></i>
+                                </div>
+                                <div class="fw-bold fs-5">-</div>
+                                <div class="text-muted small">즐겨찾기 인재</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% include "common/_footer.html" %}
+
+</body>
+</html>

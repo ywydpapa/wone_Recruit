@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-cogs me-2"></i>운영자 대시보드</h2>
+        <p>안녕하세요, {{ user_name }} 님.</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <a href="/op/seekers" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-blue-light">
+                            <i class="fas fa-user" style="color: #0056b3;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ seeker_count }}</h3>
+                            <p>구직자 수</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/op/companies" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green-light">
+                            <i class="fas fa-building" style="color: #28a745;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ company_count }}</h3>
+                            <p>기업 수</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/op/jobs" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-yellow-light">
+                            <i class="fas fa-briefcase" style="color: #f57f17;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ open_jobs }}</h3>
+                            <p>열린 공고</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <a href="/op/candidacies" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-purple-light">
+                            <i class="fas fa-paper-plane" style="color: #7b1fa2;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ total_candidacies }}</h3>
+                            <p>전체 지원</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/op/matching" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-yellow-light">
+                            <i class="fas fa-hourglass-half" style="color: #f57f17;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ pending_matches }}</h3>
+                            <p>대기 중 매칭</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/op/candidacies" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-green-light">
+                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ hired }}</h3>
+                            <p>채용 완료</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-history me-2 text-primary"></i>최근 지원 활동</span>
+                        <span class="badge bg-primary rounded-pill">{{ total_candidacies }}</span>
+                    </div>
+                    {% if recent_candidacies %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">공고명</th>
+                                    <th scope="col">구직자</th>
+                                    <th scope="col">기업</th>
+                                    <th scope="col">상태</th>
+                                    <th scope="col">매칭 단계</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for c in recent_candidacies %}
+                            <tr>
+                                <td class="fw-semibold"><a href="/op/jobs">{{ c['job_title'] }}</a></td>
+                                <td><a href="/op/seekers/{{ c['seeker_user_id'] }}">{{ c['seeker_name'] }}</a></td>
+                                <td>{{ c['company_name'] }}</td>
+                                <td>
+                                    {% set s = c['status'] %}
+                                    {% if s == 'pending' %}
+                                        <span class="badge bg-secondary">검토 대기</span>
+                                    {% elif s == 'reviewing' %}
+                                        <span class="badge bg-primary">검토 중</span>
+                                    {% elif s == 'shortlisted' %}
+                                        <span class="badge bg-info text-dark">서류 통과</span>
+                                    {% elif s == 'interview' %}
+                                        <span class="badge bg-warning text-dark">면접 예정</span>
+                                    {% elif s == 'offer' %}
+                                        <span class="badge bg-success">합격 제안</span>
+                                    {% elif s == 'hired' %}
+                                        <span class="badge bg-success">채용 완료</span>
+                                    {% elif s == 'rejected' %}
+                                        <span class="badge bg-danger">불합격</span>
+                                    {% elif s == 'withdrawn' %}
+                                        <span class="badge bg-light text-dark border">취소</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ s }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    {% set ms = c['match_stage'] %}
+                                    {% if ms == 'proposed' %}제안됨
+                                    {% elif ms == 'submitted' %}제출됨
+                                    {% elif ms == 'accepted' %}수락됨
+                                    {% elif ms == 'rejected' %}거절됨
+                                    {% elif ms %}{{ ms }}
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">지원 내역이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-bolt me-2 text-warning"></i>바로가기</span>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="/op/seekers" class="btn btn-outline-primary">
+                            <i class="fas fa-users me-1"></i>구직자 관리
+                        </a>
+                        <a href="/op/companies" class="btn btn-outline-secondary">
+                            <i class="fas fa-building me-1"></i>기업 관리
+                        </a>
+                        <a href="/op/matching" class="btn btn-outline-success">
+                            <i class="fas fa-handshake me-1"></i>매칭
+                            {% if pending_matches > 0 %}
+                            <span class="badge bg-success ms-1">{{ pending_matches }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="/op/candidacies" class="btn btn-outline-info">
+                            <i class="fas fa-list me-1"></i>전체 지원
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

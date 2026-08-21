@@ -1,0 +1,1019 @@
+/* ==========================================
+   1. Variables & Base
+   ========================================== */
+:root {
+    --primary-blue: #0056b3;
+    --light-blue: #eef4fb;
+    --dark-blue: #0a2540;
+    --text-color: #333333;
+    --gray-bg: #f8f9fa;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    font-size: 18px;
+    color: var(--text-color);
+    background-color: #ffffff;
+}
+
+/* ==========================================
+   2. Navbar & Header
+   ========================================== */
+.navbar {
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    background: #fff;
+}
+.navbar-brand {
+    font-weight: 900;
+    font-size: 1.8rem;
+    color: var(--dark-blue);
+}
+.navbar-brand span {
+    color: var(--primary-blue);
+}
+.nav-link {
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 10px;
+    transition: color 0.3s;
+}
+.nav-link:hover, .nav-link.active {
+    color: var(--primary-blue);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.user-profile .name {
+    font-weight: 700;
+    color: var(--dark-blue);
+}
+
+.btn-login {
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+    font-weight: 700;
+    border-radius: 30px;
+    padding: 8px 25px;
+    transition: all 0.3s;
+}
+.btn-login:hover {
+    background-color: var(--primary-blue);
+    color: #fff;
+}
+
+/* Dashboard Header */
+.dash-header {
+    background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary-blue) 100%);
+    padding: 40px 0;
+    color: white;
+    margin-bottom: 40px;
+}
+.dash-header h2 {
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+.dash-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* ==========================================
+   3. Forms & Inputs
+   ========================================== */
+.form-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.form-control, .form-select {
+    min-height: 48px;
+}
+
+.btn {
+    min-height: 44px;
+    min-width: 44px;
+    white-space: nowrap;
+}
+
+.form-control-lg, .form-select-lg {
+    border-radius: 10px;
+    font-size: 1rem;
+    padding: 15px 20px;
+    background-color: var(--gray-bg);
+    border: 1px solid #eee;
+}
+.form-control-lg:focus, .form-select-lg:focus {
+    box-shadow: none;
+    border-color: var(--primary-blue);
+}
+
+.btn-primary-custom {
+    background-color: var(--primary-blue);
+    color: white;
+    border-radius: 10px;
+    padding: 12px;
+    font-weight: 700;
+    width: 100%;
+}
+.btn-primary-custom:hover {
+    background-color: #004494;
+    color: white;
+}
+
+/* ==========================================
+   4. Cards & Sections
+   ========================================== */
+.content-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    margin-bottom: 25px;
+    border: 1px solid #f0f0f0;
+}
+.card-title {
+    font-weight: 700;
+    color: var(--dark-blue);
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Stat Cards */
+.stat-card {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    margin-bottom: 25px;
+    border: 1px solid #f0f0f0;
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-right: 20px;
+}
+.stat-info h3 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--dark-blue);
+}
+.stat-info p {
+    margin: 0;
+    color: #555;
+    font-weight: 600;
+}
+
+/* ==========================================
+   5. Utilities & Badges
+   ========================================== */
+.bg-blue-light { background-color: var(--light-blue); color: var(--primary-blue); }
+.bg-green-light { background-color: #e8f5e9; color: var(--success-color); }
+.bg-yellow-light { background-color: #fff8e1; color: #f57f17; }
+.bg-purple-light { background-color: #f3e5f5; color: #7b1fa2; }
+.bg-red-light { background-color: #ffebee; color: var(--danger-color); }
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.status-badge.status-open { background-color: var(--light-blue); color: var(--primary-blue); }
+.status-badge.status-closed { background-color: #d6d8db; color: #2d3136; }
+.status-badge.status-pending { background-color: #fff8e1; color: #6d5204; }
+.status-badge.status-reviewed { background-color: var(--light-blue); color: var(--primary-blue); }
+.status-badge.status-accepted { background-color: #e8f5e9; color: var(--success-color); }
+.status-badge.status-rejected { background-color: #ffebee; color: var(--danger-color); }
+
+.table-custom { margin-bottom: 0; }
+.table-custom th { font-size: 1rem; color: #555; font-weight: 600; border-bottom: 2px solid #f0f0f0; padding: 0.75rem 0.5rem; }
+.table-custom td { vertical-align: middle; font-size: 1rem; padding: 0.75rem 0.5rem; }
+
+/* Section wrapper */
+.list-section {
+    padding: 30px 0 60px;
+    background-color: var(--gray-bg);
+    min-height: calc(100vh - 200px);
+}
+
+/* ==========================================
+   6. Footer
+   ========================================== */
+.footer {
+    background-color: var(--dark-blue);
+    color: #fff;
+    padding: 50px 0 20px;
+    text-align: center;
+}
+.footer .social-icons a {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0 10px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+.footer .social-icons a:hover { opacity: 1; }
+.footer-menu { margin-bottom: 20px; }
+.footer-menu a {
+    color: #fff;
+    text-decoration: none;
+    margin: 0 15px;
+    opacity: 0.8;
+}
+.footer-menu a:hover { opacity: 1; }
+
+/* Accessibility */
+.a11y-large body, .a11y-large { font-size: 1.2rem; }
+.a11y-xlarge body, .a11y-xlarge { font-size: 1.4rem; }
+.a11y-contrast { filter: contrast(1.2); }
+
+/* Skip link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--primary-blue);
+    color: #fff;
+    padding: 8px 16px;
+    z-index: 9999;
+    font-weight: 700;
+    transition: top 0.2s;
+}
+.skip-link:focus {
+    top: 0;
+    color: #fff;
+}
+
+/* Focus outline */
+:focus-visible {
+    outline: 3px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+/* Ensure focus visible on dark backgrounds */
+.dash-header :focus-visible,
+.footer :focus-visible {
+    outline-color: #fff;
+}
+
+/* Clickable stat cards */
+a.stat-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+a.stat-card-link:hover .stat-card {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+}
+.stat-card {
+    transition: all 0.2s ease;
+}
+
+/* Filter forms stack on mobile */
+@media (max-width: 767.98px) {
+    form.row [class*="col-md-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Badge icons for color-blind accessibility */
+.badge .badge-icon {
+    margin-right: 0.25rem;
+}
+
+/* Table links */
+.table a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+}
+.table a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* ==========================================
+   7. Job Card Layout
+   ========================================== */
+.job-card {
+    background: #fff;
+    border-radius: 15px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s, transform 0.2s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.job-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+.job-card-header {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid #f5f5f5;
+    position: relative;
+}
+.job-card-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+.job-card-header h3 a {
+    color: inherit;
+    text-decoration: none;
+}
+.job-card-header h3 a:hover {
+    color: var(--primary-blue);
+    text-decoration: underline;
+}
+.job-card-company {
+    font-size: 0.95rem;
+    color: #555;
+    font-weight: 600;
+}
+.job-card-body {
+    padding: 12px 20px 16px;
+    flex: 1;
+}
+.job-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+.job-card-meta i {
+    margin-right: 4px;
+    width: 16px;
+    text-align: center;
+    color: var(--primary-blue);
+}
+.job-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.job-card-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+}
+.accommodation-tag {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+.job-card-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+.d-day-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+.d-day-active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+.d-day-urgent {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+.d-day-closed {
+    background-color: #f5f5f5;
+    color: #767676;
+}
+.job-card-salary {
+    font-weight: 700;
+    color: var(--dark-blue);
+}
+
+/* Status overlay for operator view */
+.job-card-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+/* ==========================================
+   8. Seeker Profile Cards
+   ========================================== */
+.profile-card {
+    background: #fff;
+    border-radius: 15px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.profile-card.flex-grow-1 {
+    flex: 1 1 auto;
+}
+.profile-row .col-lg-6 .profile-card:last-child {
+    margin-bottom: 0;
+}
+.profile-card-header {
+    padding: 16px 24px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--dark-blue);
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.profile-card-header i {
+    font-size: 1.2rem;
+    color: var(--primary-blue);
+}
+.profile-card-body {
+    padding: 20px 24px;
+    flex: 1;
+}
+.profile-field {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f8f8;
+}
+.profile-field:last-child {
+    border-bottom: none;
+}
+.profile-field-label {
+    flex: 0 0 140px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.95rem;
+}
+.profile-field-value {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+.profile-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 2px 3px 2px 0;
+}
+.profile-tag-blue {
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+}
+.profile-tag-green {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+.profile-tag-purple {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* Certification list */
+.cert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.cert-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.cert-list li:last-child {
+    border-bottom: none;
+}
+.cert-name {
+    font-weight: 600;
+    color: var(--dark-blue);
+}
+.cert-meta {
+    font-size: 0.85rem;
+    color: #767676;
+}
+
+/* Profile avatar placeholder */
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--light-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--primary-blue);
+    flex-shrink: 0;
+}
+
+/* ==========================================
+   9. Mobile Responsiveness (<768px)
+   ========================================== */
+@media (max-width: 767.98px) {
+    /* Dashboard header */
+    .dash-header {
+        padding: 24px 0;
+        margin-bottom: 20px;
+    }
+    .dash-header h2 {
+        font-size: 1.4rem;
+    }
+
+    /* Content cards */
+    .content-card {
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+    }
+
+    /* Stat cards: 2 per row on mobile */
+    .stat-card {
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+        margin-right: 12px;
+    }
+    .stat-info h3 {
+        font-size: 1.3rem;
+    }
+    .stat-info p {
+        font-size: 0.85rem;
+    }
+
+    /* dl/dt/dd stacking on mobile (job detail, company detail, apply form) */
+    dl.row dt[class*="col-sm-"],
+    dl.row dd[class*="col-sm-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding-left: var(--bs-gutter-x, 0.75rem);
+    }
+    dl.row dt[class*="col-sm-"] {
+        margin-bottom: 2px;
+        padding-bottom: 0;
+    }
+    dl.row dd[class*="col-sm-"] {
+        margin-bottom: 12px;
+    }
+
+    /* Profile fields stacking */
+    .profile-field {
+        flex-direction: column;
+    }
+    .profile-field-label {
+        flex: none;
+        margin-bottom: 4px;
+    }
+
+    /* Job card meta stacking */
+    .job-card-meta {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    /* Job card header: ensure title doesn't overlap bookmark */
+    .job-card-header h3 {
+        padding-right: 32px;
+    }
+
+    /* Search bar: stack buttons */
+    .list-section .d-flex.gap-2.mb-2 {
+        flex-wrap: wrap;
+    }
+    .list-section .d-flex.gap-2.mb-2 input.form-control-lg {
+        flex: 1 1 100%;
+    }
+
+    /* Section padding */
+    .list-section {
+        padding: 0 0 30px;
+    }
+
+    /* Card title responsive */
+    .card-title {
+        font-size: 1rem;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Navbar */
+    .navbar-brand {
+        font-size: 1.4rem;
+    }
+    .nav-link {
+        margin: 0;
+        padding: 8px 0;
+    }
+
+    /* Footer */
+    .footer {
+        padding: 30px 0 15px;
+    }
+
+    /* Company detail logo */
+    .content-card .d-flex.align-items-start.gap-3 {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    /* Table responsive improvements */
+    .table th, .table td {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.3rem;
+    }
+
+    /* Apply form */
+    .modal-dialog {
+        margin: 16px;
+    }
+}
+
+/* Small mobile (<480px) */
+@media (max-width: 479.98px) {
+    body {
+        font-size: 16px;
+    }
+    .dash-header h2 {
+        font-size: 1.2rem;
+    }
+    .content-card {
+        padding: 12px;
+    }
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        margin-right: 10px;
+    }
+    .stat-info h3 {
+        font-size: 1.1rem;
+    }
+    .job-card-header {
+        padding: 14px 14px 10px;
+    }
+    .job-card-body {
+        padding: 10px 14px 12px;
+    }
+    .job-card-footer {
+        padding: 10px 14px;
+    }
+}
+
+/* ==========================================
+   10. Application Status Timeline
+   ========================================== */
+.status-timeline {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    padding: 12px 0;
+    overflow-x: auto;
+}
+.timeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    min-width: 90px;
+    flex: 1;
+}
+.timeline-step::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background: #dee2e6;
+    z-index: 0;
+}
+.timeline-step:last-child::after {
+    display: none;
+}
+.timeline-step.active::after {
+    background: var(--primary-blue);
+}
+.timeline-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #fff;
+    z-index: 1;
+    position: relative;
+}
+.timeline-step.active .timeline-dot {
+    background: var(--primary-blue);
+}
+.timeline-step.current .timeline-dot {
+    background: var(--primary-blue);
+    box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.2);
+}
+.timeline-step.rejected .timeline-dot {
+    background: var(--danger-color);
+}
+.timeline-step.withdrawn .timeline-dot {
+    background: #6c757d;
+}
+.timeline-step.hired .timeline-dot {
+    background: var(--success-color);
+}
+.timeline-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 6px;
+    color: #999;
+}
+.timeline-step.active .timeline-label,
+.timeline-step.current .timeline-label {
+    color: var(--dark-blue);
+}
+.timeline-step.rejected .timeline-label {
+    color: var(--danger-color);
+}
+.timeline-step.hired .timeline-label {
+    color: var(--success-color);
+}
+.timeline-date {
+    font-size: 0.65rem;
+    color: #aaa;
+    margin-top: 2px;
+}
+@media (max-width: 767.98px) {
+    .status-timeline {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+    }
+    .timeline-step {
+        min-width: 70px;
+    }
+}
+
+/* ==========================================
+   11. Header Hero (Large)
+   ========================================== */
+.header-dash {
+    background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary-blue) 100%);
+    padding: 100px 0 150px;
+    text-align: center;
+    color: white;
+    position: relative;
+}
+.header-dash h2 {
+    font-weight: 700;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+}
+.header-dash p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* ==========================================
+   12. Filter & Search Sections
+   ========================================== */
+.filter-section {
+    margin-top: -70px;
+    position: relative;
+    z-index: 10;
+}
+.filter-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+.btn-search {
+    background-color: var(--dark-blue);
+    color: white;
+    border-radius: 10px;
+    padding: 15px;
+    font-weight: 700;
+    width: 100%;
+    transition: all 0.3s;
+}
+.btn-search:hover {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+/* ==========================================
+   13. Item Cards (Demo style)
+   ========================================== */
+.item-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+    transition: transform 0.3s, box-shadow 0.3s;
+    height: 100%;
+    border: 1px solid #f0f0f0;
+}
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+.item-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin-bottom: 10px;
+    text-decoration: none;
+    display: block;
+}
+.item-title:hover {
+    color: var(--primary-blue);
+}
+.item-meta {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+}
+.item-meta i {
+    width: 20px;
+    color: var(--primary-blue);
+}
+.item-badge {
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-right: 5px;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+.item-badge.badge-green {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+.item-card .btn-sm.rounded-pill {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+/* ==========================================
+   14. Custom Pill Tabs
+   ========================================== */
+.nav-pills .nav-link {
+    color: var(--text-color);
+    font-weight: 700;
+    border-radius: 30px;
+    padding: 10px 30px;
+    margin: 0 5px;
+}
+.nav-pills .nav-link.active {
+    background-color: var(--primary-blue);
+    color: #fff;
+}
+
+/* ==========================================
+   15. Community Post Items
+   ========================================== */
+.post-item {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+.post-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.05) !important;
+    border-color: var(--primary-blue) !important;
+}
+.tag-badge {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.tag-badge:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+/* ==========================================
+   16. Tool Buttons
+   ========================================== */
+.tool-btn {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+}
+.tool-btn:hover {
+    background-color: var(--light-blue);
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+.tool-btn i {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    color: var(--primary-blue);
+}
+
+/* ==========================================
+   17. Chat Bubbles
+   ========================================== */
+.chat-bubble {
+    max-width: 75%;
+    padding: 7px 12px;
+    border-radius: 12px;
+    font-size: 0.83rem;
+    line-height: 1.5;
+}
+.chat-bubble.me {
+    background: var(--primary-blue);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+}
+.chat-bubble.them {
+    background: #f0f0f0;
+    color: #222;
+    border-bottom-left-radius: 3px;
+}
+.chat-time {
+    font-size: 0.68rem;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* ==========================================
+   18. Modal Customization
+   ========================================== */
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+.modal-header {
+    border-bottom: none;
+    padding: 30px 30px 10px;
+}
+.modal-body {
+    padding: 20px 30px 30px;
+}
