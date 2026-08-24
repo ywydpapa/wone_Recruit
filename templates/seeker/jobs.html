@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+
+<div class="header-dash">
+    <div class="container">
+        <h2>채용 공고 검색</h2>
+        <p>나에게 맞는 일자리를 찾아보세요.</p>
+    </div>
+</div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/jobs">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select form-select-lg">
+                        <option value="">지역 (전체)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="employment_type" class="visually-hidden">고용 형태</label>
+                    <select id="employment_type" name="employment_type" class="form-select form-select-lg">
+                        <option value="">고용형태 (전체)</option>
+                        {% for et in employment_types %}
+                        <option value="{{ et }}" {% if selected_type == et %}selected{% endif %}>{{ et }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="category" class="visually-hidden">직무</label>
+                    <select id="category" name="category" class="form-select form-select-lg">
+                        <option value="">직무 (전체)</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat['id'] }}" {% if selected_category == cat['id']|string %}selected{% endif %}>{{ cat['minor_name_ko'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="공고명, 기업명, 직무 검색" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            <div class="row g-2 mt-2">
+                <div class="col-md-2">
+                    <label for="max_hours" class="visually-hidden">근무시간</label>
+                    <select id="max_hours" name="max_hours" class="form-select">
+                        <option value="">근무시간</option>
+                        <option value="4" {% if selected_max_hours == 4 %}selected{% endif %}>4시간 이하</option>
+                        <option value="6" {% if selected_max_hours == 6 %}selected{% endif %}>6시간 이하</option>
+                        <option value="8" {% if selected_max_hours == 8 %}selected{% endif %}>8시간</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="accommodation" class="visually-hidden">편의제공</label>
+                    <select id="accommodation" name="accommodation" class="form-select">
+                        <option value="">편의제공</option>
+                        {% for opt in accommodation_options %}
+                        <option value="{{ opt }}" {% if selected_accommodation == opt %}selected{% endif %}>{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-center">
+                    <div class="form-check">
+                        <input type="checkbox" id="remote" name="remote" value="1" class="form-check-input" {% if remote_checked %}checked{% endif %}>
+                        <label for="remote" class="form-check-label">재택 가능</label>
+                    </div>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="list-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0">채용 공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
+        </div>
+
+        {% if jobs %}
+        <div class="row g-4">
+            {% for job in jobs %}
+            <div class="col-lg-6">
+                <div class="item-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="flex:1;min-width:0;">
+                            <span class="item-badge">{{ job['employment_type'] }}</span>
+                            {% if job['remote_available'] %}
+                            <span class="item-badge badge-green">재택 가능</span>
+                            {% endif %}
+                            <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
+                            <div class="item-meta">
+                                <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
+                                <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+                                {% if job['category_name'] %}
+                                <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" aria-label="공고 저장">
+                            <button type="submit" class="btn btn-link p-0 border-0"
+                                    aria-label="{% if job['id'] in bookmarked_ids %}저장 취소{% else %}공고 저장{% endif %}"
+                                    style="font-size:1.3rem;color:{% if job['id'] in bookmarked_ids %}#dc3545{% else %}#ccc{% endif %};">
+                                <i class="{% if job['id'] in bookmarked_ids %}fas{% else %}far{% endif %} fa-heart"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <hr class="text-muted">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small"><i class="far fa-clock me-1"></i>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if job['salary'] %}
+                            <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
+                            {% endif %}
+                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% include "common/pagination.html" %}
+        {% else %}
+        <div class="content-card">
+            <p class="text-muted text-center py-5">조건에 맞는 공고가 없습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    loadSidoList('sido', {{ selected_sido|tojson }});
+});
+</script>
+{% include "common/_footer.html" %}
+</body>
+</html>

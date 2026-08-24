@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-building me-2"></i>기업 정보</h2>
+        <p>안녕하세요, {{ user_name }} 님. 기업 정보를 입력해 주세요.</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div class="content-card">
+
+            {% if success == '1' %}
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>기업 정보가 저장되었습니다.
+            </div>
+            {% endif %}
+
+            <form method="post" action="/company/profile" enctype="multipart/form-data" novalidate>
+
+                <fieldset class="mb-4">
+                    <legend class="h5 fw-semibold border-bottom pb-2 mb-3">기본 정보</legend>
+
+                    <div class="mb-3">
+                        <label for="logo" class="form-label fw-semibold">기업 로고 (JPEG/PNG/WebP, 최대 5MB)</label>
+                        <input type="file" class="form-control" id="logo" name="logo" accept="image/jpeg,image/png,image/webp">
+                        {% if company and company.logo_path %}
+                        <div class="mt-2">
+                            <img src="{{ company.logo_path }}" alt="기업 로고" style="max-height:60px;" class="rounded">
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="company_name" class="form-label fw-semibold">기업명 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="company_name" name="company_name"
+                            value="{{ company.company_name if company else '' }}"
+                            placeholder="예: 한빛테크" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="biz_no" class="form-label fw-semibold">사업자등록번호</label>
+                        <input type="text" class="form-control" id="biz_no" name="biz_no"
+                            value="{{ company.biz_no if company else '' }}"
+                            placeholder="예: 123-45-67890">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="industry" class="form-label fw-semibold">업종</label>
+                            <select class="form-select" id="industry" name="industry">
+                                <option value="">-- 선택 --</option>
+                                {% for ind in industry_types %}
+                                <option value="{{ ind }}" {{ 'selected' if company and company.industry == ind else '' }}>{{ ind }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="company_size" class="form-label fw-semibold">기업 규모</label>
+                            <select class="form-select" id="company_size" name="company_size">
+                                <option value="">-- 선택 --</option>
+                                {% for sz in company_sizes %}
+                                <option value="{{ sz }}" {{ 'selected' if company and company.company_size == sz else '' }}>{{ sz }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="website" class="form-label fw-semibold">홈페이지</label>
+                        <input type="url" class="form-control" id="website" name="website"
+                            value="{{ company.website if company else '' }}"
+                            placeholder="https://example.com">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="employee_count" class="form-label fw-semibold">전체 직원 수</label>
+                            <input type="number" class="form-control" id="employee_count" name="employee_count"
+                                min="0"
+                                value="{{ company.employee_count if company else 0 }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="disabled_count" class="form-label fw-semibold">장애인 근로자 수</label>
+                            <input type="number" class="form-control" id="disabled_count" name="disabled_count"
+                                min="0"
+                                value="{{ company.disabled_count if company else 0 }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="region_sido" class="form-label fw-semibold">소재 지역 (시/도)</label>
+                            <select id="region_sido" class="form-select" onchange="loadSigungu(this.value,'region_id',{{ (company.region_id if company else '')|tojson }})">
+                                <option value="">-- 선택 --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="region_id" class="form-label fw-semibold">구/군</label>
+                            <select id="region_id" name="region_id" class="form-select">
+                                <option value="">-- 시/도를 먼저 선택 --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function(){
+                        loadSidoList('region_sido', {{ selected_sido|tojson }});
+                        {% if selected_sido %}
+                        loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (company.region_id if company else '')|tojson }});
+                        {% endif %}
+                    });
+                    </script>
+                </fieldset>
+
+                <fieldset class="mb-4">
+                    <legend class="h5 fw-semibold border-bottom pb-2 mb-3">편의시설 현황</legend>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">보유 편의시설</label>
+                        <div class="row g-2">
+                            {% for opt in accommodation_options %}
+                            <div class="col-md-4 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                        name="accessibility_facilities" value="{{ opt }}"
+                                        id="af_{{ loop.index }}"
+                                        {{ 'checked' if opt in accessibility_facilities else '' }}>
+                                    <label class="form-check-label" for="af_{{ loop.index }}">{{ opt }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="accessibility_note" class="form-label fw-semibold">추가 편의시설 설명</label>
+                        <textarea class="form-control" id="accessibility_note" name="accessibility_note" rows="2"
+                            placeholder="예: 1층 전체 무장애 동선, 높이조절 책상 보유">{{ company.accessibility_note if company else '' }}</textarea>
+                    </div>
+                </fieldset>
+
+                <fieldset class="mb-4">
+                    <legend class="h5 fw-semibold border-bottom pb-2 mb-3">장애인 고용 이력</legend>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                name="hiring_experience" value="1"
+                                id="hiring_experience"
+                                {{ 'checked' if company and company.hiring_experience else '' }}>
+                            <label class="form-check-label fw-semibold" for="hiring_experience">장애인 채용 경험 있음</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="retention_note" class="form-label fw-semibold">고용 유지/성과</label>
+                        <textarea class="form-control" id="retention_note" name="retention_note" rows="2"
+                            placeholder="예: 장애인 개발자 3명 재직 중, 평균 근속 2.5년">{{ company.retention_note if company else '' }}</textarea>
+                    </div>
+                </fieldset>
+
+                <fieldset class="mb-4">
+                    <legend class="h5 fw-semibold border-bottom pb-2 mb-3">복리후생</legend>
+
+                    <div class="mb-3">
+                        <label for="benefits" class="form-label fw-semibold">복리후생</label>
+                        <textarea class="form-control" id="benefits" name="benefits" rows="3"
+                            placeholder="예: 4대보험, 유연근무제, 재택근무, 자기개발비">{{ company.benefits if company else '' }}</textarea>
+                    </div>
+                </fieldset>
+
+                <fieldset class="mb-4">
+                    <legend class="h5 fw-semibold border-bottom pb-2 mb-3">기업 소개</legend>
+
+                    <div class="mb-3">
+                        <label for="intro" class="form-label fw-semibold">기업 소개</label>
+                        <textarea class="form-control" id="intro" name="intro" rows="4"
+                            placeholder="기업 소개를 작성해 주세요.">{{ company.intro if company else '' }}</textarea>
+                    </div>
+                </fieldset>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-1"></i>저장
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary">취소</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

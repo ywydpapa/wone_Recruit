@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-building me-2"></i>{{ company['company_name'] }}</h2>
+        <p>{{ company['industry'] or '' }}{% if company['industry'] and company['company_size'] %} · {% endif %}{{ company['company_size'] or '' }}</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div style="max-width:780px;margin:0 auto;">
+
+            <div class="content-card mb-3">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    {% if company['logo_path'] %}
+                    <img src="{{ company['logo_path'] }}" alt="{{ company['company_name'] }} 로고"
+                         style="width:72px;height:72px;object-fit:contain;border-radius:12px;border:1px solid #e9ecef;">
+                    {% else %}
+                    <div style="width:72px;height:72px;border-radius:12px;background:var(--light-blue);display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-building fa-2x" style="color:var(--primary-blue);"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h4 class="mb-1">{{ company['company_name'] }}</h4>
+                        <div class="text-muted small">
+                            {% if company['industry'] %}{{ company['industry'] }}{% endif %}
+                            {% if company['company_size'] %} · {{ company['company_size'] }}{% endif %}
+                            {% if company['region_sido'] %} · {{ company['region_sido'] }} {{ company['region_sigungu'] or '' }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if company['intro'] %}
+                <p class="mb-3">{{ company['intro'] }}</p>
+                {% endif %}
+
+                <dl class="row mb-0">
+                    {% if company['employee_count'] %}
+                    <dt class="col-sm-4">전체 직원 수</dt>
+                    <dd class="col-sm-8">{{ company['employee_count'] }}명</dd>
+                    {% endif %}
+
+                    {% if company['disabled_count'] is not none %}
+                    <dt class="col-sm-4">장애인 근로자</dt>
+                    <dd class="col-sm-8">
+                        {{ company['disabled_count'] }}명
+                        {% if company['employee_count'] and company['employee_count'] > 0 %}
+                        ({{ "%.1f"|format(company['disabled_count'] / company['employee_count'] * 100) }}%)
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+
+                    {% if company['hiring_experience'] %}
+                    <dt class="col-sm-4">장애인 채용 경험</dt>
+                    <dd class="col-sm-8"><span class="badge bg-success">있음</span></dd>
+                    {% endif %}
+
+                    {% if company['website'] %}
+                    <dt class="col-sm-4">웹사이트</dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ company['website'] }}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt me-1"></i>{{ company['website'] }}
+                        </a>
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+
+            {% if accessibility_facilities or company['accessibility_note'] %}
+            <div class="content-card mb-3">
+                <h6 class="fw-bold mb-3"><i class="fas fa-wheelchair me-2 text-primary"></i>접근성 시설</h6>
+                {% if accessibility_facilities %}
+                <div class="mb-2">
+                    {% for item in accessibility_facilities %}
+                    <span class="badge bg-secondary me-1 mb-1">{{ item }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if company['accessibility_note'] %}
+                <p class="small text-muted mb-0">{{ company['accessibility_note'] }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if company['retention_note'] %}
+            <div class="content-card mb-3">
+                <h6 class="fw-bold mb-3"><i class="fas fa-users me-2 text-primary"></i>근속 현황</h6>
+                <p class="mb-0">{{ company['retention_note'] }}</p>
+            </div>
+            {% endif %}
+
+            {% if company['benefits'] %}
+            <div class="content-card mb-3">
+                <h6 class="fw-bold mb-3"><i class="fas fa-gift me-2 text-primary"></i>복리후생</h6>
+                <p class="mb-0">{{ company['benefits'] }}</p>
+            </div>
+            {% endif %}
+
+            <div class="content-card mb-3">
+                <h6 class="fw-bold mb-3"><i class="fas fa-briefcase me-2 text-primary"></i>채용 중인 공고 <span class="badge bg-primary rounded-pill">{{ open_jobs|length }}</span></h6>
+                {% if open_jobs %}
+                <div class="row g-4">
+                    {% for job in open_jobs %}
+                    <div class="col-md-6">
+                        <div class="item-card">
+                            <div>
+                                <span class="item-badge">{{ job['employment_type'] }}</span>
+                                {% if job['remote_available'] %}
+                                <span class="item-badge badge-green">재택 가능</span>
+                                {% endif %}
+                                <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
+                                <div class="item-meta">
+                                    <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+                                </div>
+                            </div>
+                            <hr class="text-muted">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small"><i class="far fa-clock me-1"></i>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if job['salary'] %}
+                                    <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
+                                    {% endif %}
+                                    <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">현재 채용 중인 공고가 없습니다.</p>
+                {% endif %}
+            </div>
+
+            <div class="content-card">
+                <a href="/jobs" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-1"></i>공고 목록으로</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

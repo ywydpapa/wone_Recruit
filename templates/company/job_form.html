@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-file-alt me-2"></i>{{ '공고 수정' if job else '새 공고 작성' }}</h2>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div class="content-card" style="max-width:720px;margin:0 auto;">
+            <form method="post" action="{{ '/company/jobs/' + job['id']|string + '/edit' if job else '/company/jobs/new' }}" novalidate>
+                <div class="mb-3">
+                    <label for="category_id" class="form-label fw-semibold">직무 카테고리</label>
+                    <select id="category_id" name="category_id" class="form-select">
+                        <option value="">선택 안 함</option>
+                        {% set current_major = namespace(val='') %}
+                        {% for cat in categories %}
+                            {% if cat['major_name_ko'] != current_major.val %}
+                                {% if current_major.val %}
+                                </optgroup>
+                                {% endif %}
+                                <optgroup label="{{ cat['major_name_ko'] }}">
+                                {% set current_major.val = cat['major_name_ko'] %}
+                            {% endif %}
+                            <option value="{{ cat['id'] }}" {% if job and job['category_id'] == cat['id'] %}selected{% endif %}>
+                                {{ cat['minor_name_ko'] }}
+                            </option>
+                        {% endfor %}
+                        {% if current_major.val %}
+                        </optgroup>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="title" class="form-label fw-semibold">공고 제목 <span class="text-danger">*</span></label>
+                    <input type="text" id="title" name="title" class="form-control" required value="{{ job['title'] if job else '' }}">
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="region_sido" class="form-label fw-semibold">지역 (시/도)</label>
+                        <select id="region_sido" class="form-select" onchange="loadSigungu(this.value,'region_id',{{ (job['region_id'] if job else '')|tojson }})">
+                            <option value="">선택 안 함</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="region_id" class="form-label fw-semibold">구/군</label>
+                        <select id="region_id" name="region_id" class="form-select">
+                            <option value="">-- 시/도를 먼저 선택 --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="employment_type" class="form-label fw-semibold">고용 형태</label>
+                        <select id="employment_type" name="employment_type" class="form-select">
+                            {% for et in employment_types %}
+                            <option value="{{ et }}" {% if job and job['employment_type'] == et %}selected{% endif %}>{{ et }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" id="remote_available" name="remote_available" value="1" class="form-check-input"
+                        {% if job and job['remote_available'] %}checked{% endif %}>
+                    <label for="remote_available" class="form-check-label">재택/원격근무 가능</label>
+                </div>
+
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="fs-6 fw-semibold px-2 w-auto">근무 시간</legend>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-3">
+                            <label for="work_start_time" class="form-label">시작 시간</label>
+                            <input type="time" id="work_start_time" name="work_start_time" class="form-control" value="{{ job['work_start_time'] if job else '09:00' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="work_end_time" class="form-label">종료 시간</label>
+                            <input type="time" id="work_end_time" name="work_end_time" class="form-control" value="{{ job['work_end_time'] if job else '18:00' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="work_days" class="form-label">근무 요일</label>
+                            <input type="text" id="work_days" name="work_days" class="form-control" value="{{ job['work_days'] if job else '월~금' }}" placeholder="월~금, 주3일 등">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="min_work_hours" class="form-label">최소 일일 근무시간</label>
+                            <select id="min_work_hours" name="min_work_hours" class="form-select">
+                                {% for h in daily_hours_options %}
+                                <option value="{{ h }}" {% if job and job['min_work_hours'] == h %}selected{% elif not job and h == 8 %}selected{% endif %}>{{ h }}시간</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" id="flexible_hours" name="flexible_hours" value="1" class="form-check-input"
+                            {% if job and job['flexible_hours'] %}checked{% endif %}>
+                        <label for="flexible_hours" class="form-check-label">유연근무 가능 (출퇴근 시간 조정 가능)</label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="fs-6 fw-semibold px-2 w-auto">편의 제공</legend>
+                    <div class="mb-2">
+                        <label class="form-label">제공 편의시설</label>
+                        <div class="row g-2">
+                            {% for opt in accommodation_options %}
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input type="checkbox" name="accommodations_provided" value="{{ opt }}" class="form-check-input"
+                                        id="acc_{{ loop.index }}"
+                                        {% if opt in accommodations_provided %}checked{% endif %}>
+                                    <label for="acc_{{ loop.index }}" class="form-check-label">{{ opt }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <label for="accommodations_note" class="form-label">추가 편의사항</label>
+                        <textarea id="accommodations_note" name="accommodations_note" class="form-control" rows="2" placeholder="기타 편의 제공 사항을 입력하세요">{{ job['accommodations_note'] if job else '' }}</textarea>
+                    </div>
+                </fieldset>
+
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="fs-6 fw-semibold px-2 w-auto">우대 장애 유형</legend>
+                    <div class="mb-2">
+                        <label class="form-label">우대 장애유형 (미선택 시 전체 환영)</label>
+                        <div class="row g-2">
+                            {% for dt in disability_types %}
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="preferred_disability" value="{{ dt['name'] }}" class="form-check-input"
+                                        id="pd_{{ loop.index }}"
+                                        {% if dt['name'] in preferred_disability %}checked{% endif %}>
+                                    <label for="pd_{{ loop.index }}" class="form-check-label">{{ dt['name'] }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold">우대 장애정도</label>
+                        <div class="d-flex gap-3">
+                            {% for sev in ['경증', '중증', '무관'] %}
+                            <div class="form-check">
+                                <input type="radio" name="preferred_severity" value="{{ sev }}" class="form-check-input"
+                                    id="sev_{{ loop.index }}"
+                                    {% if job and job['preferred_severity'] == sev %}checked{% elif not job and sev == '무관' %}checked{% endif %}>
+                                <label for="sev_{{ loop.index }}" class="form-check-label">{{ sev }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="salary" class="form-label fw-semibold">급여</label>
+                        <input type="text" id="salary" name="salary" class="form-control" value="{{ job['salary'] if job else '' }}" placeholder="예: 월 200만원">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="deadline" class="form-label fw-semibold">마감일</label>
+                        <input type="date" id="deadline" name="deadline" class="form-control" value="{{ job['deadline'] if job else '' }}">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="benefits" class="form-label fw-semibold">복리후생</label>
+                        <textarea id="benefits" name="benefits" class="form-control" rows="2" placeholder="4대보험, 식대, 교통비 등">{{ job['benefits'] if job else '' }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="requirements" class="form-label fw-semibold">우대사항/필수자격</label>
+                        <textarea id="requirements" name="requirements" class="form-control" rows="2" placeholder="자격증, 경력 요건 등">{{ job['requirements'] if job else '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label fw-semibold">공고 내용</label>
+                    <textarea id="description" name="description" class="form-control" rows="6">{{ job['description'] if job else '' }}</textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="status" class="form-label fw-semibold">공고 상태</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="draft" {% if not job or job['status'] == 'draft' %}selected{% endif %}>임시저장</option>
+                        <option value="open" {% if job and job['status'] == 'open' %}selected{% endif %}>공개</option>
+                        <option value="closed" {% if job and job['status'] == 'closed' %}selected{% endif %}>마감</option>
+                        <option value="filled" {% if job and job['status'] == 'filled' %}selected{% endif %}>채용완료</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <a href="/company/jobs" class="btn btn-outline-secondary">취소</a>
+                </div>
+                <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    loadSidoList('region_sido', {{ selected_sido|tojson }});
+                    {% if selected_sido %}
+                    loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (job['region_id'] if job else '')|tojson }});
+                    {% endif %}
+                });
+                </script>
+            </form>
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

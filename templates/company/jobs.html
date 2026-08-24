@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="fas fa-briefcase me-2"></i>공고 관리</h2>
+            <p>등록된 채용 공고를 관리합니다.</p>
+        </div>
+        <a href="/company/jobs/new" class="btn btn-primary"><i class="fas fa-plus me-1"></i>새 공고 작성</a>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div class="content-card">
+            {% if jobs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">공고 관리 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">공고 제목</th>
+                            <th scope="col">고용 형태</th>
+                            <th scope="col">지역</th>
+                            <th scope="col">상태</th>
+                            <th scope="col">마감일</th>
+                            <th scope="col">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td><a href="/company/jobs/{{ job['id'] }}/edit" class="text-decoration-none fw-semibold">{{ job['title'] }}</a></td>
+                        <td>{{ job['employment_type'] }}</td>
+                        <td>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>
+                            {% set s = job['status'] %}
+                            {% if s == 'open' %}
+                                <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>공개</span>
+                            {% elif s == 'draft' %}
+                                <span class="badge bg-secondary"><i class="fas fa-clock badge-icon" aria-hidden="true"></i>임시저장</span>
+                            {% elif s == 'closed' %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-times badge-icon" aria-hidden="true"></i>마감</span>
+                            {% elif s == 'filled' %}
+                                <span class="badge bg-info text-dark"><i class="fas fa-check badge-icon" aria-hidden="true"></i>채용완료</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ s }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ job['deadline'] or '-' }}</td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <a href="/company/jobs/{{ job['id'] }}/applicants" class="btn btn-sm btn-outline-secondary">지원자</a>
+                                <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-outline-primary">수정</a>
+                                <form method="post" action="/company/jobs/{{ job['id'] }}/status" class="d-inline">
+                                    <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()" aria-label="상태 변경">
+                                        <option value="draft" {% if job['status'] == 'draft' %}selected{% endif %}>임시저장</option>
+                                        <option value="open" {% if job['status'] == 'open' %}selected{% endif %}>공개</option>
+                                        <option value="closed" {% if job['status'] == 'closed' %}selected{% endif %}>마감</option>
+                                        <option value="filled" {% if job['status'] == 'filled' %}selected{% endif %}>채용완료</option>
+                                    </select>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "common/pagination.html" %}
+            {% else %}
+            <p class="text-muted text-center py-4">등록된 공고가 없습니다. <a href="/company/jobs/new">새 공고를 작성</a>해 보세요.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>
