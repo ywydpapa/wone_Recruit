@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-link me-2"></i>매칭</h2>
+        <p>구직자와 채용 공고를 연결합니다.</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        {% if job is none %}
+        {# 공고 선택 화면 #}
+        <div class="content-card">
+            <h5 class="mb-3">매칭할 공고를 선택하세요</h5>
+            {% if open_jobs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">공고 선택 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th>공고 제목</th>
+                            <th>기업명</th>
+                            <th>지역</th>
+                            <th>마감일</th>
+                            <th>매칭 시작</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for j in open_jobs %}
+                    <tr>
+                        <td class="fw-semibold">{{ j['title'] }}</td>
+                        <td>{{ j['company_name'] }}</td>
+                        <td>{{ (j['region_sido']|default('') ~ ' ' ~ j['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ j['deadline'] or '-' }}</td>
+                        <td>
+                            <a href="/op/matching?job_id={{ j['id'] }}" class="btn btn-sm btn-primary">선택</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">공개된 공고가 없습니다.</p>
+            {% endif %}
+        </div>
+        {% else %}
+        {# 후보자 목록 화면 #}
+        <div class="content-card mb-3">
+            <h5 class="mb-2">선택된 공고</h5>
+            <p class="mb-1"><strong>{{ job['title'] }}</strong> / {{ job['company_name'] }} / {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }} / 마감: {{ job['deadline'] or '-' }}</p>
+            <a href="/op/matching" class="btn btn-sm btn-outline-secondary mt-1">다른 공고 선택</a>
+        </div>
+        <div class="content-card">
+            <h5 class="mb-3">동의한 구직자 (미지원 대상)</h5>
+            {% if candidates %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">매칭 후보자 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th>이름</th>
+                            <th>장애 유형</th>
+                            <th>중증도</th>
+                            <th>지역</th>
+                            <th>근무 선호</th>
+                            <th>희망 직종</th>
+                            <th>지역 매치</th>
+                            <th>근무시간</th>
+                            <th>편의 매치</th>
+                            <th>제안</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for c in candidates %}
+                    <tr>
+                        <td class="fw-semibold">{{ c['name'] }}</td>
+                        <td>{{ c['disability_name'] or '-' }}</td>
+                        <td>{{ c['severity'] or '-' }}</td>
+                        <td>{{ (c['region_sido']|default('') ~ ' ' ~ c['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ c['work_pref'] or '-' }}</td>
+                        <td>{{ c['desired_job'] or '-' }}</td>
+                        {% set compat = compatibility.get(c['id'], {}) %}
+                        <td>
+                            {% if compat.get('region') %}
+                            <span class="badge bg-success">일치</span>
+                            {% else %}
+                            <span class="badge bg-secondary">다름</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if compat.get('hours') %}
+                            <span class="badge bg-success">충족</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">부족</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if compat.get('accommodation_total', 0) > 0 %}
+                            <span class="badge bg-info">{{ compat.get('accommodation', 0) }}/{{ compat.get('accommodation_total', 0) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="/op/matching/propose">
+                                <input type="hidden" name="job_id" value="{{ job_id }}">
+                                <input type="hidden" name="seeker_user_id" value="{{ c['id'] }}">
+                                <button type="submit" class="btn btn-sm btn-success">제안</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">매칭 가능한 구직자가 없습니다.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

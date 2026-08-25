@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-user me-2"></i>구직자 상세</h2>
+        <p>구직자의 상세 프로필을 확인합니다. <span class="badge bg-warning text-dark">열람 기록이 저장됩니다.</span></p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container" style="max-width: 860px;">
+
+        {# Identity header card #}
+        <section class="profile-card mb-3" aria-label="구직자 기본 정보">
+            <div class="profile-card-body">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="profile-avatar" aria-hidden="true">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-1" style="font-size:1.3rem; color:var(--dark-blue);">{{ seeker['name'] }}</h3>
+                        <div class="text-muted">
+                            <span class="me-3"><i class="fas fa-at me-1" aria-hidden="true"></i>{{ seeker['username'] }}</span>
+                            <span class="me-3"><i class="fas fa-phone me-1" aria-hidden="true"></i>{{ seeker['phone'] or '-' }}</span>
+                            <span><i class="fas fa-calendar me-1" aria-hidden="true"></i>{{ seeker['created_at'][:10] if seeker['created_at'] else '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {% if profile %}
+        <div class="row g-3 profile-row">
+            {# Left column #}
+            <div class="col-lg-6 d-flex flex-column">
+                {# Disability & mobility card #}
+                <section class="profile-card flex-grow-1" aria-labelledby="section-disability">
+                    <div class="profile-card-header" id="section-disability">
+                        <i class="fas fa-wheelchair" aria-hidden="true"></i>장애 및 이동
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="profile-field">
+                            <span class="profile-field-label">장애 유형</span>
+                            <span class="profile-field-value">{{ profile['disability_name'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">중증도</span>
+                            <span class="profile-field-value">
+                                {% if profile['severity'] == '중증' %}
+                                <span class="profile-tag profile-tag-purple">{{ profile['severity'] }}</span>
+                                {% elif profile['severity'] %}
+                                <span class="profile-tag profile-tag-blue">{{ profile['severity'] }}</span>
+                                {% else %}-{% endif %}
+                            </span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">성별</span>
+                            <span class="profile-field-value">{{ profile['gender'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">출생년도</span>
+                            <span class="profile-field-value">{{ profile['birth_year'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">거주 지역</span>
+                            <span class="profile-field-value">{{ (profile['region_sido']|default('') ~ ' ' ~ profile['region_sigungu']|default(''))|trim or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">이동수단</span>
+                            <span class="profile-field-value">{{ profile['mobility_type'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">최대 통근</span>
+                            <span class="profile-field-value">{% if profile['commute_max_minutes'] %}{{ profile['commute_max_minutes'] }}분{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">의사소통 선호</span>
+                            <span class="profile-field-value">{{ communication_pref_display }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">보조기기</span>
+                            <span class="profile-field-value">{{ assistive_tech_display }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                {# Education & career card #}
+                <section class="profile-card" aria-labelledby="section-career">
+                    <div class="profile-card-header" id="section-career">
+                        <i class="fas fa-graduation-cap" aria-hidden="true"></i>학력 및 경력
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="profile-field">
+                            <span class="profile-field-label">최종학력</span>
+                            <span class="profile-field-value">{{ profile['education_level'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">학교명</span>
+                            <span class="profile-field-value">{{ profile['school_name'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">전공</span>
+                            <span class="profile-field-value">{{ profile['major'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">경력(년)</span>
+                            <span class="profile-field-value">{{ profile['career_years'] if profile['career_years'] is not none else '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">최근 직장</span>
+                            <span class="profile-field-value">{{ profile['recent_company'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">최근 직무</span>
+                            <span class="profile-field-value">{{ profile['recent_job_title'] or '-' }}</span>
+                        </div>
+                        {% if profile['experience_summary'] %}
+                        <div class="profile-field">
+                            <span class="profile-field-label">경력 요약</span>
+                            <span class="profile-field-value">{{ profile['experience_summary'] }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+
+            {# Right column #}
+            <div class="col-lg-6 d-flex flex-column">
+                {# Work capability card #}
+                <section class="profile-card flex-grow-1" aria-labelledby="section-work">
+                    <div class="profile-card-header" id="section-work">
+                        <i class="fas fa-briefcase" aria-hidden="true"></i>근무 역량
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="profile-field">
+                            <span class="profile-field-label">희망 직종</span>
+                            <span class="profile-field-value">{{ profile['desired_job'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">근무 선호</span>
+                            <span class="profile-field-value">
+                                {% if profile['work_pref'] %}
+                                <span class="profile-tag profile-tag-blue">{{ profile['work_pref'] }}</span>
+                                {% else %}-{% endif %}
+                            </span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">일일 근무시간</span>
+                            <span class="profile-field-value">{% if profile['daily_work_hours'] is not none %}{{ profile['daily_work_hours'] }}시간{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">선호 시간대</span>
+                            <span class="profile-field-value">{{ profile['preferred_time'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">휴식 빈도</span>
+                            <span class="profile-field-value">{{ profile['rest_frequency'] or '-' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">필요 편의제공</span>
+                            <span class="profile-field-value">
+                                {% if accommodation_needs_display and accommodation_needs_display != '-' %}
+                                    {% for item in accommodation_needs_display.split(', ') %}
+                                    <span class="profile-tag profile-tag-green">{{ item }}</span>
+                                    {% endfor %}
+                                {% else %}-{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                {# Additional info card (certs + resume + consent) #}
+                <section class="profile-card" aria-labelledby="section-additional">
+                    <div class="profile-card-header" id="section-additional">
+                        <i class="fas fa-folder-open" aria-hidden="true"></i>자격 및 기타
+                    </div>
+                    <div class="profile-card-body">
+                        {% if profile and profile.resume_path %}
+                        <div class="profile-field">
+                            <span class="profile-field-label">이력서</span>
+                            <span class="profile-field-value">
+                                <a href="{{ profile.resume_path }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-download me-1"></i>다운로드
+                                </a>
+                            </span>
+                        </div>
+                        {% endif %}
+                        <div class="profile-field">
+                            <span class="profile-field-label">자격증</span>
+                            <span class="profile-field-value">
+                                {% if certifications %}
+                                {% for cert in certifications %}
+                                <div{% if not loop.last %} class="mb-1"{% endif %}>
+                                    <span class="fw-semibold">{{ cert['cert_name'] }}</span>
+                                    <span class="text-muted" style="font-size:0.85rem;">{{ cert['issuing_org'] or '' }}{% if cert['cert_date'] %} / {{ cert['cert_date'] }}{% endif %}</span>
+                                </div>
+                                {% endfor %}
+                                {% else %}-{% endif %}
+                            </span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="profile-field-label">개인정보 동의</span>
+                            <span class="profile-field-value">
+                                {% if profile['consent_sensitive'] %}
+                                <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>동의</span>
+                                <span class="text-muted ms-1">({{ profile['consented_at'][:10] if profile['consented_at'] else '' }})</span>
+                                {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-times badge-icon" aria-hidden="true"></i>미동의</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+        {% else %}
+        <div class="profile-card">
+            <div class="profile-card-body">
+                <p class="text-muted mb-0">프로필 정보가 없습니다.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="content-card mt-3">
+            <h5><i class="fas fa-key me-2"></i>비밀번호 초기화</h5>
+            <form method="post" action="/op/users/{{ seeker.id }}/reset-password" class="d-flex gap-2 align-items-end">
+                <div class="flex-grow-1">
+                    <label for="new_password_reset" class="form-label">새 비밀번호</label>
+                    <input type="password" id="new_password_reset" name="new_password" class="form-control" minlength="4" required>
+                </div>
+                <button type="submit" class="btn btn-warning" onclick="return confirm('비밀번호를 초기화하시겠습니까?')">초기화</button>
+            </form>
+        </div>
+
+        <div class="mt-3">
+            <a href="/op/seekers" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>목록으로</a>
+        </div>
+
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

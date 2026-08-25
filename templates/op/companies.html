@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="header-dash">
+    <div class="container">
+        <h2>기업 관리</h2>
+        <p>등록된 전체 기업을 확인합니다.</p>
+    </div>
+</div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/op/companies">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="기업명, 사업자번호 검색" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="industry" class="visually-hidden">업종</label>
+                    <select id="industry" name="industry" class="form-select form-select-lg">
+                        <option value="">업종 (전체)</option>
+                        {% for it in industry_types %}
+                        <option value="{{ it }}" {% if selected_industry == it %}selected{% endif %}>{{ it }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="company_size" class="visually-hidden">기업 규모</label>
+                    <select id="company_size" name="company_size" class="form-select form-select-lg">
+                        <option value="">규모 (전체)</option>
+                        {% for cs in company_sizes %}
+                        <option value="{{ cs }}" {% if selected_size == cs %}selected{% endif %}>{{ cs }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select form-select-lg">
+                        <option value="">지역</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="hiring_experience" class="visually-hidden">채용 경험</label>
+                    <select id="hiring_experience" name="hiring_experience" class="form-select form-select-lg">
+                        <option value="" {% if selected_hiring == "" %}selected{% endif %}>채용경험</option>
+                        <option value="1" {% if selected_hiring == "1" %}selected{% endif %}>경험있음</option>
+                        <option value="0" {% if selected_hiring == "0" %}selected{% endif %}>없음</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="list-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0">기업 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}개)</span></h4>
+        </div>
+        <div class="content-card">
+            {% if companies %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">기업 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">기업명</th>
+                            <th scope="col">업종</th>
+                            <th scope="col">규모</th>
+                            <th scope="col">직원 수</th>
+                            <th scope="col">장애인 고용</th>
+                            <th scope="col">편의시설</th>
+                            <th scope="col">채용 경험</th>
+                            <th scope="col">지역</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for c in companies %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/companies/{{ c['id'] }}" style="color:inherit;text-decoration:none;">{{ c['company_name'] }}</a></td>
+                        <td>{{ c['industry'] or '-' }}</td>
+                        <td>{{ c['company_size'] or '-' }}</td>
+                        <td>{{ c['employee_count'] }}</td>
+                        <td>{{ c['disabled_count'] }}</td>
+                        <td>
+                            {% if c['facility_count'] > 0 %}
+                            <span class="badge bg-info text-dark">{{ c['facility_count'] }}개</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c['hiring_experience'] %}
+                            <span class="badge bg-success">경험 있음</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ (c['region_sido']|default('') ~ ' ' ~ c['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td><a href="/companies/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "common/pagination.html" %}
+            {% else %}
+            <p class="text-muted text-center py-4">등록된 기업이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    loadSidoList('sido', {{ selected_sido|tojson }});
+});
+</script>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

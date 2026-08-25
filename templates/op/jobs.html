@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="header-dash">
+    <div class="container">
+        <h2>공고 관리</h2>
+        <p>플랫폼에 등록된 전체 채용 공고를 확인합니다.</p>
+    </div>
+</div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/op/jobs">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="공고명, 기업명 검색" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="visually-hidden">상태</label>
+                    <select id="status" name="status" class="form-select form-select-lg">
+                        <option value="">상태 (전체)</option>
+                        <option value="open" {% if selected_status == 'open' %}selected{% endif %}>공개</option>
+                        <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>임시저장</option>
+                        <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>마감</option>
+                        <option value="filled" {% if selected_status == 'filled' %}selected{% endif %}>채용완료</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select form-select-lg">
+                        <option value="">지역 (전체)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="employment_type" class="visually-hidden">고용 형태</label>
+                    <select id="employment_type" name="employment_type" class="form-select form-select-lg">
+                        <option value="">고용형태 (전체)</option>
+                        {% for et in employment_types %}
+                        <option value="{{ et }}" {% if selected_type == et %}selected{% endif %}>{{ et }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="list-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0">전체 공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
+        </div>
+
+        <div class="content-card">
+            {% if jobs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">공고 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">공고명</th>
+                            <th scope="col">기업</th>
+                            <th scope="col">지역</th>
+                            <th scope="col">고용형태</th>
+                            <th scope="col">급여</th>
+                            <th scope="col">마감</th>
+                            <th scope="col">상태</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/op/jobs/{{ job['id'] }}" style="color:inherit;text-decoration:none;">{{ job['title'] }}</a></td>
+                        <td>{{ job['company_name'] }}</td>
+                        <td>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</td>
+                        <td>{{ job['employment_type'] }}{% if job['remote_available'] %} <span class="badge bg-success">재택</span>{% endif %}</td>
+                        <td>{{ job['salary'] or '협의' }}</td>
+                        <td>{{ job['deadline'] or '상시' }}</td>
+                        <td>
+                            {% set s = job['status'] %}
+                            {% if s == 'open' %}
+                                <span class="badge bg-success">공개</span>
+                            {% elif s == 'draft' %}
+                                <span class="badge bg-secondary">임시저장</span>
+                            {% elif s == 'closed' %}
+                                <span class="badge bg-warning text-dark">마감</span>
+                            {% elif s == 'filled' %}
+                                <span class="badge bg-info text-dark">채용완료</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ s }}</span>
+                            {% endif %}
+                        </td>
+                        <td><a href="/op/jobs/{{ job['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "common/pagination.html" %}
+            {% else %}
+            <p class="text-muted text-center py-4">등록된 공고가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    loadSidoList('sido', {{ selected_sido|tojson }});
+});
+</script>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

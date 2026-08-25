@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-handshake me-2"></i>매칭 제안</h2>
+        <p>운영자가 제안한 채용 매칭을 확인하고 수락 또는 거절합니다.</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div class="content-card">
+            {% if proposals %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">매칭 제안 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">공고 제목</th>
+                            <th scope="col">기업명</th>
+                            <th scope="col">지역</th>
+                            <th scope="col">고용 형태</th>
+                            <th scope="col">제안일</th>
+                            <th scope="col">응답</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for p in proposals %}
+                    <tr>
+                        <td class="fw-semibold">{{ p['job_title'] }}</td>
+                        <td>{{ p['company_name'] }}</td>
+                        <td>{{ (p['region_sido']|default('') ~ ' ' ~ p['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ p['employment_type'] or '-' }}</td>
+                        <td>{{ p['created_at'][:10] if p['created_at'] else '-' }}</td>
+                        <td>
+                            <form method="post" action="/proposals/{{ p['id'] }}/respond" class="d-flex gap-1">
+                                <button type="submit" name="action" value="accept" class="btn btn-sm btn-success">수락</button>
+                                <button type="submit" name="action" value="reject"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('제안을 거절하시겠습니까?')">거절</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">받은 매칭 제안이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

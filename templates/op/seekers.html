@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="header-dash">
+    <div class="container">
+        <h2>구직자 관리</h2>
+        <p>등록된 전체 구직자를 확인하고 매칭합니다.</p>
+    </div>
+</div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/op/seekers">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="이름, 아이디 검색" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="disability_type_id" class="visually-hidden">장애 유형</label>
+                    <select id="disability_type_id" name="disability_type_id" class="form-select form-select-lg">
+                        <option value="">장애유형 (전체)</option>
+                        {% for dt in disability_types %}
+                        <option value="{{ dt['id'] }}" {% if selected_disability == dt['id'] %}selected{% endif %}>{{ dt['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="severity" class="visually-hidden">중증도</label>
+                    <select id="severity" name="severity" class="form-select form-select-lg">
+                        <option value="">중증도 (전체)</option>
+                        <option value="경증" {% if selected_severity == "경증" %}selected{% endif %}>경증</option>
+                        <option value="중증" {% if selected_severity == "중증" %}selected{% endif %}>중증</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select form-select-lg">
+                        <option value="">지역 (전체)</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label for="consent" class="visually-hidden">동의 여부</label>
+                    <select id="consent" name="consent" class="form-select form-select-lg">
+                        <option value="">동의</option>
+                        <option value="1" {% if selected_consent == "1" %}selected{% endif %}>동의</option>
+                        <option value="0" {% if selected_consent == "0" %}selected{% endif %}>미동의</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="list-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0">구직자 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
+        </div>
+        <div class="content-card">
+            {% if seekers %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">구직자 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">이름</th>
+                            <th scope="col">장애 유형</th>
+                            <th scope="col">중증도</th>
+                            <th scope="col">지역</th>
+                            <th scope="col">이동수단</th>
+                            <th scope="col">근무 선호</th>
+                            <th scope="col">동의</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for s in seekers %}
+                    <tr>
+                        <td class="fw-semibold">{{ s['name'] }}</td>
+                        <td>{{ s['disability_name'] or '-' }}</td>
+                        <td>{{ s['severity'] or '-' }}</td>
+                        <td>{{ (s['region_sido']|default('') ~ ' ' ~ s['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ s['mobility_type'] or '-' }}</td>
+                        <td>{{ s['work_pref'] or '-' }} / {{ s['daily_work_hours'] or '-' }}h</td>
+                        <td>
+                            {% if s['consent_sensitive'] %}
+                                <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>동의</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-times badge-icon" aria-hidden="true"></i>미동의</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/op/seekers/{{ s['id'] }}" class="btn btn-sm btn-outline-primary">상세</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "common/pagination.html" %}
+            {% else %}
+            <p class="text-muted text-center py-4">등록된 구직자가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    loadSidoList('sido', {{ selected_sido|tojson }});
+});
+</script>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

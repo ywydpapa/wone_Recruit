@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-list-check me-2"></i>전체 지원 현황</h2>
+        <p>모든 지원 및 매칭 현황을 확인합니다.</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div class="content-card">
+            {% if candidacies %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <caption class="visually-hidden">후보자 목록</caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">공고 제목</th>
+                            <th scope="col">기업명</th>
+                            <th scope="col">구직자</th>
+                            <th scope="col">출처</th>
+                            <th scope="col">상태</th>
+                            <th scope="col">매칭 단계</th>
+                            <th scope="col">등록일</th>
+                            <th scope="col">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for c in candidacies %}
+                    <tr>
+                        <td class="fw-semibold">{{ c['job_title'] }}</td>
+                        <td>{{ c['company_name'] }}</td>
+                        <td>{{ c['seeker_name'] }}</td>
+                        <td>
+                            {% if c['source'] == 'direct' %}
+                                <span class="badge bg-secondary">직접지원</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark">운영자매칭</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set s = c['status'] %}
+                            {% if s == 'pending' %}
+                                <span class="badge bg-secondary"><i class="fas fa-clock badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'reviewing' %}
+                                <span class="badge bg-primary"><i class="fas fa-eye badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'shortlisted' %}
+                                <span class="badge bg-info text-dark"><i class="fas fa-list badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'interview' %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-comments badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'offer' or s == 'hired' %}
+                                <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'rejected' %}
+                                <span class="badge bg-danger"><i class="fas fa-times badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'withdrawn' %}
+                                <span class="badge bg-danger"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c['match_stage'] %}
+                                {{ match_stage_labels.get(c['match_stage'], c['match_stage']) }}
+                                {% if c['match_stage'] == 'seeker_confirmed' %}
+                                <form method="post" action="/op/matching/{{ c['id'] }}/submit" class="d-inline ms-1">
+                                    <button type="submit" class="btn btn-sm btn-primary">기업 전달</button>
+                                </form>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ c['created_at'][:10] if c['created_at'] else '-' }}</td>
+                        <td>
+                            <a href="/op/seekers/{{ c['id'] }}" class="btn btn-sm btn-outline-secondary">-</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "common/pagination.html" %}
+            {% else %}
+            <p class="text-muted text-center py-4">지원 현황이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>

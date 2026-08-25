@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container">
+        <h2><i class="fas fa-list-check me-2"></i>내 지원 현황</h2>
+        <p>지원한 공고의 진행 상황을 확인합니다.</p>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        {% if applications %}
+        {% for app in applications %}
+        <div class="content-card mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <h6 class="fw-bold mb-1">{{ app['title'] }}</h6>
+                    <span class="text-muted small">{{ app['company_name'] }} · {{ app['created_at'][:10] if app['created_at'] else '-' }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% set s = app['status'] %}
+                    {% if s == 'pending' %}
+                        <span class="badge bg-secondary"><i class="fas fa-clock badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'reviewing' %}
+                        <span class="badge bg-primary"><i class="fas fa-eye badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'shortlisted' %}
+                        <span class="badge bg-info text-dark"><i class="fas fa-list badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'interview' %}
+                        <span class="badge bg-warning text-dark"><i class="fas fa-comments badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'offer' %}
+                        <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'hired' %}
+                        <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'rejected' %}
+                        <span class="badge bg-danger"><i class="fas fa-times badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% elif s == 'withdrawn' %}
+                        <span class="badge bg-light text-dark border"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ s }}</span>
+                    {% endif %}
+                    {% if app['status'] not in ('hired', 'rejected', 'withdrawn') %}
+                    <form method="post" action="/applications/{{ app['id'] }}/withdraw"
+                          onsubmit="return confirm('지원을 취소하시겠습니까?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">취소</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% set history = history_map.get(app['id'], []) %}
+            {% if history %}
+            {% set steps = ['pending', 'reviewing', 'shortlisted', 'interview', 'offer', 'hired'] %}
+            {% set reached = [] %}
+            {% set dates = {} %}
+            {% for h in history %}
+                {% if h['to_status'] not in reached %}
+                    {% set _ = reached.append(h['to_status']) %}
+                {% endif %}
+                {% if dates.update({h['to_status']: h['created_at'][:10] if h['created_at'] else ''}) %}{% endif %}
+            {% endfor %}
+
+            <div class="status-timeline mt-3" role="list" aria-label="지원 상태 타임라인">
+                {% for step in steps %}
+                {% set is_active = step in reached %}
+                {% set is_current = step == app['status'] and step not in ('rejected', 'withdrawn') %}
+                <div class="timeline-step {% if is_active %}active{% endif %} {% if is_current %}current{% endif %}" role="listitem">
+                    <div class="timeline-dot">
+                        {% if is_active %}<i class="fas fa-check" aria-hidden="true"></i>{% endif %}
+                    </div>
+                    <span class="timeline-label">{{ status_labels.get(step, step) }}</span>
+                    {% if dates.get(step) %}
+                    <span class="timeline-date">{{ dates[step] }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if app['status'] == 'rejected' %}
+                <div class="timeline-step active rejected" role="listitem">
+                    <div class="timeline-dot"><i class="fas fa-times" aria-hidden="true"></i></div>
+                    <span class="timeline-label">{{ status_labels.get('rejected', '불합격') }}</span>
+                    {% if dates.get('rejected') %}
+                    <span class="timeline-date">{{ dates['rejected'] }}</span>
+                    {% endif %}
+                </div>
+                {% elif app['status'] == 'withdrawn' %}
+                <div class="timeline-step active withdrawn" role="listitem">
+                    <div class="timeline-dot"><i class="fas fa-undo" aria-hidden="true"></i></div>
+                    <span class="timeline-label">{{ status_labels.get('withdrawn', '취소') }}</span>
+                    {% if dates.get('withdrawn') %}
+                    <span class="timeline-date">{{ dates['withdrawn'] }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="content-card">
+            <p class="text-muted text-center py-4">아직 지원한 공고가 없습니다. <a href="/jobs">공고를 검색</a>해 보세요.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>
