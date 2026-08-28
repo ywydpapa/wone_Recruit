@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2>커뮤니티</h2>
+            <p>채용 경험, 업무 노하우, 취업 팁을 나누어 보세요.</p>
+        </div>
+        <form class="input-group" style="max-width: 300px;" action="/community" method="get">
+            <label for="community-search" class="visually-hidden">검색</label>
+            <input type="text" id="community-search" class="form-control rounded-start-pill ps-3" name="q" placeholder="관심있는 주제 검색..." value="{{ q }}">
+            <button class="btn btn-light rounded-end-pill px-3 text-primary" type="submit" aria-label="검색"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row mt-2">
+        <div class="col-lg-8">
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <ul class="nav nav-pills gap-2">
+                        {% set cats = [("all", "전체"), ("general", "자유"), ("job", "취업"), ("qna", "Q&A"), ("tip", "꿀팁"), ("life", "일상")] %}
+                        {% for key, label in cats %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if current_category == key %}active{% else %}text-dark bg-light{% endif %} rounded-pill px-3 py-1" href="/community?category={{ key }}">{{ label }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="post-list">
+                    {% for p in posts %}
+                    {% set meta = categories.get(p.category, ('자유', 'secondary')) %}
+                    <div class="p-3 mb-3 border rounded bg-white post-item shadow-sm">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-{{ meta[1] }} bg-opacity-10 text-{{ meta[1] }} border border-{{ meta[1] }} px-2 py-1">{{ meta[0] }}</span>
+                            <span class="small text-muted"><i class="far fa-clock me-1"></i>{{ p.created_at }}</span>
+                        </div>
+                        <h5 class="fw-bold mb-2">
+                            <a href="/post/{{ p.id }}" class="text-dark text-decoration-none stretched-link">{{ p.title }}</a>
+                        </h5>
+                        <p class="text-muted small mb-3 text-truncate">{{ p.content }}</p>
+                        <div class="d-flex justify-content-between align-items-center small text-muted">
+                            <span><i class="fas fa-user-circle me-1"></i>{{ p.author }}</span>
+                            <div>
+                                <span class="me-3"><i class="far fa-eye me-1"></i>{{ p.views }}</span>
+                                <span class="me-3 text-primary"><i class="far fa-comment-dots me-1"></i>{{ p.comment_count }}</span>
+                                <span class="text-danger"><i class="fas fa-heart me-1"></i>{{ p.like_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-5">게시글이 없습니다.</p>
+                    {% endfor %}
+                </div>
+
+                <nav aria-label="페이지 이동" class="mt-4">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                            <a class="page-link" href="/community?category={{ current_category }}&q={{ q }}&page={{ page-1 }}">이전</a>
+                        </li>
+                        {% for p in range(1, total_pages+1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="/community?category={{ current_category }}&q={{ q }}&page={{ p }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                            <a class="page-link" href="/community?category={{ current_category }}&q={{ q }}&page={{ page+1 }}">다음</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="content-card text-center py-4">
+                <div class="mb-3"><i class="fas fa-user-circle fa-4x text-secondary"></i></div>
+                <h5 class="fw-bold mb-1">{{ user_name }} 님</h5>
+                <p class="text-muted small mb-3">
+                    {% if user_role == 'seeker' %}구직자{% elif user_role == 'company' %}기업{% elif user_role == 'operator' %}운영자{% endif %}
+                </p>
+                <div class="d-flex justify-content-around text-center border-top pt-3">
+                    <div><h5 class="text-dark mb-0 fw-bold">{{ my_post_count }}</h5><span class="small text-muted">작성글</span></div>
+                    <div><h5 class="text-dark mb-0 fw-bold">{{ my_comment_count }}</h5><span class="small text-muted">댓글</span></div>
+                    <div><h5 class="text-danger mb-0 fw-bold">{{ my_like_received }}</h5><span class="small text-muted">받은 좋아요</span></div>
+                </div>
+            </div>
+            <div class="content-card mt-4">
+                <a href="/write_post" class="btn btn-primary w-100 rounded-pill mb-3 fw-bold shadow-sm">
+                    <i class="fas fa-pen me-2"></i>새 게시글 작성하기
+                </a>
+                <a href="/my_bookmarks_posts" class="tool-btn"><i class="far fa-bookmark"></i> 스크랩한 글</a>
+                <a href="/my_posts" class="tool-btn"><i class="far fa-list-alt"></i> 내가 쓴 글/댓글</a>
+            </div>
+            <div class="content-card mt-4">
+                <div class="card-title mb-3"><span><i class="fas fa-hashtag me-2 text-primary"></i>인기 태그</span></div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/community?q=면접" class="badge tag-badge px-3 py-2 rounded-pill">#면접팁</a>
+                    <a href="/community?q=이력서" class="badge tag-badge px-3 py-2 rounded-pill">#이력서</a>
+                    <a href="/community?q=재택" class="badge tag-badge px-3 py-2 rounded-pill">#재택근무</a>
+                    <a href="/community?q=접근성" class="badge tag-badge px-3 py-2 rounded-pill">#접근성</a>
+                    <a href="/community?q=편의시설" class="badge tag-badge px-3 py-2 rounded-pill">#편의시설</a>
+                    <a href="/community?q=자기소개" class="badge tag-badge px-3 py-2 rounded-pill">#자기소개</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>
