@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include "common/header.html" %}
+<body>
+{% include "common/topbar.html" %}
+<main id="main">
+<div class="dash-header">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="fas fa-clock me-2"></i>근태관리</h2>
+            <p>일일 근태 기록</p>
+        </div>
+        <a href="/company/attendance/monthly" class="btn btn-outline-primary">
+            <i class="fas fa-calendar-alt me-1"></i>월간 현황
+        </a>
+    </div>
+</div>
+<div class="list-section">
+    <div class="container">
+        <div class="content-card mb-4">
+            <form method="get" action="/company/attendance" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label for="date" class="form-label fw-semibold">날짜</label>
+                    <input type="date" id="date" name="date" class="form-control" value="{{ work_date }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">조회</button>
+                </div>
+            </form>
+        </div>
+
+        {% if employees %}
+        <form method="post" action="/company/attendance">
+            <input type="hidden" name="work_date" value="{{ work_date }}">
+            <div class="content-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <caption class="visually-hidden">근태 기록 - {{ work_date }}</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">이름</th>
+                                <th scope="col">출근</th>
+                                <th scope="col">퇴근</th>
+                                <th scope="col">상태</th>
+                                <th scope="col">메모</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for emp in employees %}
+                        {% set rec = records.get(emp['user_id']) %}
+                        <tr>
+                            <td class="fw-semibold">
+                                {{ emp['user_name'] }}
+                                <input type="hidden" name="employee_user_id" value="{{ emp['user_id'] }}">
+                            </td>
+                            <td>
+                                <input type="time" name="check_in_{{ emp['user_id'] }}" class="form-control form-control-sm" style="width:120px;"
+                                       value="{{ rec['check_in'] if rec and rec['check_in'] else '' }}"
+                                       aria-label="{{ emp['user_name'] }} 출근 시간">
+                            </td>
+                            <td>
+                                <input type="time" name="check_out_{{ emp['user_id'] }}" class="form-control form-control-sm" style="width:120px;"
+                                       value="{{ rec['check_out'] if rec and rec['check_out'] else '' }}"
+                                       aria-label="{{ emp['user_name'] }} 퇴근 시간">
+                            </td>
+                            <td>
+                                <select name="status_{{ emp['user_id'] }}" class="form-select form-select-sm" style="width:100px;"
+                                        aria-label="{{ emp['user_name'] }} 근태 상태">
+                                    {% set cur_status = rec['status'] if rec else 'normal' %}
+                                    {% for val, label in status_labels.items() %}
+                                    <option value="{{ val }}" {{ 'selected' if val == cur_status }}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="memo_{{ emp['user_id'] }}" class="form-control form-control-sm"
+                                       placeholder="메모" value="{{ rec['memo'] if rec and rec['memo'] else '' }}"
+                                       aria-label="{{ emp['user_name'] }} 메모">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>전체 저장
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="content-card">
+            <p class="text-muted text-center py-4">
+                채용된 직원이 없습니다. 지원자를 '채용 완료' 상태로 변경하면 이곳에 표시됩니다.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</main>
+{% include "common/_footer.html" %}
+</body>
+</html>
