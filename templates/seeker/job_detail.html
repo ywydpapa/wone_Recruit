@@ -1,20 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-file-alt me-2"></i>{{ job['title'] }}</h2>
-        <p>{{ job['company_name'] }}</p>
-    </div>
-</div>
-
-<div class="list-section">
-    <div class="container">
-        <div style="max-width:780px;margin:0 auto;">
+{% extends "base.html" %}
+{% block title %}{{ job['title'] }} | WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4">{{ job['title'] }}</h2>
+<div class="narrow-form-lg">
 
             <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
                 {% if not preferred_disability and job['preferred_severity'] == '무관' %}
@@ -34,10 +22,10 @@
                 <div class="d-flex align-items-start gap-3 mb-3">
                     {% if job['logo_path'] %}
                     <img src="{{ job['logo_path'] }}" alt="{{ job['company_name'] }} 로고"
-                         style="width:60px;height:60px;object-fit:contain;border-radius:8px;border:1px solid #e9ecef;">
+                         class="img-logo-sm">
                     {% endif %}
                     <div>
-                        <h5 class="mb-1"><a href="/companies/{{ job['company_id'] }}" style="color:inherit;text-decoration:none;">{{ job['company_name'] }}</a></h5>
+                        <h5 class="mb-1"><a href="/companies/{{ job['company_id'] }}" class="link-plain">{{ job['company_name'] }}</a></h5>
                         <span class="text-muted small">
                             {% if job['industry'] %}{{ job['industry'] }}{% endif %}
                             {% if job['industry'] and job['company_size'] %} · {% endif %}
@@ -190,7 +178,7 @@
 
             <div class="content-card mb-3">
                 <h6 class="fw-bold mb-3">상세 내용</h6>
-                <div style="white-space:pre-wrap;" class="small">{{ job['description'] }}</div>
+                <div class="text-prewrap small">{{ job['description'] }}</div>
             </div>
 
             <div class="content-card">
@@ -199,7 +187,7 @@
                         <i class="fas fa-arrow-left me-2"></i>목록으로
                     </a>
                     <div class="d-flex gap-2">
-                        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" style="display:inline-block">
+                        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline-block">
                             <button type="submit" class="btn {% if is_bookmarked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4"
                                     aria-label="{% if is_bookmarked %}저장 취소{% else %}공고 저장{% endif %}">
                                 <i class="{% if is_bookmarked %}fas{% else %}far{% endif %} fa-heart me-1"></i>
@@ -214,9 +202,4 @@
             </div>
 
         </div>
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

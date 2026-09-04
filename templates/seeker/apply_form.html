@@ -1,18 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-paper-plane me-2"></i>지원서 작성</h2>
-        <p>{{ job['title'] }}</p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
-        <div style="max-width:680px;margin:0 auto;">
+{% extends "base.html" %}
+{% block title %}지원서 작성 | WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-paper-plane me-2"></i>지원서 작성</h2>
+<div class="narrow-form">
             {% if already_applied %}
             <div class="content-card">
                 <div class="alert alert-warning mb-3" role="alert">
@@ -98,9 +88,4 @@
             </div>
             {% endif %}
         </div>
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

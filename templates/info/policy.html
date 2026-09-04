@@ -1,16 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-file-alt me-2"></i>{{ page_title }}</h2>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-file-alt me-2"></i>{{ page_title }}</h2>
+<div class="container">
         <div class="content-card">
 
             {% if policy_type == 'privacy' %}
@@ -68,8 +60,4 @@
 
         </div>
     </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

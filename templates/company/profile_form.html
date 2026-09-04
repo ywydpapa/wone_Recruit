@@ -1,18 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-building me-2"></i>기업 정보</h2>
-        <p>안녕하세요, {{ user_name }} 님. 기업 정보를 입력해 주세요.</p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
-        <div class="content-card">
+{% extends "base.html" %}
+{% block title %}기업 정보{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-building me-2"></i>기업 정보</h2>
+<div class="content-card">
 
             {% if success == '1' %}
             <div class="alert alert-success" role="alert">
@@ -30,7 +21,7 @@
                         <input type="file" class="form-control" id="logo" name="logo" accept="image/jpeg,image/png,image/webp">
                         {% if company and company.logo_path %}
                         <div class="mt-2">
-                            <img src="{{ company.logo_path }}" alt="기업 로고" style="max-height:60px;" class="rounded">
+                            <img src="{{ company.logo_path }}" alt="기업 로고" class="rounded" style="max-height:60px;">
                         </div>
                         {% endif %}
                     </div>
@@ -106,14 +97,6 @@
                             </select>
                         </div>
                     </div>
-                    <script>
-                    document.addEventListener('DOMContentLoaded', function(){
-                        loadSidoList('region_sido', {{ selected_sido|tojson }});
-                        {% if selected_sido %}
-                        loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (company.region_id if company else '')|tojson }});
-                        {% endif %}
-                    });
-                    </script>
                 </fieldset>
 
                 <fieldset class="mb-4">
@@ -192,9 +175,15 @@
 
             </form>
         </div>
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    loadSidoList('region_sido', {{ selected_sido|tojson }});
+    {% if selected_sido %}
+    loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (company.region_id if company else '')|tojson }});
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,19 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-user me-2"></i>구직자 상세</h2>
-        <p>구직자의 상세 프로필을 확인합니다. <span class="badge bg-warning text-dark">열람 기록이 저장됩니다.</span></p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container" style="max-width: 860px;">
+{% extends "base.html" %}
+{% block title %}구직자 상세 - WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-user me-2"></i>{{ seeker['name'] }}</h2>
+<div class="container narrow-form-lg">
 
-        {# Identity header card #}
         <section class="profile-card mb-3" aria-label="구직자 기본 정보">
             <div class="profile-card-body">
                 <div class="d-flex align-items-center gap-3">
@@ -34,9 +24,7 @@
 
         {% if profile %}
         <div class="row g-3 profile-row">
-            {# Left column #}
             <div class="col-lg-6 d-flex flex-column">
-                {# Disability & mobility card #}
                 <section class="profile-card flex-grow-1" aria-labelledby="section-disability">
                     <div class="profile-card-header" id="section-disability">
                         <i class="fas fa-wheelchair" aria-hidden="true"></i>장애 및 이동
@@ -87,7 +75,6 @@
                     </div>
                 </section>
 
-                {# Education & career card #}
                 <section class="profile-card" aria-labelledby="section-career">
                     <div class="profile-card-header" id="section-career">
                         <i class="fas fa-graduation-cap" aria-hidden="true"></i>학력 및 경력
@@ -127,9 +114,7 @@
                 </section>
             </div>
 
-            {# Right column #}
             <div class="col-lg-6 d-flex flex-column">
-                {# Work capability card #}
                 <section class="profile-card flex-grow-1" aria-labelledby="section-work">
                     <div class="profile-card-header" id="section-work">
                         <i class="fas fa-briefcase" aria-hidden="true"></i>근무 역량
@@ -172,7 +157,6 @@
                     </div>
                 </section>
 
-                {# Additional info card (certs + resume + consent) #}
                 <section class="profile-card" aria-labelledby="section-additional">
                     <div class="profile-card-header" id="section-additional">
                         <i class="fas fa-folder-open" aria-hidden="true"></i>자격 및 기타
@@ -195,7 +179,7 @@
                                 {% for cert in certifications %}
                                 <div{% if not loop.last %} class="mb-1"{% endif %}>
                                     <span class="fw-semibold">{{ cert['cert_name'] }}</span>
-                                    <span class="text-muted" style="font-size:0.85rem;">{{ cert['issuing_org'] or '' }}{% if cert['cert_date'] %} / {{ cert['cert_date'] }}{% endif %}</span>
+                                    <span class="text-muted small">{{ cert['issuing_org'] or '' }}{% if cert['cert_date'] %} / {{ cert['cert_date'] }}{% endif %}</span>
                                 </div>
                                 {% endfor %}
                                 {% else %}-{% endif %}
@@ -240,8 +224,4 @@
         </div>
 
     </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

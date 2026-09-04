@@ -1,18 +1,7 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-
-<div class="header-dash">
-    <div class="container">
-        <h2>채용 공고 검색</h2>
-        <p>나에게 맞는 일자리를 찾아보세요.</p>
-    </div>
-</div>
-
-<div class="container filter-section">
+{% extends "base.html" %}
+{% block title %}채용 공고 검색 | WONE Recruit{% endblock %}
+{% block content %}
+<div class="container-fluid filter-section">
     <div class="filter-card">
         <form method="get" action="/jobs">
             <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
@@ -80,8 +69,6 @@
     </div>
 </div>
 
-<div class="list-section">
-    <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold m-0">채용 공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
         </div>
@@ -92,7 +79,7 @@
             <div class="col-lg-6">
                 <div class="item-card">
                     <div class="d-flex justify-content-between align-items-start">
-                        <div style="flex:1;min-width:0;">
+                        <div class="flex-fill-clamp">
                             <span class="item-badge">{{ job['employment_type'] }}</span>
                             {% if job['remote_available'] %}
                             <span class="item-badge badge-green">재택 가능</span>
@@ -107,9 +94,8 @@
                             </div>
                         </div>
                         <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" aria-label="공고 저장">
-                            <button type="submit" class="btn btn-link p-0 border-0"
-                                    aria-label="{% if job['id'] in bookmarked_ids %}저장 취소{% else %}공고 저장{% endif %}"
-                                    style="font-size:1.3rem;color:{% if job['id'] in bookmarked_ids %}#dc3545{% else %}#ccc{% endif %};">
+                            <button type="submit" class="btn btn-link p-0 border-0 bookmark-heart{% if job['id'] in bookmarked_ids %} active{% endif %}"
+                                    aria-label="{% if job['id'] in bookmarked_ids %}저장 취소{% else %}공고 저장{% endif %}">
                                 <i class="{% if job['id'] in bookmarked_ids %}fas{% else %}far{% endif %} fa-heart"></i>
                             </button>
                         </form>
@@ -134,14 +120,11 @@
             <p class="text-muted text-center py-5">조건에 맞는 공고가 없습니다.</p>
         </div>
         {% endif %}
-    </div>
-</div>
-</main>
+{% endblock %}
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     loadSidoList('sido', {{ selected_sido|tojson }});
 });
 </script>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

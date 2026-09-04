@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="header-dash">
-    <div class="container">
-        <h2>공고 관리</h2>
-        <p>플랫폼에 등록된 전체 채용 공고를 확인합니다.</p>
-    </div>
-</div>
+{% extends "base.html" %}
+{% block title %}공고 관리 - WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4">공고 관리</h2>
 
 <div class="container filter-section">
     <div class="filter-card">
@@ -54,8 +46,7 @@
     </div>
 </div>
 
-<div class="list-section">
-    <div class="container">
+<div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold m-0">전체 공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
         </div>
@@ -80,7 +71,7 @@
                     <tbody>
                     {% for job in jobs %}
                     <tr>
-                        <td class="fw-semibold"><a href="/op/jobs/{{ job['id'] }}" style="color:inherit;text-decoration:none;">{{ job['title'] }}</a></td>
+                        <td class="fw-semibold"><a href="/op/jobs/{{ job['id'] }}" class="link-plain">{{ job['title'] }}</a></td>
                         <td>{{ job['company_name'] }}</td>
                         <td>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</td>
                         <td>{{ job['employment_type'] }}{% if job['remote_available'] %} <span class="badge bg-success">재택</span>{% endif %}</td>
@@ -112,13 +103,11 @@
             {% endif %}
         </div>
     </div>
-</div>
+{% endblock %}
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     loadSidoList('sido', {{ selected_sido|tojson }});
 });
 </script>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

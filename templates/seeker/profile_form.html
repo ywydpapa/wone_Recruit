@@ -1,18 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-user-edit me-2"></i>내 프로필</h2>
-        <p>안녕하세요, {{ user_name }} 님. 프로필을 작성해 주세요.</p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
-        <div class="content-card">
+{% extends "base.html" %}
+{% block title %}내 프로필 | WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-user-edit me-2"></i>내 프로필</h2>
+<div class="content-card">
 
             {% if error == 'incomplete' %}
             <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
@@ -35,8 +25,7 @@
 
             <form method="post" action="/profile" enctype="multipart/form-data" novalidate>
 
-                {# ===== Section 1: 장애 정보 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">장애 정보</legend>
 
                     {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
@@ -135,11 +124,10 @@
                         </div>
                         {% endfor %}
                     </div>
-                    </div>{# end consent wrapper #}
+                    </div>
                 </fieldset>
 
-                {# ===== Section 2: 근무 조건 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">근무 조건</legend>
 
                     <div class="mb-3">
@@ -221,8 +209,7 @@
                     </div>
                 </fieldset>
 
-                {# ===== Section 3: 거주 지역 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">거주 지역</legend>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -248,8 +235,7 @@
                     </script>
                 </fieldset>
 
-                {# ===== Section 4: 학력 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">학력</legend>
 
                     <div class="mb-3">
@@ -275,8 +261,7 @@
                     </div>
                 </fieldset>
 
-                {# ===== Section 5: 경력 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">경력</legend>
 
                     <div class="mb-3">
@@ -305,8 +290,7 @@
                     </div>
                 </fieldset>
 
-                {# ===== Section 6: 자격증 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">자격증</legend>
                     <div id="cert-container">
                         {% if certifications %}
@@ -344,8 +328,7 @@
                     </script>
                 </fieldset>
 
-                {# ===== Section 7: 이력서 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">이력서</legend>
                     <div class="mb-3">
                         <label for="resume" class="form-label fw-semibold">이력서 파일 (PDF, 최대 10MB)</label>
@@ -359,8 +342,7 @@
                     {% endif %}
                 </fieldset>
 
-                {# ===== Section 8: 동의 ===== #}
-                <fieldset class="mb-4 p-3 border rounded">
+                                <fieldset class="mb-4 p-3 border rounded">
                     <legend class="fw-bold fs-6 px-2">개인정보 동의</legend>
                     {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
                     <div class="d-flex align-items-center gap-2">
@@ -391,9 +373,4 @@
 
             </form>
         </div>
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

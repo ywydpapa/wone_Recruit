@@ -1,25 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-            <h2>새 글 작성</h2>
-            <p>커뮤니티에 새로운 글을 작성합니다.</p>
-        </div>
-        <div>
-            <a href="/community" class="btn btn-light rounded-pill px-4 shadow-sm">
-                <i class="fas fa-arrow-left me-2"></i>돌아가기
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="list-section">
-    <div class="container">
+{% extends "base.html" %}
+{% block title %}새 글 작성 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">새 글 작성</h2><a href="/community" class="btn btn-light rounded-pill px-4 shadow-sm"><i class="fas fa-arrow-left me-2"></i>돌아가기</a></div>
+<div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="content-card">
@@ -54,8 +37,4 @@
             </div>
         </div>
     </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

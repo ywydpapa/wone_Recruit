@@ -1,24 +1,14 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-heart me-2"></i>저장한 공고</h2>
-        <p>관심 있는 공고를 모아 봅니다.</p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
-        {% if jobs %}
+{% extends "base.html" %}
+{% block title %}저장한 공고 | WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-heart me-2"></i>저장한 공고</h2>
+{% if jobs %}
         <div class="row g-4">
             {% for job in jobs %}
             <div class="col-lg-6">
                 <div class="item-card">
                     <div class="d-flex justify-content-between align-items-start">
-                        <div style="flex:1;min-width:0;">
+                        <div class="flex-fill-clamp">
                             <span class="item-badge">{{ job['employment_type'] }}</span>
                             {% if job['remote_available'] %}
                             <span class="item-badge badge-green">재택 가능</span>
@@ -33,9 +23,8 @@
                             </div>
                         </div>
                         <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" aria-label="저장 취소">
-                            <button type="submit" class="btn btn-link p-0 border-0"
-                                    aria-label="저장 취소"
-                                    style="font-size:1.3rem;color:#dc3545;">
+                            <button type="submit" class="btn btn-link p-0 border-0 bookmark-heart active"
+                                    aria-label="저장 취소">
                                 <i class="fas fa-heart"></i>
                             </button>
                         </form>
@@ -59,9 +48,4 @@
             <p class="text-muted text-center py-4">저장한 공고가 없습니다. <a href="/jobs">공고를 검색</a>하고 <i class="far fa-heart"></i>를 눌러 저장하세요.</p>
         </div>
         {% endif %}
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

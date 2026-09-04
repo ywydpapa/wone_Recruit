@@ -1,36 +1,20 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-            <h2>인재 프로필</h2>
-            <p>{{ profile.desired_job or '구직자' }} 프로필입니다.</p>
-        </div>
-        <div>
-            <a href="/company/talents" class="btn btn-light rounded-pill px-4 shadow-sm">
-                <i class="fas fa-arrow-left me-2"></i>인재 목록으로
-            </a>
-        </div>
-    </div>
-</div>
+{% extends "base.html" %}
+{% block title %}인재 프로필{% endblock %}
 
-<div class="list-section">
-    <div class="container">
-        <div class="row justify-content-center">
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">인재 프로필</h2><a href="/company/talents" class="btn btn-light rounded-pill px-4 shadow-sm"><i class="fas fa-arrow-left me-2"></i>인재 목록으로</a></div>
+
+<div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="content-card">
                     <div class="d-flex align-items-center gap-4 mb-4">
                         <div class="profile-avatar"><i class="fas fa-user"></i></div>
                         <div>
                             {% if profile.disability_name %}
-                            <span class="item-badge mb-2 d-inline-block">{{ profile.disability_name }} · {{ profile.severity }}</span>
+                            <span class="item-badge mb-2 d-inline-block">{{ profile.disability_name }} &middot; {{ profile.severity }}</span>
                             {% endif %}
                             <h3 class="fw-bold mb-1">{{ profile.seeker_name }}</h3>
-                            <p class="text-muted mb-0">{{ profile.desired_job or '미지정' }} · {{ profile.work_pref }}</p>
+                            <p class="text-muted mb-0">{{ profile.desired_job or '미지정' }} &middot; {{ profile.work_pref }}</p>
                         </div>
                     </div>
                     <div class="row g-3">
@@ -49,7 +33,7 @@
                         <div class="col-sm-6">
                             <div class="p-3 bg-light rounded">
                                 <p class="small text-muted mb-1">근무시간</p>
-                                <p class="fw-bold mb-0"><i class="fas fa-clock me-1 text-primary"></i>{{ profile.daily_work_hours }}시간 · {{ profile.preferred_time }}</p>
+                                <p class="fw-bold mb-0"><i class="fas fa-clock me-1 text-primary"></i>{{ profile.daily_work_hours }}시간 &middot; {{ profile.preferred_time }}</p>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -64,7 +48,7 @@
                 {% if profile.experience_summary %}
                 <div class="content-card mt-4">
                     <h6 class="fw-bold text-muted mb-3"><i class="fas fa-file-alt me-2 text-primary"></i>경력 요약</h6>
-                    <div style="line-height: 1.8; white-space: pre-wrap;">{{ profile.experience_summary }}</div>
+                    <div class="text-prewrap">{{ profile.experience_summary }}</div>
                 </div>
                 {% endif %}
 
@@ -85,7 +69,7 @@
                     {% for cert in certs %}
                     <div class="border-start border-primary border-3 ps-3 mb-3">
                         <p class="fw-bold mb-0">{{ cert.cert_name }}</p>
-                        <p class="small text-muted mb-0">{{ cert.issuing_org }} · {{ cert.cert_date }}</p>
+                        <p class="small text-muted mb-0">{{ cert.issuing_org }} &middot; {{ cert.cert_date }}</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -107,9 +91,6 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-</main>
 
 <div class="modal fade" id="offerModal" tabindex="-1" aria-labelledby="offerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -145,7 +126,4 @@
         </div>
     </div>
 </div>
-
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

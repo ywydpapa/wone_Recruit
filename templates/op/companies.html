@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="header-dash">
-    <div class="container">
-        <h2>기업 관리</h2>
-        <p>등록된 전체 기업을 확인합니다.</p>
-    </div>
-</div>
+{% extends "base.html" %}
+{% block title %}기업 관리 - WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4">기업 관리</h2>
 
 <div class="container filter-section">
     <div class="filter-card">
@@ -61,8 +53,7 @@
     </div>
 </div>
 
-<div class="list-section">
-    <div class="container">
+<div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold m-0">기업 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}개)</span></h4>
         </div>
@@ -87,7 +78,7 @@
                     <tbody>
                     {% for c in companies %}
                     <tr>
-                        <td class="fw-semibold"><a href="/companies/{{ c['id'] }}" style="color:inherit;text-decoration:none;">{{ c['company_name'] }}</a></td>
+                        <td class="fw-semibold"><a href="/companies/{{ c['id'] }}" class="link-plain">{{ c['company_name'] }}</a></td>
                         <td>{{ c['industry'] or '-' }}</td>
                         <td>{{ c['company_size'] or '-' }}</td>
                         <td>{{ c['employee_count'] }}</td>
@@ -119,13 +110,11 @@
             {% endif %}
         </div>
     </div>
-</div>
+{% endblock %}
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     loadSidoList('sido', {{ selected_sido|tojson }});
 });
 </script>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

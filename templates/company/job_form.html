@@ -1,17 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-file-alt me-2"></i>{{ '공고 수정' if job else '새 공고 작성' }}</h2>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
-        <div class="content-card" style="max-width:720px;margin:0 auto;">
+{% extends "base.html" %}
+{% block title %}{{ '공고 수정' if job else '새 공고 작성' }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-file-alt me-2"></i>{{ '공고 수정' if job else '새 공고 작성' }}</h2>
+<div class="content-card narrow-form">
             <form method="post" action="{{ '/company/jobs/' + job['id']|string + '/edit' if job else '/company/jobs/new' }}" novalidate>
                 <div class="mb-3">
                     <label for="category_id" class="form-label fw-semibold">직무 카테고리</label>
@@ -199,19 +191,17 @@
                     <button type="submit" class="btn btn-primary">저장</button>
                     <a href="/company/jobs" class="btn btn-outline-secondary">취소</a>
                 </div>
-                <script>
-                document.addEventListener('DOMContentLoaded', function(){
-                    loadSidoList('region_sido', {{ selected_sido|tojson }});
-                    {% if selected_sido %}
-                    loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (job['region_id'] if job else '')|tojson }});
-                    {% endif %}
-                });
-                </script>
             </form>
         </div>
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    loadSidoList('region_sido', {{ selected_sido|tojson }});
+    {% if selected_sido %}
+    loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (job['region_id'] if job else '')|tojson }});
+    {% endif %}
+});
+</script>
+{% endblock %}

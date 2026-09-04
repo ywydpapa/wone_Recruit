@@ -1,18 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-file-alt me-2"></i>{{ job['title'] }}</h2>
-        <p>{{ job['company_name'] }}</p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
-        <div class="content-card" style="max-width:720px;margin:0 auto;">
+{% extends "base.html" %}
+{% block title %}공고 상세 - WONE Recruit{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-file-alt me-2"></i>{{ job['title'] }}</h2>
+<div class="container">
+        <div class="content-card narrow-form">
             <dl class="row mb-0">
                 <dt class="col-sm-3">기업명</dt>
                 <dd class="col-sm-9">{{ job['company_name'] }}</dd>
@@ -58,7 +49,7 @@
 
                 <dt class="col-sm-3 mt-3">공고 내용</dt>
                 <dd class="col-sm-9 mt-3">
-                    <div style="white-space:pre-wrap;">{{ job['description'] }}</div>
+                    <div class="text-prewrap">{{ job['description'] }}</div>
                 </dd>
 
                 {% if job['fit_physical_lower'] is not none %}
@@ -75,25 +66,25 @@
                         ('내부장기', job['fit_internal_organ']),
                         ('뇌병변', job['fit_brain_lesion']),
                     ] %}
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    <div class="fit-wrap">
                     {% for label, v in fits %}
                         {% if v == 3 %}
-                        <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;background:#d4edda;color:#155724;">{{ label }}</span>
+                        <span class="fit-badge fit-high">{{ label }}</span>
                         {% elif v == 2 %}
-                        <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;background:#fff3cd;color:#856404;">{{ label }}</span>
+                        <span class="fit-badge fit-mid">{{ label }}</span>
                         {% elif v == 1 %}
-                        <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;color:#6c757d;background:#e9ecef;">{{ label }}</span>
+                        <span class="fit-badge fit-low">{{ label }}</span>
                         {% else %}
-                        <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;color:#bbb;background:#f5f5f5;text-decoration:line-through;">{{ label }}</span>
+                        <span class="fit-badge fit-none">{{ label }}</span>
                         {% endif %}
                     {% endfor %}
                     </div>
-                    <div style="margin-top:8px;font-size:12px;color:#aaa;">
-                        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d4edda;vertical-align:middle;"></span> 적합 &nbsp;&nbsp;
-                        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fff3cd;vertical-align:middle;"></span> 조건부 &nbsp;&nbsp;
-                        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e9ecef;vertical-align:middle;"></span> 제한적
+                    <div class="fit-legend">
+                        <span class="fit-dot fit-high"></span> 적합 &nbsp;&nbsp;
+                        <span class="fit-dot fit-mid"></span> 조건부 &nbsp;&nbsp;
+                        <span class="fit-dot fit-low"></span> 제한적
                     </div>
-                    {% if job['fit_notes'] %}<div style="margin-top:10px;padding:10px;background:#f8f9fa;border-radius:6px;font-size:13px;color:#555;">{{ job['fit_notes'] }}</div>{% endif %}
+                    {% if job['fit_notes'] %}<div class="fit-notes">{{ job['fit_notes'] }}</div>{% endif %}
                 </dd>
                 {% endif %}
             </dl>
@@ -104,8 +95,4 @@
             </div>
         </div>
     </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}
