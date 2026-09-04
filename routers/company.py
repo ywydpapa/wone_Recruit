@@ -11,6 +11,7 @@ from core.candidacy import apply_transition, TRANSITIONS, TERMINAL
 from core.levy import calc_levy
 from core.upload import save_upload
 from core.pagination import page_info, PER_PAGE
+from core.notifications import create_notification
 
 router = APIRouter(prefix="/company")
 api_router = APIRouter()
@@ -113,31 +114,49 @@ async def company_profile_save(
 
 
 @router.get("/jobs", response_class=HTMLResponse)
-async def job_list(request: Request, page: int = 1):
+async def job_list(
+    request: Request,
+    q: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    page: int = 1,
+):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
-        sql = """SELECT jp.*, r.sido AS region_sido, r.sigungu AS region_sigungu
+        where = ["jp.company_id=?"]
+        params = [company["id"]]
+        if q and q.strip():
+            where.append("jp.title LIKE ?")
+            params.append(f"%{q.strip()}%")
+        if status and status in ("open", "draft", "closed", "filled"):
+            where.append("jp.status=?")
+            params.append(status)
+        sql = f"""SELECT jp.*, r.sido AS region_sido, r.sigungu AS region_sigungu
                FROM job_postings jp
                LEFT JOIN regions r ON jp.region_id = r.id
-               WHERE jp.company_id=? ORDER BY jp.created_at DESC"""
-        params = [company["id"]]
+               WHERE {' AND '.join(where)} ORDER BY jp.created_at DESC"""
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
         jobs = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
+        qs_parts = []
+        if q:
+            qs_parts.append(f"q={q}")
+        if status:
+            qs_parts.append(f"status={status}")
+        base_qs = "&".join(qs_parts)
     finally:
         conn.close()
     return templates.TemplateResponse(
         request=request, name="company/jobs.html", context={
             "request": request, "page_title": "공고 관리",
             "user_name": user["user_name"], "user_role": "company",
-            "jobs": jobs,
-            "pagination": pagination, "base_qs": "",
+            "jobs": jobs, "q": q or "", "selected_status": status or "",
+            "pagination": pagination, "base_qs": base_qs,
         }
     )
 
@@ -675,6 +694,11 @@ async def send_talent_offer(
             "INSERT INTO talent_offers (seeker_user_id, company_user_id, company_name, title, message, contact) "
             "VALUES (?,?,?,?,?,?)",
             (seeker_user_id, user["user_id"], company_name, title, message, contact),
+        )
+        create_notification(
+            conn, seeker_user_id,
+            f"{company_name}에서 입사 제안을 보냈습니다",
+            "/proposals",
         )
         conn.commit()
     finally:

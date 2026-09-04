@@ -1,19 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-{% include "common/header.html" %}
-<body>
-{% include "common/topbar.html" %}
-<main id="main">
-<div class="dash-header">
-    <div class="container">
-        <h2><i class="fas fa-calculator me-2"></i>장애인 고용부담금</h2>
-        <p>장애인 고용의무 이행 현황 및 부담금·장려금 시뮬레이션입니다.</p>
-    </div>
-</div>
-<div class="list-section">
-    <div class="container">
+{% extends "base.html" %}
+{% block title %}의무고용 현황{% endblock %}
 
-        <div class="card mb-4">
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-calculator me-2"></i>의무고용 현황</h2>
+<div class="card mb-4">
             <div class="card-header fw-semibold">기업 현황</div>
             <div class="card-body">
                 <dl class="row mb-0">
@@ -101,9 +91,4 @@
             </div>
         </div>
 
-    </div>
-</div>
-</main>
-{% include "common/_footer.html" %}
-</body>
-</html>
+{% endblock %}

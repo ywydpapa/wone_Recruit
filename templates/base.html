@@ -1,0 +1,278 @@
+{% set user_name = request.session.get('user_name', '') %}
+{% set user_role = request.session.get('user_role', 'seeker') %}
+{% set _notif = 0 %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WONE Recruit{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+
+<a href="#main" class="skip-link">본문 바로가기</a>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <a href="/"><span>WONE</span> Recruit</a>
+    </div>
+    <nav class="sidebar-nav" aria-label="주 메뉴">
+
+        {% if user_role == 'company' %}
+
+        <a href="/" class="sidebar-link{% if request.url.path == '/' %} active{% endif %}">
+            <i class="fas fa-home"></i><span>대시보드</span>
+        </a>
+
+        <div class="sidebar-section">채용 관리</div>
+        <a href="/company/jobs" class="sidebar-link{% if '/company/jobs' in request.url.path %} active{% endif %}">
+            <i class="fas fa-clipboard-list"></i><span>공고 관리</span>
+        </a>
+        <a href="/company/applicants" class="sidebar-link{% if '/company/applicants' in request.url.path %} active{% endif %}">
+            <i class="fas fa-users"></i><span>지원자 관리</span>
+        </a>
+        <a href="/company/calendar" class="sidebar-link{% if '/company/calendar' in request.url.path %} active{% endif %}">
+            <i class="fas fa-calendar-alt"></i><span>면접 캘린더</span>
+        </a>
+
+        <div class="sidebar-section">인재</div>
+        <a href="/company/talents" class="sidebar-link{% if '/company/talents' in request.url.path %} active{% endif %}">
+            <i class="fas fa-search"></i><span>인재 검색</span>
+        </a>
+        <a href="/company/recommendations" class="sidebar-link{% if '/company/recommendations' in request.url.path %} active{% endif %}">
+            <i class="fas fa-user-check"></i><span>추천 인재</span>
+        </a>
+
+        <div class="sidebar-section">채용 계획</div>
+        <a href="/company/levy" class="sidebar-link{% if '/company/levy' in request.url.path %} active{% endif %}">
+            <i class="fas fa-calculator"></i><span>의무고용 현황</span>
+        </a>
+
+        <div class="sidebar-section">설정</div>
+        <a href="/company/profile" class="sidebar-link{% if '/company/profile' in request.url.path %} active{% endif %}">
+            <i class="fas fa-building"></i><span>기업 정보</span>
+        </a>
+
+        {% elif user_role == 'seeker' %}
+
+        <a href="/" class="sidebar-link{% if request.url.path == '/' %} active{% endif %}">
+            <i class="fas fa-home"></i><span>대시보드</span>
+        </a>
+
+        <div class="sidebar-section">이력서</div>
+        <a href="/profile" class="sidebar-link{% if request.url.path == '/profile' %} active{% endif %}">
+            <i class="fas fa-id-card"></i><span>내 프로필</span>
+        </a>
+
+        <div class="sidebar-section">채용</div>
+        <a href="/jobs" class="sidebar-link{% if request.url.path == '/jobs' %} active{% endif %}">
+            <i class="fas fa-briefcase"></i><span>공고 검색</span>
+        </a>
+        <a href="/applications" class="sidebar-link{% if request.url.path == '/applications' %} active{% endif %}">
+            <i class="fas fa-file-alt"></i><span>지원 현황</span>
+        </a>
+        <a href="/bookmarks" class="sidebar-link{% if request.url.path == '/bookmarks' %} active{% endif %}">
+            <i class="fas fa-bookmark"></i><span>저장 공고</span>
+        </a>
+
+        <div class="sidebar-section">제안</div>
+        <a href="/proposals" class="sidebar-link{% if request.url.path == '/proposals' %} active{% endif %}">
+            <i class="fas fa-handshake"></i><span>매칭 제안</span>
+        </a>
+
+        <div class="sidebar-section">설정</div>
+        <a href="/account/mypage" class="sidebar-link{% if '/account/mypage' in request.url.path %} active{% endif %}">
+            <i class="fas fa-user-circle"></i><span>마이페이지</span>
+        </a>
+
+        {% elif user_role == 'operator' %}
+
+        <a href="/" class="sidebar-link{% if request.url.path == '/' %} active{% endif %}">
+            <i class="fas fa-home"></i><span>대시보드</span>
+        </a>
+
+        <div class="sidebar-section">관리</div>
+        <a href="/op/seekers" class="sidebar-link{% if '/op/seekers' in request.url.path %} active{% endif %}">
+            <i class="fas fa-users"></i><span>구직자</span>
+        </a>
+        <a href="/op/companies" class="sidebar-link{% if '/op/companies' in request.url.path %} active{% endif %}">
+            <i class="fas fa-building"></i><span>기업</span>
+        </a>
+        <a href="/op/jobs" class="sidebar-link{% if '/op/jobs' in request.url.path %} active{% endif %}">
+            <i class="fas fa-clipboard-list"></i><span>공고</span>
+        </a>
+
+        <div class="sidebar-section">매칭</div>
+        <a href="/op/matching" class="sidebar-link{% if '/op/matching' in request.url.path %} active{% endif %}">
+            <i class="fas fa-link"></i><span>매칭</span>
+        </a>
+
+        {% endif %}
+
+        <div class="sidebar-section">커뮤니티</div>
+        <a href="/community" class="sidebar-link{% if '/community' in request.url.path %} active{% endif %}">
+            <i class="fas fa-comments"></i><span>커뮤니티</span>
+        </a>
+
+    </nav>
+    <div class="sidebar-footer">
+        <button type="button" class="sidebar-hide-btn" id="sidebarHideBtn" onclick="toggleSidebar()" title="사이드바 숨기기" aria-expanded="true" aria-controls="sidebar">
+            <i class="fas fa-chevron-left" aria-hidden="true"></i><span>숨기기</span>
+        </button>
+    </div>
+    <div class="sidebar-resize" id="sidebarResize" aria-hidden="true"></div>
+    <button type="button" class="sidebar-reset-btn sr-only-focusable" id="sidebarResetBtn" title="사이드바 너비 기본값 복원">기본값 복원</button>
+</aside>
+<div class="sidebar-hover-zone" id="sidebarHoverZone"></div>
+
+<div class="main-wrap">
+    <header class="topbar">
+        <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="메뉴 접기/펼치기" aria-expanded="true" aria-controls="sidebar" aria-label="메뉴 접기/펼치기">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+        </button>
+        <div class="topbar-brand d-md-none">
+            <a href="/"><span>WONE</span> Recruit</a>
+        </div>
+        <div class="topbar-actions">
+            <a href="/notifications" class="topbar-icon" id="topbar-notif-btn" title="알림" aria-label="알림">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                <span id="topbar-notif-badge" class="topbar-badge d-none" aria-live="polite">0</span>
+            </a>
+            <div class="dropdown">
+                <button type="button" class="topbar-profile" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ user_name }} 계정 메뉴">
+                    <img src="https://ui-avatars.com/api/?name={{ user_name|replace(' ', '+') }}&background=eef4fb&color=0056b3&size=32" alt="{{ user_name }} 프로필 사진">
+                    <span class="d-none d-md-inline ms-2">{{ user_name }}</span>
+                    <i class="fas fa-chevron-down ms-1 small" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm mt-2">
+                    <li><span class="dropdown-item-text text-muted small">
+                        {% if user_role == 'seeker' %}구직자
+                        {% elif user_role == 'company' %}기업
+                        {% elif user_role == 'operator' %}운영자
+                        {% endif %}
+                    </span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/account/password"><i class="fas fa-key me-2"></i>비밀번호 변경</a></li>
+                    <li><a class="dropdown-item" href="/account/consent"><i class="fas fa-shield-alt me-2"></i>개인정보 관리</a></li>
+                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>로그아웃</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-muted small" href="/account/withdraw"><i class="fas fa-user-times me-2"></i>회원탈퇴</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-area" id="main" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+    var sidebar = document.getElementById('sidebar');
+    var handle = document.getElementById('sidebarResize');
+    var hoverZone = document.getElementById('sidebarHoverZone');
+    var body = document.body;
+    var MIN_W = 180, MAX_W = 360, DEFAULT_W = 240;
+
+    var savedW = parseInt(localStorage.getItem('recruit_sidebar_w')) || DEFAULT_W;
+    var hidden = localStorage.getItem('recruit_sidebar_hidden') === '1';
+    sidebar.style.width = savedW + 'px';
+    document.documentElement.style.setProperty('--sidebar-w', savedW + 'px');
+    if (hidden) { body.classList.add('sidebar-hidden'); }
+
+    function updateAriaExpanded() {
+        var expanded = String(!hidden);
+        document.querySelectorAll('[aria-controls="sidebar"]').forEach(function(btn) {
+            btn.setAttribute('aria-expanded', expanded);
+        });
+    }
+    updateAriaExpanded();
+
+    window.toggleSidebar = function() {
+        hidden = !hidden;
+        body.classList.toggle('sidebar-hidden', hidden);
+        localStorage.setItem('recruit_sidebar_hidden', hidden ? '1' : '0');
+        updateAriaExpanded();
+    };
+
+    var dragging = false;
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        dragging = true;
+        body.classList.add('sidebar-resizing');
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        var w = Math.min(MAX_W, Math.max(MIN_W, e.clientX));
+        sidebar.style.width = w + 'px';
+        document.documentElement.style.setProperty('--sidebar-w', w + 'px');
+    });
+    document.addEventListener('mouseup', function() {
+        if (!dragging) return;
+        dragging = false;
+        body.classList.remove('sidebar-resizing');
+        var w = parseInt(sidebar.style.width);
+        localStorage.setItem('recruit_sidebar_w', w);
+    });
+
+    var resetBtn = document.getElementById('sidebarResetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            sidebar.style.width = DEFAULT_W + 'px';
+            document.documentElement.style.setProperty('--sidebar-w', DEFAULT_W + 'px');
+            localStorage.setItem('recruit_sidebar_w', DEFAULT_W);
+        });
+    }
+
+    var peekTimer = null;
+    hoverZone.addEventListener('mouseenter', function() {
+        if (!body.classList.contains('sidebar-hidden')) return;
+        peekTimer = setTimeout(function() {
+            body.classList.add('sidebar-peek');
+        }, 200);
+    });
+    hoverZone.addEventListener('mouseleave', function() {
+        clearTimeout(peekTimer);
+    });
+    sidebar.addEventListener('mouseleave', function() {
+        if (body.classList.contains('sidebar-peek')) {
+            body.classList.remove('sidebar-peek');
+        }
+    });
+    sidebar.addEventListener('mouseenter', function() {
+        clearTimeout(peekTimer);
+    });
+
+    if (window.innerWidth <= 768) {
+        body.classList.remove('sidebar-hidden');
+    }
+})();
+</script>
+<script>
+(function() {
+    fetch('/api/notifications/count')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var badge = document.getElementById('topbar-notif-badge');
+            if (badge && data.count > 0) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.classList.remove('d-none');
+                var btn = document.getElementById('topbar-notif-btn');
+                if (btn) btn.setAttribute('aria-label', '알림, 읽지 않은 알림 ' + data.count + '건');
+            }
+        })
+        .catch(function(){});
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
