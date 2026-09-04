@@ -13,7 +13,7 @@ from core.constants import (
     REST_FREQUENCY_OPTIONS, ACCOMMODATION_OPTIONS,
 )
 from core.upload import save_upload
-from core.pagination import paginate_sql, page_info, PER_PAGE
+from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
 
 router = APIRouter()
@@ -176,12 +176,15 @@ async def job_search(
     category: Optional[str] = Query(None),
     max_hours: Optional[str] = Query(None),
     accommodation: Optional[str] = Query(None),
+    disability_type: Optional[str] = Query(None),
+    severity: Optional[str] = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "seeker")
     conn = get_sqlite()
     try:
         categories = conn.execute("SELECT * FROM job_categories ORDER BY major_code, minor_code").fetchall()
+        disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
         sql = (
             "SELECT jp.*, c.company_name, c.id AS company_db_id, jc.minor_name_ko AS category_name, "
             "r.sido AS region_sido, r.sigungu AS region_sigungu "
@@ -215,6 +218,12 @@ async def job_search(
         if accommodation:
             sql += " AND jp.accommodations_provided LIKE ?"
             params.append(f"%{accommodation}%")
+        if disability_type:
+            sql += " AND jp.preferred_disability LIKE ?"
+            params.append(f"%{disability_type}%")
+        if severity:
+            sql += " AND (jp.preferred_severity=? OR jp.preferred_severity='무관')"
+            params.append(severity)
         sql += " ORDER BY jp.created_at DESC"
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
@@ -258,6 +267,8 @@ async def job_search(
     if category: qs_parts.append(f"category={category}")
     if max_hours: qs_parts.append(f"max_hours={max_hours}")
     if accommodation: qs_parts.append(f"accommodation={accommodation}")
+    if disability_type: qs_parts.append(f"disability_type={disability_type}")
+    if severity: qs_parts.append(f"severity={severity}")
     base_qs = "&".join(qs_parts)
     return templates.TemplateResponse(
         request=request, name="seeker/jobs.html", context={
@@ -277,6 +288,9 @@ async def job_search(
             "selected_max_hours": int(max_hours) if max_hours else "",
             "selected_accommodation": accommodation or "",
             "accommodation_options": ACCOMMODATION_OPTIONS,
+            "disability_types": disability_types,
+            "selected_disability_type": disability_type or "",
+            "selected_severity": severity or "",
             "pagination": pagination, "base_qs": base_qs,
         }
     )
@@ -603,6 +617,37 @@ async def bookmarks_list(request: Request):
     )
 
 
+@router.get("/recent", response_class=HTMLResponse)
+async def recent_views_list(request: Request):
+    user = require_role(request, "seeker")
+    conn = get_sqlite()
+    try:
+        jobs = conn.execute(
+            """SELECT jp.*, c.company_name,
+                      jc.minor_name_ko AS category_name,
+                      r.sido AS region_sido, r.sigungu AS region_sigungu,
+                      rv.viewed_at
+               FROM recent_views rv
+               JOIN job_postings jp ON rv.job_id=jp.id
+               JOIN companies c ON jp.company_id=c.id
+               LEFT JOIN job_categories jc ON jp.category_id=jc.id
+               LEFT JOIN regions r ON jp.region_id=r.id
+               WHERE rv.user_id=?
+               ORDER BY rv.viewed_at DESC
+               LIMIT 20""",
+            (user["user_id"],),
+        ).fetchall()
+    finally:
+        conn.close()
+    return templates.TemplateResponse(
+        request=request, name="seeker/recent.html", context={
+            "request": request, "page_title": "최근 본 공고",
+            "user_name": user["user_name"], "user_role": "seeker",
+            "jobs": jobs,
+        }
+    )
+
+
 @router.get("/companies/{company_id}", response_class=HTMLResponse)
 async def company_detail(request: Request, company_id: int):
     user = require_role(request, "seeker", "operator")
@@ -646,6 +691,34 @@ async def company_detail(request: Request, company_id: int):
     )
 
 
+@router.get("/profile/views", response_class=HTMLResponse)
+async def profile_views(request: Request):
+    user = require_role(request, "seeker")
+    conn = get_sqlite()
+    try:
+        views = conn.execute(
+            """SELECT al.created_at, al.purpose,
+                      u.name AS viewer_name,
+                      c.company_name
+               FROM access_log al
+               JOIN users u ON al.viewer_id = u.id
+               LEFT JOIN companies c ON u.id = c.user_id
+               WHERE al.seeker_user_id = ?
+               ORDER BY al.created_at DESC
+               LIMIT 50""",
+            (user["user_id"],),
+        ).fetchall()
+    finally:
+        conn.close()
+    return templates.TemplateResponse(
+        request=request, name="seeker/profile_views.html", context={
+            "request": request, "page_title": "프로필 열람 현황",
+            "user_name": user["user_name"], "user_role": "seeker",
+            "views": views,
+        }
+    )
+
+
 @router.get("/jobs/{job_id}", response_class=HTMLResponse)
 async def job_detail(request: Request, job_id: int):
     user = require_role(request, "seeker")
@@ -677,6 +750,13 @@ async def job_detail(request: Request, job_id: int):
             "SELECT 1 FROM bookmarks WHERE user_id=? AND job_id=?",
             (user["user_id"], job_id),
         ).fetchone() is not None
+        if job is not None:
+            conn.execute(
+                "INSERT INTO recent_views (user_id, job_id, viewed_at) VALUES (?,?,datetime('now','localtime')) "
+                "ON CONFLICT(user_id, job_id) DO UPDATE SET viewed_at=datetime('now','localtime')",
+                (user["user_id"], job_id),
+            )
+            conn.commit()
     finally:
         conn.close()
     if job is None:

@@ -1,17 +1,12 @@
 import os
 import time
 
-from fastapi import UploadFile
-
 UPLOAD_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "uploads"
 )
 
 
-async def save_upload(
-    upload: UploadFile, subdir: str, user_id: int,
-    allowed_types: list, max_bytes: int,
-) -> str:
+async def save_upload(upload, subdir, user_id, allowed_types, max_bytes):
     if not upload or not upload.filename:
         return ""
     if upload.content_type not in allowed_types:

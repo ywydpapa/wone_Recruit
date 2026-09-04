@@ -1,0 +1,96 @@
+/* 필터 */
+.filter-section {
+    margin-bottom: 24px;
+}
+.filter-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+.filter-card .form-select,
+.filter-card .form-control {
+    border-radius: 8px;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    background-color: var(--gray-bg);
+    border: 1px solid #eee;
+}
+.filter-card .form-select:focus,
+.filter-card .form-control:focus {
+    box-shadow: none;
+    border-color: var(--primary-blue);
+}
+.btn-search {
+    background-color: var(--dark-blue);
+    color: white;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: 700;
+    width: 100%;
+    transition: all 0.3s;
+}
+.btn-search:hover {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+/* 커뮤니티 */
+.post-item {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+.post-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.05) !important;
+    border-color: var(--primary-blue) !important;
+}
+.tag-badge {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.tag-badge:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+/* 채팅 */
+.chat-bubble {
+    max-width: 75%;
+    padding: 7px 12px;
+    border-radius: 12px;
+    font-size: 0.83rem;
+    line-height: 1.5;
+}
+.chat-bubble.me {
+    background: var(--primary-blue);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+}
+.chat-bubble.them {
+    background: #f0f0f0;
+    color: #222;
+    border-bottom-left-radius: 3px;
+}
+.chat-time {
+    font-size: 0.68rem;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* 적합도 뱃지 */
+.fit-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.fit-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.fit-badge.fit-high { background: #d4edda; color: #155724; }
+.fit-badge.fit-mid { background: #fff3cd; color: #856404; }
+.fit-badge.fit-low { background: #e9ecef; color: #6c757d; font-weight: 400; }
+.fit-badge.fit-none { background: #f5f5f5; color: #bbb; font-weight: 400; text-decoration: line-through; }
+.fit-legend { margin-top: 8px; font-size: 12px; color: #aaa; }
+.fit-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
+.fit-dot.fit-high { background: #d4edda; }
+.fit-dot.fit-mid { background: #fff3cd; }
+.fit-dot.fit-low { background: #e9ecef; }
+.fit-notes { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #555; }

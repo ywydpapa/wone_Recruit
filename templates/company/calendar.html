@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}면접 캘린더{% endblock %}
+
+{% block styles %}
+<style>
+/* 캘린더 그리드 */
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:#dee2e6; border:1px solid #dee2e6; border-radius:8px; overflow:hidden; }
+.cal-header { background:#f8f9fa; text-align:center; padding:8px 4px; font-weight:600; font-size:0.85rem; }
+.cal-header.sun { color:#dc3545; }
+.cal-header.sat { color:#0d6efd; }
+.cal-cell { background:#fff; min-height:100px; padding:6px 8px; vertical-align:top; }
+.cal-cell.empty { background:#fafafa; }
+.cal-day { font-weight:600; font-size:0.85rem; margin-bottom:4px; }
+.cal-day.sun { color:#dc3545; }
+.cal-day.sat { color:#0d6efd; }
+.cal-slot { font-size:0.75rem; background:#e8f4fd; border-radius:4px; padding:3px 6px; margin-bottom:3px; line-height:1.3; }
+.cal-slot .time { font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">면접 캘린더</h2>
+    <div class="d-flex gap-2 align-items-center">
+        <a href="/company/calendar?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chevron-left"></i></a>
+        <span class="fw-semibold">{{ year }}년 {{ month }}월</span>
+        <a href="/company/calendar?year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-chevron-right"></i></a>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="cal-grid">
+        <div class="cal-header sun">일</div>
+        <div class="cal-header">월</div>
+        <div class="cal-header">화</div>
+        <div class="cal-header">수</div>
+        <div class="cal-header">목</div>
+        <div class="cal-header">금</div>
+        <div class="cal-header sat">토</div>
+
+        {% for _ in range(first_weekday) %}
+        <div class="cal-cell empty"></div>
+        {% endfor %}
+
+        {% for day in range(1, days_in_month + 1) %}
+        {% set weekday = (first_weekday + day - 1) % 7 %}
+        {% set ds = '%04d-%02d-%02d'|format(year, month, day) %}
+        <div class="cal-cell">
+            <div class="cal-day{% if weekday == 0 %} sun{% elif weekday == 6 %} sat{% endif %}">{{ day }}</div>
+            {% for iv in by_date.get(ds, []) %}
+            <div class="cal-slot">
+                <span class="time">{{ iv['interview_time'][:5] if iv['interview_time'] else '' }}</span>
+                {{ iv['seeker_name'] }}<br>
+                <span class="text-muted">{{ iv['job_title'][:15] }}</span>
+                {% if iv['interview_type'] %}
+                &middot; {{ '대면' if iv['interview_type'] == 'onsite' else ('화상' if iv['interview_type'] == 'video' else '전화') }}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        {% set total_cells = first_weekday + days_in_month %}
+        {% set remaining = (7 - total_cells % 7) % 7 %}
+        {% for _ in range(remaining) %}
+        <div class="cal-cell empty"></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

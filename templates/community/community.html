@@ -39,7 +39,11 @@
                         </div>
                     </div>
                     {% else %}
-                    <p class="text-center text-muted py-5">게시글이 없습니다.</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="far fa-comment-dots"></i></div>
+                        <p class="empty-state-text">게시글이 없습니다.</p>
+                        <a href="/write_post" class="btn btn-primary btn-sm">첫 글 작성하기</a>
+                    </div>
                     {% endfor %}
                 </div>
 

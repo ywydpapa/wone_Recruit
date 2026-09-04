@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}내 지원 현황 | WONE Recruit{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-list-check me-2"></i>내 지원 현황</h2>
+<div class="page-header"><h2><i class="fas fa-list-check me-2"></i>내 지원 현황</h2></div>
 {% if applications %}
         {% for app in applications %}
         <div class="content-card mb-3">
@@ -52,7 +52,7 @@
                 {% if dates.update({h['to_status']: h['created_at'][:10] if h['created_at'] else ''}) %}{% endif %}
             {% endfor %}
 
-            <div class="status-timeline mt-3" role="list" aria-label="지원 상태 타임라인">
+            <div class="status-timeline mt-3">
                 {% for step in steps %}
                 {% set is_active = step in reached %}
                 {% set is_current = step == app['status'] and step not in ('rejected', 'withdrawn') %}
@@ -90,7 +90,11 @@
         {% endfor %}
         {% else %}
         <div class="content-card">
-            <p class="text-muted text-center py-4">아직 지원한 공고가 없습니다. <a href="/jobs">공고를 검색</a>해 보세요.</p>
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-file-alt"></i></div>
+                <p class="empty-state-text">아직 지원한 공고가 없습니다.</p>
+                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
+            </div>
         </div>
         {% endif %}
 {% endblock %}

@@ -12,7 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/pages.css">
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -70,6 +73,9 @@
         <a href="/profile" class="sidebar-link{% if request.url.path == '/profile' %} active{% endif %}">
             <i class="fas fa-id-card"></i><span>내 프로필</span>
         </a>
+        <a href="/profile/views" class="sidebar-link{% if request.url.path == '/profile/views' %} active{% endif %}">
+            <i class="fas fa-eye"></i><span>열람 현황</span>
+        </a>
 
         <div class="sidebar-section">채용</div>
         <a href="/jobs" class="sidebar-link{% if request.url.path == '/jobs' %} active{% endif %}">
@@ -80,6 +86,9 @@
         </a>
         <a href="/bookmarks" class="sidebar-link{% if request.url.path == '/bookmarks' %} active{% endif %}">
             <i class="fas fa-bookmark"></i><span>저장 공고</span>
+        </a>
+        <a href="/recent" class="sidebar-link{% if request.url.path == '/recent' %} active{% endif %}">
+            <i class="fas fa-history"></i><span>최근 본 공고</span>
         </a>
 
         <div class="sidebar-section">제안</div>

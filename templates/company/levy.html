@@ -2,93 +2,77 @@
 {% block title %}의무고용 현황{% endblock %}
 
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-calculator me-2"></i>의무고용 현황</h2>
-<div class="card mb-4">
-            <div class="card-header fw-semibold">기업 현황</div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">기업명</dt>
-                    <dd class="col-sm-9">{{ company['company_name'] }}</dd>
-                    <dt class="col-sm-3">상시근로자 수</dt>
-                    <dd class="col-sm-9">{{ levy.employee_count }}명</dd>
-                    <dt class="col-sm-3">현재 장애인 근로자</dt>
-                    <dd class="col-sm-9">{{ levy.disabled_count }}명</dd>
-                </dl>
-            </div>
-        </div>
+<div class="page-header"><h2><i class="fas fa-calculator me-2"></i>의무고용 현황</h2></div>
+<div class="content-card">
+    <h5 class="fw-bold mb-3">기업 현황</h5>
+    <dl class="row mb-0">
+        <dt class="col-sm-3">기업명</dt>
+        <dd class="col-sm-9">{{ company['company_name'] }}</dd>
+        <dt class="col-sm-3">상시근로자 수</dt>
+        <dd class="col-sm-9">{{ levy.employee_count }}명</dd>
+        <dt class="col-sm-3">현재 장애인 근로자</dt>
+        <dd class="col-sm-9">{{ levy.disabled_count }}명</dd>
+    </dl>
+</div>
 
         {% if levy.employee_count < 50 %}
-        <div class="card mb-4">
-            <div class="card-body">
-                <p class="mb-0">50인 미만 사업장은 고용의무 대상이 아닙니다.</p>
-            </div>
+        <div class="content-card">
+            <p class="mb-0">50인 미만 사업장은 고용의무 대상이 아닙니다.</p>
         </div>
         {% else %}
 
-        <div class="card mb-4">
-            <div class="card-header fw-semibold">고용의무 현황</div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">고용의무비율</dt>
-                    <dd class="col-sm-8">{{ (levy.quota_rate * 100)|round(1) }}%</dd>
-                    <dt class="col-sm-4">의무고용 인원</dt>
-                    <dd class="col-sm-8">{{ levy.mandatory }}명</dd>
-                    <dt class="col-sm-4">미달 인원</dt>
-                    <dd class="col-sm-8">{{ levy.shortfall }}명</dd>
-                    <dt class="col-sm-4">초과 인원</dt>
-                    <dd class="col-sm-8">{{ levy.surplus }}명</dd>
-                </dl>
-            </div>
+        <div class="content-card">
+            <h5 class="fw-bold mb-3">고용의무 현황</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">고용의무비율</dt>
+                <dd class="col-sm-8">{{ (levy.quota_rate * 100)|round(1) }}%</dd>
+                <dt class="col-sm-4">의무고용 인원</dt>
+                <dd class="col-sm-8">{{ levy.mandatory }}명</dd>
+                <dt class="col-sm-4">미달 인원</dt>
+                <dd class="col-sm-8">{{ levy.shortfall }}명</dd>
+                <dt class="col-sm-4">초과 인원</dt>
+                <dd class="col-sm-8">{{ levy.surplus }}명</dd>
+            </dl>
         </div>
 
         {% if levy.employee_count < 100 %}
-        <div class="card mb-4">
-            <div class="card-body">
-                <p class="mb-0">100인 미만 사업장은 부담금 납부 대상이 아닙니다.</p>
-            </div>
+        <div class="content-card">
+            <p class="mb-0">100인 미만 사업장은 부담금 납부 대상이 아닙니다.</p>
         </div>
         {% elif levy.shortfall > 0 %}
-        <div class="card mb-4 border-danger">
-            <div class="card-header fw-semibold text-danger">부담금 예상 (미달)</div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">월 부담금</dt>
-                    <dd class="col-sm-8">{{ "{:,}".format(levy.monthly_levy) }}원</dd>
-                    <dt class="col-sm-4">연간 부담금</dt>
-                    <dd class="col-sm-8">{{ "{:,}".format(levy.annual_levy) }}원</dd>
-                </dl>
-            </div>
+        <div class="content-card">
+            <h5 class="fw-bold mb-3 text-danger">부담금 예상 (미달)</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">월 부담금</dt>
+                <dd class="col-sm-8">{{ "{:,}".format(levy.monthly_levy) }}원</dd>
+                <dt class="col-sm-4">연간 부담금</dt>
+                <dd class="col-sm-8">{{ "{:,}".format(levy.annual_levy) }}원</dd>
+            </dl>
         </div>
         {% endif %}
 
         {% if levy.surplus > 0 %}
-        <div class="card mb-4 border-success">
-            <div class="card-header fw-semibold text-success">장려금 예상 (초과 고용)</div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">월 장려금 예상</dt>
-                    <dd class="col-sm-8">{{ "{:,}".format(levy.monthly_incentive_min) }}원 ~ {{ "{:,}".format(levy.monthly_incentive_max) }}원</dd>
-                </dl>
-                <p class="text-muted small mt-2 mb-0">장려금 단가는 장애인 유형·중증 여부에 따라 달라질 수 있습니다.</p>
-            </div>
+        <div class="content-card">
+            <h5 class="fw-bold mb-3 text-success">장려금 예상 (초과 고용)</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">월 장려금 예상</dt>
+                <dd class="col-sm-8">{{ "{:,}".format(levy.monthly_incentive_min) }}원 ~ {{ "{:,}".format(levy.monthly_incentive_max) }}원</dd>
+            </dl>
+            <p class="text-muted small mt-2 mb-0">장려금 단가는 장애인 유형·중증 여부에 따라 달라질 수 있습니다.</p>
         </div>
         {% endif %}
 
         {% if levy.shortfall == 0 and levy.surplus == 0 %}
-        <div class="card mb-4">
-            <div class="card-body">
-                <p class="mb-0">현재 의무고용 인원을 정확히 충족하고 있습니다. (부담금 없음, 장려금 없음)</p>
-            </div>
+        <div class="content-card">
+            <p class="mb-0">현재 의무고용 인원을 정확히 충족하고 있습니다. (부담금 없음, 장려금 없음)</p>
         </div>
         {% endif %}
 
         {% endif %}
 
-        <div class="card mb-4">
-            <div class="card-body text-muted small">
-                <p class="mb-1">적용 기준: 2026년 장애인 고용촉진 및 직업재활법</p>
-                <p class="mb-0">본 계산기는 참고용이며 실제 납부액은 한국장애인고용공단 확인을 권장합니다.</p>
-            </div>
+        <div class="content-card text-muted small">
+            <p class="mb-1">적용 기준: 2026년 장애인 고용촉진 및 직업재활법</p>
+            <p class="mb-0">본 계산기는 참고용이며 실제 납부액은 한국장애인고용공단 확인을 권장합니다.</p>
         </div>
 
 {% endblock %}

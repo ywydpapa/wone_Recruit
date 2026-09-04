@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% block title %}구직자 상세 - WONE Recruit{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-user me-2"></i>{{ seeker['name'] }}</h2>
+<div class="page-header"><h2><i class="fas fa-user me-2"></i>{{ seeker['name'] }}</h2></div>
 <div class="container narrow-form-lg">
 
-        <section class="profile-card mb-3" aria-label="구직자 기본 정보">
+        <section class="profile-card mb-3">
             <div class="profile-card-body">
                 <div class="d-flex align-items-center gap-3">
                     <div class="profile-avatar" aria-hidden="true">
                         <i class="fas fa-user"></i>
                     </div>
                     <div>
-                        <h3 class="fw-bold mb-1" style="font-size:1.3rem; color:var(--dark-blue);">{{ seeker['name'] }}</h3>
+                        <h3 class="fw-bold mb-1 profile-name">{{ seeker['name'] }}</h3>
                         <div class="text-muted">
                             <span class="me-3"><i class="fas fa-at me-1" aria-hidden="true"></i>{{ seeker['username'] }}</span>
                             <span class="me-3"><i class="fas fa-phone me-1" aria-hidden="true"></i>{{ seeker['phone'] or '-' }}</span>

@@ -2,7 +2,7 @@
 {% block title %}근태관리{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0"><i class="fas fa-clock me-2"></i>근태관리</h2><a href="/company/attendance/monthly" class="btn btn-outline-primary"><i class="fas fa-calendar-alt me-1"></i>월간 현황</a></div>
+<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">근태관리</h2><a href="/company/attendance/monthly" class="btn btn-outline-primary"><i class="fas fa-calendar-alt me-1"></i>월간 현황</a></div>
 <div class="content-card mb-4">
             <form method="get" action="/company/attendance" class="row g-3 align-items-end">
                 <div class="col-auto">
@@ -41,17 +41,14 @@
                             </td>
                             <td>
                                 <input type="time" name="check_in_{{ emp['user_id'] }}" class="form-control form-control-sm input-time"
-                                       value="{{ rec['check_in'] if rec and rec['check_in'] else '' }}"
-                                       aria-label="{{ emp['user_name'] }} 출근 시간">
+                                       value="{{ rec['check_in'] if rec and rec['check_in'] else '' }}">
                             </td>
                             <td>
                                 <input type="time" name="check_out_{{ emp['user_id'] }}" class="form-control form-control-sm input-time"
-                                       value="{{ rec['check_out'] if rec and rec['check_out'] else '' }}"
-                                       aria-label="{{ emp['user_name'] }} 퇴근 시간">
+                                       value="{{ rec['check_out'] if rec and rec['check_out'] else '' }}">
                             </td>
                             <td>
-                                <select name="status_{{ emp['user_id'] }}" class="form-select form-select-sm input-select-sm"
-                                        aria-label="{{ emp['user_name'] }} 근태 상태">
+                                <select name="status_{{ emp['user_id'] }}" class="form-select form-select-sm input-select-sm">
                                     {% set cur_status = rec['status'] if rec else 'normal' %}
                                     {% for val, label in status_labels.items() %}
                                     <option value="{{ val }}" {{ 'selected' if val == cur_status }}>{{ label }}</option>
@@ -60,8 +57,7 @@
                             </td>
                             <td>
                                 <input type="text" name="memo_{{ emp['user_id'] }}" class="form-control form-control-sm"
-                                       placeholder="메모" value="{{ rec['memo'] if rec and rec['memo'] else '' }}"
-                                       aria-label="{{ emp['user_name'] }} 메모">
+                                       placeholder="메모" value="{{ rec['memo'] if rec and rec['memo'] else '' }}">
                             </td>
                         </tr>
                         {% endfor %}

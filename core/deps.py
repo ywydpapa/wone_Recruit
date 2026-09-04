@@ -1,6 +1,6 @@
 import json
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -19,11 +19,11 @@ def _fromjson(v):
 templates.env.filters["fromjson"] = _fromjson
 
 
-def check_login(request: Request) -> bool:
+def check_login(request):
     return request.session.get("logined", False)
 
 
-def get_current_user(request: Request) -> dict:
+def get_current_user(request):
     return {
         "user_id": request.session.get("user_id"),
         "user_name": request.session.get("user_name", ""),
@@ -31,7 +31,7 @@ def get_current_user(request: Request) -> dict:
     }
 
 
-def require_role(request: Request, *roles: str):
+def require_role(request, *roles):
     if not check_login(request):
         raise HTTPException(status_code=303, headers={"Location": "/login"})
     user = get_current_user(request)

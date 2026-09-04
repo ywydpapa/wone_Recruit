@@ -2,7 +2,7 @@
 {% block title %}{{ '공고 수정' if job else '새 공고 작성' }}{% endblock %}
 
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-file-alt me-2"></i>{{ '공고 수정' if job else '새 공고 작성' }}</h2>
+<div class="page-header"><h2><i class="fas fa-edit me-2"></i>{{ '공고 수정' if job else '새 공고 작성' }}</h2></div>
 <div class="content-card narrow-form">
             <form method="post" action="{{ '/company/jobs/' + job['id']|string + '/edit' if job else '/company/jobs/new' }}" novalidate>
                 <div class="mb-3">

@@ -23,7 +23,11 @@
                         </div>
                     </div>
                     {% else %}
-                    <p class="text-muted text-center py-4">스크랩한 글이 없습니다.</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="far fa-bookmark"></i></div>
+                        <p class="empty-state-text">스크랩한 글이 없습니다.</p>
+                        <a href="/community" class="btn btn-primary btn-sm">커뮤니티 둘러보기</a>
+                    </div>
                     {% endfor %}
                 </div>
             </div>

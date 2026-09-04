@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}최근 본 공고 | WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2><i class="fas fa-history me-2"></i>최근 본 공고</h2></div>
+{% if jobs %}
+        <div class="row g-4">
+            {% for job in jobs %}
+            <div class="col-lg-6">
+                <div class="item-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-fill-clamp">
+                            <span class="item-badge">{{ job['employment_type'] }}</span>
+                            {% if job['remote_available'] %}
+                            <span class="item-badge badge-green">재택 가능</span>
+                            {% endif %}
+                            <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
+                            <div class="item-meta">
+                                <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
+                                <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+                                {% if job['category_name'] %}
+                                <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="text-muted">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small"><i class="far fa-eye me-1"></i>{{ job['viewed_at'][:16] }} 열람</span>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if job['salary'] %}
+                            <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
+                            {% endif %}
+                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="content-card">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-history"></i></div>
+                <p class="empty-state-text">최근 본 공고가 없습니다.</p>
+                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
+            </div>
+        </div>
+        {% endif %}
+{% endblock %}

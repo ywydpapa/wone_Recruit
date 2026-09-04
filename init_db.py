@@ -229,6 +229,22 @@ def init():
         UNIQUE(user_id, job_id)
     );
     CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id);
+    CREATE TABLE IF NOT EXISTS recent_views (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        job_id INTEGER NOT NULL,
+        viewed_at TEXT DEFAULT (datetime('now','localtime')),
+        UNIQUE(user_id, job_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_recent_views_user ON recent_views(user_id);
+    CREATE TABLE IF NOT EXISTS company_pipeline_stages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER NOT NULL,
+        stage_key TEXT NOT NULL,
+        label TEXT NOT NULL,
+        sort_order INTEGER NOT NULL,
+        UNIQUE(company_id, stage_key)
+    );
     """)
 
     for name in DISABILITY_TYPES:
@@ -499,6 +515,15 @@ def init():
     company_id = conn.execute(
         "SELECT id FROM companies WHERE user_id=?", (uid["comp1"],)
     ).fetchone()["id"]
+
+    for sort_order, (stage_key, label) in enumerate([
+        ("reviewing", "검토중"), ("shortlisted", "서류합격"),
+        ("interview", "면접"), ("offer", "제의"),
+    ], 1):
+        conn.execute(
+            "INSERT OR IGNORE INTO company_pipeline_stages (company_id, stage_key, label, sort_order) VALUES (?,?,?,?)",
+            (company_id, stage_key, label, sort_order),
+        )
 
     cat = {
         r["minor_code"]: r["id"]

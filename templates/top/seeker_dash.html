@@ -27,7 +27,7 @@
             <div class="col-md-3">
                 <a href="/applications" class="stat-card-link">
                     <div class="stat-card">
-                        <div class="stat-icon bg-green-light">
+                        <div class="stat-icon bg-blue-light">
                             <i class="fas fa-paper-plane"></i>
                         </div>
                         <div class="stat-info">
@@ -40,7 +40,7 @@
             <div class="col-md-3">
                 <a href="/proposals" class="stat-card-link">
                     <div class="stat-card">
-                        <div class="stat-icon bg-purple-light">
+                        <div class="stat-icon bg-blue-light">
                             <i class="fas fa-handshake"></i>
                         </div>
                         <div class="stat-info">
@@ -53,7 +53,7 @@
             <div class="col-md-3">
                 <a href="/bookmarks" class="stat-card-link">
                     <div class="stat-card">
-                        <div class="stat-icon bg-yellow-light">
+                        <div class="stat-icon bg-blue-light">
                             <i class="fas fa-heart"></i>
                         </div>
                         <div class="stat-info">
@@ -71,7 +71,7 @@
                 <span class="fw-bold"><i class="fas fa-user-check me-2 text-primary"></i>프로필 완성도</span>
                 <span class="fw-bold {% if profile_completeness.percent >= 80 %}text-success{% elif profile_completeness.percent >= 50 %}text-warning{% else %}text-danger{% endif %}">{{ profile_completeness.percent }}%</span>
             </div>
-            <div class="progress progress-sm" role="progressbar" aria-valuenow="{{ profile_completeness.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="프로필 완성도">
+            <div class="progress progress-sm" role="progressbar" aria-valuenow="{{ profile_completeness.percent }}" aria-valuemax="100">
                 <div class="progress-bar {% if profile_completeness.percent >= 80 %}bg-success{% elif profile_completeness.percent >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
                      style="width:{{ profile_completeness.percent }}%"></div>
             </div>
@@ -94,7 +94,7 @@
                 {% for rec in recommended %}
                 {% set job = rec.job %}
                 <div class="col-md-6 col-lg-4">
-                    <article class="job-card clickable-card" onclick="location.href='/jobs/{{ job['id'] }}'">
+                    <article class="job-card clickable-card">
                         <div class="job-card-header">
                             <h3><a href="/jobs/{{ job['id'] }}" class="stretched-link">{{ job['title'] }}</a></h3>
                             <div class="job-card-company"><i class="fas fa-building me-1" aria-hidden="true"></i>{{ job['company_name'] }}</div>
@@ -174,7 +174,11 @@
                         </table>
                     </div>
                     {% else %}
-                    <p class="text-muted text-center py-4">아직 지원한 공고가 없습니다. <a href="/jobs">공고를 검색</a>해 보세요.</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="fas fa-file-alt"></i></div>
+                        <p class="empty-state-text">아직 지원한 공고가 없습니다.</p>
+                        <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -182,22 +186,22 @@
             <div class="col-lg-4">
                 <div class="content-card">
                     <div class="card-title">
-                        <span><i class="fas fa-bolt me-2 text-warning"></i>바로가기</span>
+                        <span><i class="fas fa-bolt me-2 text-primary"></i>바로가기</span>
                     </div>
                     <div class="d-grid gap-2">
                         <a href="/jobs" class="btn btn-outline-primary">
                             <i class="fas fa-search me-1"></i>공고 검색
                         </a>
-                        <a href="/profile" class="btn btn-outline-secondary">
+                        <a href="/profile" class="btn btn-outline-primary">
                             <i class="fas fa-user-edit me-1"></i>내 프로필
                         </a>
-                        <a href="/proposals" class="btn btn-outline-success">
+                        <a href="/proposals" class="btn btn-outline-primary">
                             <i class="fas fa-handshake me-1"></i>매칭 제안
                             {% if proposals > 0 %}
-                            <span class="badge bg-success ms-1">{{ proposals }}</span>
+                            <span class="badge bg-primary ms-1">{{ proposals }}</span>
                             {% endif %}
                         </a>
-                        <a href="/applications" class="btn btn-outline-info">
+                        <a href="/applications" class="btn btn-outline-primary">
                             <i class="fas fa-list me-1"></i>지원 현황
                         </a>
                     </div>

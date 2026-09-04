@@ -23,7 +23,11 @@
                         </div>
                     </div>
                     {% else %}
-                    <p class="text-muted text-center py-4">작성한 글이 없습니다.</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="far fa-list-alt"></i></div>
+                        <p class="empty-state-text">작성한 글이 없습니다.</p>
+                        <a href="/write_post" class="btn btn-primary btn-sm">글 작성하기</a>
+                    </div>
                     {% endfor %}
                 </div>
                 <div class="content-card mt-4">
@@ -35,7 +39,10 @@
                         <span class="small text-muted">{{ c.created_at }}</span>
                     </div>
                     {% else %}
-                    <p class="text-muted text-center py-4">작성한 댓글이 없습니다.</p>
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="far fa-comment-dots"></i></div>
+                        <p class="empty-state-text">작성한 댓글이 없습니다.</p>
+                    </div>
                     {% endfor %}
                 </div>
             </div>

@@ -1,4 +1,4 @@
-def calc_profile_completeness(conn, uid: int) -> dict:
+def calc_profile_completeness(conn, uid):
     profile = conn.execute(
         "SELECT * FROM seeker_profiles WHERE user_id=?", (uid,)
     ).fetchone()
@@ -56,7 +56,7 @@ def calc_profile_completeness(conn, uid: int) -> dict:
     return {"percent": percent, "missing": missing, "has_required": has_required}
 
 
-def get_recommended_jobs(conn, uid: int, limit: int = 5) -> list:
+def get_recommended_jobs(conn, uid, limit=5):
     import json
 
     profile = conn.execute(
@@ -125,7 +125,7 @@ def get_recommended_jobs(conn, uid: int, limit: int = 5) -> list:
     return scored[:limit]
 
 
-def get_seeker_dashboard(conn, uid: int) -> dict:
+def get_seeker_dashboard(conn, uid):
     apps = conn.execute("""
         SELECT c.*, jp.title as job_title, co.company_name
         FROM candidacies c
@@ -158,7 +158,8 @@ def get_seeker_dashboard(conn, uid: int) -> dict:
                 recommended=recommended)
 
 
-def get_company_dashboard(conn, uid: int) -> dict:
+def get_company_dashboard(conn, uid):
+    from core.candidacy import get_pipeline_display, get_stage_labels, get_stage_color_map
     company = conn.execute(
         "SELECT * FROM companies WHERE user_id=?", (uid,)
     ).fetchone()
@@ -215,19 +216,25 @@ def get_company_dashboard(conn, uid: int) -> dict:
             WHERE jp.company_id=? {_filter}
             ORDER BY c.created_at DESC LIMIT 5
         """, (cid,)).fetchall()
+        pipeline_stages = get_pipeline_display(conn, cid)
+        stage_labels = get_stage_labels(conn, cid)
+        stage_colors = get_stage_color_map(conn, cid)
         return dict(company=company, job_count=job_count, open_count=open_count,
                     total_applicants=total_applicants, pending_apps=pending_apps,
                     new_apps_this_week=new_apps_this_week, hired_count=hired_count,
                     interview_count=interview_count, pipeline=pipeline,
-                    recent_apps=recent_apps)
+                    recent_apps=recent_apps,
+                    pipeline_stages=pipeline_stages, status_labels=stage_labels,
+                    stage_colors=stage_colors)
     else:
         return dict(company=None, job_count=0, open_count=0,
                     total_applicants=0, pending_apps=0, new_apps_this_week=0,
                     hired_count=0, interview_count=0, pipeline={},
-                    recent_apps=[])
+                    recent_apps=[], pipeline_stages=[], status_labels={},
+                    stage_colors={})
 
 
-def get_operator_dashboard(conn) -> dict:
+def get_operator_dashboard(conn):
     seeker_count = conn.execute(
         "SELECT COUNT(*) FROM users WHERE role='seeker'"
     ).fetchone()[0]

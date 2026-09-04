@@ -1,7 +1,7 @@
 import math
 
 
-def calc_levy(employee_count: int, disabled_count: int, rates: dict) -> dict:
+def calc_levy(employee_count, disabled_count, rates):
     # 장애인 고용부담금 계산
     quota_rate = rates.get("quota_rate_private", 0.031)
     levy_per = rates.get("levy_per_person_month", 1310000)

@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0"><i class="fas fa-briefcase me-2"></i>공고 관리</h2>
+    <h2 class="mb-0">공고 관리</h2>
     <a href="/company/jobs/new" class="btn btn-primary"><i class="fas fa-plus me-1"></i>새 공고 작성</a>
 </div>
 
@@ -59,6 +59,9 @@
                     <div class="d-flex gap-1 flex-wrap">
                         <a href="/company/jobs/{{ job['id'] }}/applicants" class="btn btn-sm btn-outline-secondary">지원자</a>
                         <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-outline-primary">수정</a>
+                        <form method="post" action="/company/jobs/{{ job['id'] }}/copy" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">복사</button>
+                        </form>
                         <form method="post" action="/company/jobs/{{ job['id'] }}/status" class="d-inline">
                             <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()" aria-label="상태 변경">
                                 <option value="draft" {% if job['status'] == 'draft' %}selected{% endif %}>임시저장</option>
@@ -76,10 +79,16 @@
     </div>
     {% include "common/pagination.html" %}
     {% else %}
-    <p class="text-muted text-center py-4">
-        {% if q or selected_status %}조건에 맞는 공고가 없습니다. <a href="/company/jobs">전체 보기</a>
-        {% else %}등록된 공고가 없습니다. <a href="/company/jobs/new">새 공고를 작성</a>해 보세요.{% endif %}
-    </p>
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-briefcase"></i></div>
+        {% if q or selected_status %}
+        <p class="empty-state-text">조건에 맞는 공고가 없습니다.</p>
+        <a href="/company/jobs" class="btn btn-primary btn-sm">전체 보기</a>
+        {% else %}
+        <p class="empty-state-text">등록된 공고가 없습니다.</p>
+        <a href="/company/jobs/new" class="btn btn-primary btn-sm">새 공고 작성하기</a>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
 {% endblock %}

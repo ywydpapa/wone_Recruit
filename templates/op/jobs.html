@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}공고 관리 - WONE Recruit{% endblock %}
 {% block content %}
-<h2 class="mb-4">공고 관리</h2>
+<div class="page-header"><h2><i class="fas fa-clipboard-list me-2"></i>공고 관리</h2></div>
 
 <div class="container filter-section">
     <div class="filter-card">
@@ -10,11 +10,11 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label for="q" class="visually-hidden">검색어</label>
-                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="공고명, 기업명 검색" value="{{ q }}">
+                    <input type="text" id="q" name="q" class="form-control" placeholder="공고명, 기업명 검색" value="{{ q }}">
                 </div>
                 <div class="col-md-2">
                     <label for="status" class="visually-hidden">상태</label>
-                    <select id="status" name="status" class="form-select form-select-lg">
+                    <select id="status" name="status" class="form-select">
                         <option value="">상태 (전체)</option>
                         <option value="open" {% if selected_status == 'open' %}selected{% endif %}>공개</option>
                         <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>임시저장</option>
@@ -24,13 +24,13 @@
                 </div>
                 <div class="col-md-2">
                     <label for="sido" class="visually-hidden">지역</label>
-                    <select id="sido" name="sido" class="form-select form-select-lg">
+                    <select id="sido" name="sido" class="form-select">
                         <option value="">지역 (전체)</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label for="employment_type" class="visually-hidden">고용 형태</label>
-                    <select id="employment_type" name="employment_type" class="form-select form-select-lg">
+                    <select id="employment_type" name="employment_type" class="form-select">
                         <option value="">고용형태 (전체)</option>
                         {% for et in employment_types %}
                         <option value="{{ et }}" {% if selected_type == et %}selected{% endif %}>{{ et }}</option>

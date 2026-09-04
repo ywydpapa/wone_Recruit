@@ -1,7 +1,7 @@
 PER_PAGE = 20
 
 
-def page_info(total: int, page: int, per_page: int = PER_PAGE):
+def page_info(total, page, per_page=PER_PAGE):
     total_pages = max(1, (total + per_page - 1) // per_page)
     page = max(1, min(page, total_pages))
 
@@ -27,7 +27,7 @@ def page_info(total: int, page: int, per_page: int = PER_PAGE):
     }
 
 
-def paginate_sql(sql: str, params: list, page: int, per_page: int = PER_PAGE):
+def paginate_sql(sql, params, page, per_page=PER_PAGE):
     page = max(1, page)
     count_sql = f"SELECT COUNT(*) FROM ({sql})"
     offset = (page - 1) * per_page

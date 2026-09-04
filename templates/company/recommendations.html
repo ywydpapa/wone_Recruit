@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}추천 인재{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">추천 인재</h2>
+</div>
+
+<div class="content-card">
+    {% if candidates %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <caption class="visually-hidden">채용매니저 추천 목록</caption>
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">지원자명</th>
+                    <th scope="col">공고</th>
+                    <th scope="col">상태</th>
+                    <th scope="col">추천일</th>
+                    <th scope="col">상세</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in candidates %}
+            <tr>
+                <td class="fw-semibold">{{ c['seeker_name'] }}</td>
+                <td>{{ c['job_title'][:30] }}</td>
+                <td>
+                    {% set s = c['status'] %}
+                    {% if s == 'rejected' %}
+                        <span class="badge bg-danger">{{ status_labels.get(s, s) }}</span>
+                    {% elif s == 'withdrawn' %}
+                        <span class="badge bg-light text-dark border">{{ status_labels.get(s, s) }}</span>
+                    {% else %}
+                        {% set bc = stage_colors.get(s, 'secondary') %}
+                        <span class="badge bg-{{ bc }}{% if bc in ['warning', 'info'] %} text-dark{% endif %}">{{ status_labels.get(s, s) }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ c['created_at'][:10] if c['created_at'] else '-' }}</td>
+                <td>
+                    <a href="/company/jobs/{{ c['job_id'] }}/applicants/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-user-check"></i></div>
+        <p class="empty-state-text">채용매니저가 추천한 인재가 없습니다.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

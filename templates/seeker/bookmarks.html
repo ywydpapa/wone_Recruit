@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}저장한 공고 | WONE Recruit{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-heart me-2"></i>저장한 공고</h2>
+<div class="page-header"><h2><i class="fas fa-heart me-2"></i>저장한 공고</h2></div>
 {% if jobs %}
         <div class="row g-4">
             {% for job in jobs %}
@@ -45,7 +45,11 @@
         </div>
         {% else %}
         <div class="content-card">
-            <p class="text-muted text-center py-4">저장한 공고가 없습니다. <a href="/jobs">공고를 검색</a>하고 <i class="far fa-heart"></i>를 눌러 저장하세요.</p>
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="far fa-heart"></i></div>
+                <p class="empty-state-text">저장한 공고가 없습니다. 공고를 검색하고 <i class="far fa-heart"></i>를 눌러 저장하세요.</p>
+                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
+            </div>
         </div>
         {% endif %}
 {% endblock %}

@@ -2,7 +2,7 @@
 {% block title %}인재 검색{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">인재 검색</h2>
+<div class="page-header"><h2><i class="fas fa-search me-2"></i>인재 검색</h2></div>
 
 <div class="container-fluid filter-section">
     <div class="filter-card">
@@ -11,7 +11,7 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label for="disability_type" class="visually-hidden">장애 유형</label>
-                    <select id="disability_type" name="disability_type" class="form-select form-select-lg">
+                    <select id="disability_type" name="disability_type" class="form-select">
                         <option value="">장애 유형 (전체)</option>
                         {% for dt in disability_types %}
                         <option value="{{ dt.name }}" {% if selected_disability == dt.name %}selected{% endif %}>{{ dt.name }}</option>
@@ -20,13 +20,13 @@
                 </div>
                 <div class="col-md-2">
                     <label for="sido" class="visually-hidden">지역</label>
-                    <select id="sido" name="sido" class="form-select form-select-lg">
+                    <select id="sido" name="sido" class="form-select">
                         <option value="">지역 (전체)</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label for="work_pref" class="visually-hidden">근무 형태</label>
-                    <select id="work_pref" name="work_pref" class="form-select form-select-lg">
+                    <select id="work_pref" name="work_pref" class="form-select">
                         <option value="">근무형태 (전체)</option>
                         <option value="사무직" {% if selected_work_pref == '사무직' %}selected{% endif %}>사무직</option>
                         <option value="재택" {% if selected_work_pref == '재택' %}selected{% endif %}>재택</option>
@@ -36,7 +36,7 @@
                 </div>
                 <div class="col-md-3">
                     <label for="talent-q" class="visually-hidden">검색어</label>
-                    <input type="text" id="talent-q" class="form-control form-control-lg" name="q" value="{{ q }}" placeholder="이름, 희망직무 검색">
+                    <input type="text" id="talent-q" class="form-control" name="q" value="{{ q }}" placeholder="이름, 희망직무 검색">
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
@@ -47,7 +47,6 @@
     </div>
 </div>
 
-<div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold m-0">인재 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
         </div>
@@ -59,12 +58,12 @@
                     <div class="mb-3">
                         <div class="profile-avatar mx-auto"><i class="fas fa-user"></i></div>
                     </div>
-                    {% if t.disability_name %}
-                    <span class="item-badge">{{ t.disability_name }} &middot; {{ t.severity }}</span>
-                    {% endif %}
                     <h5 class="fw-bold mt-2">{{ t.seeker_name }}</h5>
                     <p class="text-muted small mb-3">{{ t.desired_job or '미지정' }}</p>
                     <div class="text-start item-meta small">
+                        {% if t.disability_name %}
+                        <div><i class="fas fa-id-card"></i> {{ t.disability_name }} &middot; {{ t.severity }}</div>
+                        {% endif %}
                         <div><i class="fas fa-map-marker-alt"></i> {{ (t.region_sido or '') ~ ' ' ~ (t.region_sigungu or '') | trim or '미지정' }}</div>
                         <div><i class="fas fa-briefcase"></i> {{ t.work_pref }}</div>
                         <div><i class="fas fa-clock"></i> {{ t.daily_work_hours }}시간 &middot; {{ t.preferred_time }}</div>
@@ -87,7 +86,6 @@
             <p class="text-muted text-center py-4">조건에 맞는 인재가 없습니다.</p>
         </div>
         {% endif %}
-</div>
 {% endblock %}
 
 {% block scripts %}

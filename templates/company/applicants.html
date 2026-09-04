@@ -15,18 +15,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0"><i class="fas fa-users me-2"></i>지원자 목록</h2><div class="d-flex gap-2"><button class="btn btn-outline-secondary btn-sm" id="btn-toggle-view" onclick="toggleView()" aria-label="보기 전환"><i class="fas fa-columns me-1"></i><span id="toggle-label">파이프라인</span></button><a href="/company/jobs" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>공고 목록</a></div></div>
+<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">지원자 목록</h2><div class="d-flex gap-2"><button class="btn btn-outline-secondary btn-sm" id="btn-toggle-view" onclick="toggleView()" aria-label="보기 전환"><i class="fas fa-columns me-1"></i><span id="toggle-label">파이프라인</span></button><a href="/company/jobs" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>공고 목록</a></div></div>
 <div id="pipeline-view" class="content-card" style="display:none;">
             <div class="pipeline-wrap">
-                {% set stage_config = [
-                    ('pending', '접수', 'secondary'),
-                    ('reviewing', '검토중', 'primary'),
-                    ('shortlisted', '서류합격', 'info'),
-                    ('interview', '면접', 'warning'),
-                    ('offer', '제의', 'success'),
-                    ('hired', '채용', 'success'),
-                ] %}
-                {% for key, label, color in stage_config %}
+                {% for key, label, color in pipeline_stages %}
                 <div class="pipeline-col">
                     <div class="pipeline-col-header">
                         <span class="badge bg-{{ color }}{% if color == 'warning' or color == 'info' %} text-dark{% endif %}">{{ label }}</span>
@@ -83,24 +75,13 @@
                         <td class="fw-semibold">{{ ap['seeker_name'] }}</td>
                         <td>
                             {% set s = ap['status'] %}
-                            {% if s == 'pending' %}
-                                <span class="badge bg-secondary"><i class="fas fa-clock badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                            {% elif s == 'reviewing' %}
-                                <span class="badge bg-primary"><i class="fas fa-eye badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                            {% elif s == 'shortlisted' %}
-                                <span class="badge bg-info text-dark"><i class="fas fa-list badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                            {% elif s == 'interview' %}
-                                <span class="badge bg-warning text-dark"><i class="fas fa-comments badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                            {% elif s == 'offer' %}
-                                <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                            {% elif s == 'hired' %}
-                                <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                            {% elif s == 'rejected' %}
-                                <span class="badge bg-danger"><i class="fas fa-times badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                            {% if s == 'rejected' %}
+                                <span class="badge bg-danger"><i class="fas fa-times badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
                             {% elif s == 'withdrawn' %}
-                                <span class="badge bg-light text-dark border"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
+                                <span class="badge bg-light text-dark border"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
                             {% else %}
-                                <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ s }}</span>
+                                {% set bc = stage_colors.get(s, 'secondary') %}
+                                <span class="badge bg-{{ bc }}{% if bc in ['warning', 'info'] %} text-dark{% endif %}">{{ status_labels.get(s, s) }}</span>
                             {% endif %}
                         </td>
                         <td>{{ '직접' if ap['source'] == 'direct' else '매칭' }}</td>
@@ -115,7 +96,10 @@
                 </table>
             </div>
             {% else %}
-            <p class="text-muted text-center py-4">아직 지원자가 없습니다.</p>
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+                <p class="empty-state-text">아직 지원자가 없습니다.</p>
+            </div>
             {% endif %}
         </div>
 {% endblock %}

@@ -1,376 +1,407 @@
 {% extends "base.html" %}
 {% block title %}내 프로필 | WONE Recruit{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-user-edit me-2"></i>내 프로필</h2>
-<div class="content-card">
+<div class="page-header">
+    <h2><i class="fas fa-user-edit me-2"></i>내 프로필</h2>
+</div>
 
-            {% if error == 'incomplete' %}
-            <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <div>{{ msg or '프로필을 먼저 완성해주세요.' }}</div>
-            </div>
-            {% endif %}
+{% if error == 'incomplete' %}
+<div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <div>{{ msg or '프로필을 먼저 완성해주세요.' }}</div>
+</div>
+{% endif %}
 
-            {% if error == 'consent' %}
-            <div class="alert alert-danger" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>민감정보 제공 동의가 필요합니다.
-            </div>
-            {% endif %}
+{% if error == 'consent' %}
+<div class="alert alert-danger" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>민감정보 제공 동의가 필요합니다.
+</div>
+{% endif %}
 
-            {% if success == '1' %}
-            <div class="alert alert-success" role="alert">
-                <i class="fas fa-check-circle me-2"></i>프로필이 저장되었습니다.
-            </div>
-            {% endif %}
+{% if success == '1' %}
+<div class="alert alert-success" role="alert">
+    <i class="fas fa-check-circle me-2"></i>프로필이 저장되었습니다.
+</div>
+{% endif %}
 
-            <form method="post" action="/profile" enctype="multipart/form-data" novalidate>
+<form method="post" action="/profile" enctype="multipart/form-data" novalidate>
 
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">장애 정보</legend>
+    <fieldset class="form-section">
+        <legend><i class="fas fa-wheelchair"></i>장애 정보</legend>
+        <div class="form-section-body">
 
-                    {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
-                    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
-                        <i class="fas fa-lock"></i>
-                        <div>
-                            장애정보 동의가 철회된 상태입니다.
-                            <a href="/account/consent" class="alert-link">개인정보 관리</a>에서 다시 동의할 수 있습니다.
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <div {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}style="opacity:0.4;pointer-events:none"{% endif %}>
-                    <div class="mb-3">
-                        <label for="disability_type_id" class="form-label fw-semibold">장애유형 <span class="text-danger">*</span></label>
-                        <select class="form-select" id="disability_type_id" name="disability_type_id" required>
-                            <option value="">-- 선택 --</option>
-                            {% for dt in disability_types %}
-                            <option value="{{ dt.id }}" {% if profile and profile.disability_type_id == dt.id %}selected{% endif %}>{{ dt.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <fieldset class="mb-3">
-                        <legend class="form-label fw-semibold">장애정도</legend>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="severity" id="severity_light" value="경증"
-                                {% if not profile or profile.severity == '경증' %}checked{% endif %}>
-                            <label class="form-check-label" for="severity_light">경증</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="severity" id="severity_heavy" value="중증"
-                                {% if profile and profile.severity == '중증' %}checked{% endif %}>
-                            <label class="form-check-label" for="severity_heavy">중증</label>
-                        </div>
-                    </fieldset>
-
-                    <div class="mb-3">
-                        <label for="gender" class="form-label fw-semibold">성별</label>
-                        <select class="form-select" id="gender" name="gender">
-                            <option value="">-- 선택 안 함 --</option>
-                            <option value="남" {% if profile and profile.gender == '남' %}selected{% endif %}>남</option>
-                            <option value="여" {% if profile and profile.gender == '여' %}selected{% endif %}>여</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="birth_year" class="form-label fw-semibold">출생연도</label>
-                        <input type="number" class="form-control" id="birth_year" name="birth_year"
-                            min="1920" max="2010"
-                            value="{{ profile.birth_year if profile and profile.birth_year else '' }}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="mobility_type" class="form-label fw-semibold">이동수단</label>
-                        <select class="form-select" id="mobility_type" name="mobility_type">
-                            <option value="">-- 선택 --</option>
-                            {% for mt in mobility_types %}
-                            <option value="{{ mt }}" {% if profile and profile.mobility_type == mt %}selected{% endif %}>{{ mt }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="commute_max_minutes" class="form-label fw-semibold">최대 통근 시간 (편도)</label>
-                        <select class="form-select" id="commute_max_minutes" name="commute_max_minutes">
-                            <option value="">-- 선택 --</option>
-                            {% for cm in commute_options %}
-                            <option value="{{ cm }}" {% if profile and profile.commute_max_minutes == cm %}selected{% endif %}>
-                                {% if cm < 60 %}{{ cm }}분{% elif cm % 60 == 0 %}{{ cm // 60 }}시간{% else %}{{ cm // 60 }}시간 {{ cm % 60 }}분{% endif %}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">의사소통 선호</label>
-                        {% for co in communication_options %}
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="communication_pref" value="{{ co }}"
-                                id="comm_{{ loop.index }}"
-                                {% if co in communication_pref %}checked{% endif %}>
-                            <label class="form-check-label" for="comm_{{ loop.index }}">{{ co }}</label>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">사용 중인 보조기기</label>
-                        {% for at in assistive_tech_options %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="assistive_tech" value="{{ at }}"
-                                id="at_{{ loop.index }}"
-                                {% if at in assistive_tech %}checked{% endif %}>
-                            <label class="form-check-label" for="at_{{ loop.index }}">{{ at }}</label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    </div>
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">근무 조건</legend>
-
-                    <div class="mb-3">
-                        <label for="desired_job" class="form-label fw-semibold">희망 직종</label>
-                        <input type="text" class="form-control" id="desired_job" name="desired_job"
-                            value="{{ profile.desired_job if profile else '' }}"
-                            placeholder="예: 사무보조, 웹개발">
-                    </div>
-
-                    <fieldset class="mb-3">
-                        <legend class="form-label fw-semibold">근무 형태 선호</legend>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="work_pref" id="wp_remote" value="재택"
-                                {% if profile and profile.work_pref == '재택' %}checked{% endif %}>
-                            <label class="form-check-label" for="wp_remote">재택</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="work_pref" id="wp_office" value="출근"
-                                {% if profile and profile.work_pref == '출근' %}checked{% endif %}>
-                            <label class="form-check-label" for="wp_office">출근</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="work_pref" id="wp_any" value="무관"
-                                {% if not profile or profile.work_pref == '무관' %}checked{% endif %}>
-                            <label class="form-check-label" for="wp_any">무관</label>
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="mb-3">
-                        <legend class="form-label fw-semibold">일일 근무 가능 시간</legend>
-                        {% for dh in daily_hours_options %}
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="daily_work_hours" value="{{ dh }}"
-                                id="dh_{{ dh }}"
-                                {% if (profile and profile.daily_work_hours == dh) or (not profile and dh == 8) %}checked{% endif %}>
-                            <label class="form-check-label" for="dh_{{ dh }}">{{ dh }}시간</label>
-                        </div>
-                        {% endfor %}
-                    </fieldset>
-
-                    <fieldset class="mb-3">
-                        <legend class="form-label fw-semibold">선호 시간대</legend>
-                        {% for pt in preferred_time_options %}
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="preferred_time" value="{{ pt }}"
-                                id="pt_{{ loop.index }}"
-                                {% if (profile and profile.preferred_time == pt) or (not profile and pt == '풀타임') %}checked{% endif %}>
-                            <label class="form-check-label" for="pt_{{ loop.index }}">{{ pt }}</label>
-                        </div>
-                        {% endfor %}
-                    </fieldset>
-
-                    <fieldset class="mb-3">
-                        <legend class="form-label fw-semibold">휴식 필요 빈도</legend>
-                        {% for rf in rest_frequency_options %}
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="rest_frequency" value="{{ rf }}"
-                                id="rf_{{ loop.index }}"
-                                {% if (profile and profile.rest_frequency == rf) or (not profile and rf == '불필요') %}checked{% endif %}>
-                            <label class="form-check-label" for="rf_{{ loop.index }}">{{ rf }}</label>
-                        </div>
-                        {% endfor %}
-                    </fieldset>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">필요한 편의제공</label>
-                        <div class="row">
-                        {% for ao in accommodation_options %}
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="accommodation_needs" value="{{ ao }}"
-                                    id="ao_{{ loop.index }}"
-                                    {% if ao in accommodation_needs %}checked{% endif %}>
-                                <label class="form-check-label" for="ao_{{ loop.index }}">{{ ao }}</label>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        </div>
-                    </div>
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">거주 지역</legend>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="region_sido" class="form-label fw-semibold">시/도</label>
-                            <select id="region_sido" class="form-select" onchange="loadSigungu(this.value,'region_id',{{ (profile.region_id or '')|tojson }})">
-                                <option value="">-- 선택 --</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="region_id" class="form-label fw-semibold">구/군</label>
-                            <select id="region_id" name="region_id" class="form-select">
-                                <option value="">-- 시/도를 먼저 선택 --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <script>
-                    document.addEventListener('DOMContentLoaded', function(){
-                        loadSidoList('region_sido', {{ selected_sido|tojson }});
-                        {% if selected_sido %}
-                        loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (profile.region_id or '')|tojson }});
-                        {% endif %}
-                    });
-                    </script>
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">학력</legend>
-
-                    <div class="mb-3">
-                        <label for="education_level" class="form-label fw-semibold">최종학력</label>
-                        <select class="form-select" id="education_level" name="education_level">
-                            <option value="">-- 선택 --</option>
-                            {% for el in education_levels %}
-                            <option value="{{ el }}" {% if profile and profile.education_level == el %}selected{% endif %}>{{ el }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="school_name" class="form-label fw-semibold">학교명</label>
-                        <input type="text" class="form-control" id="school_name" name="school_name"
-                            value="{{ profile.school_name if profile else '' }}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="major" class="form-label fw-semibold">전공</label>
-                        <input type="text" class="form-control" id="major" name="major"
-                            value="{{ profile.major if profile else '' }}">
-                    </div>
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">경력</legend>
-
-                    <div class="mb-3">
-                        <label for="career_years" class="form-label fw-semibold">경력 연수</label>
-                        <input type="number" class="form-control" id="career_years" name="career_years"
-                            min="0" max="50"
-                            value="{{ profile.career_years if profile else 0 }}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="recent_company" class="form-label fw-semibold">최근 직장명</label>
-                        <input type="text" class="form-control" id="recent_company" name="recent_company"
-                            value="{{ profile.recent_company if profile else '' }}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="recent_job_title" class="form-label fw-semibold">최근 직무</label>
-                        <input type="text" class="form-control" id="recent_job_title" name="recent_job_title"
-                            value="{{ profile.recent_job_title if profile else '' }}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="experience_summary" class="form-label fw-semibold">경력 요약</label>
-                        <textarea class="form-control" id="experience_summary" name="experience_summary" rows="4"
-                            placeholder="강점, 경험, 희망사항 등을 자유롭게 작성해 주세요.">{{ profile.experience_summary if profile else '' }}</textarea>
-                    </div>
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">자격증</legend>
-                    <div id="cert-container">
-                        {% if certifications %}
-                        {% for cert in certifications %}
-                        <div class="row g-2 mb-2 cert-row">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" name="cert_name" value="{{ cert.cert_name }}" placeholder="자격증명">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="month" class="form-control" name="cert_date" value="{{ cert.cert_date }}">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="text" class="form-control" name="cert_org" value="{{ cert.issuing_org }}" placeholder="발급기관">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.cert-row').remove()" aria-label="자격증 행 삭제">삭제</button>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCertRow()">
-                        <i class="fas fa-plus me-1"></i>자격증 추가
-                    </button>
-                    <script>
-                    function addCertRow() {
-                        var html = '<div class="row g-2 mb-2 cert-row">' +
-                            '<div class="col-md-4"><input type="text" class="form-control" name="cert_name" placeholder="자격증명"></div>' +
-                            '<div class="col-md-3"><input type="month" class="form-control" name="cert_date"></div>' +
-                            '<div class="col-md-3"><input type="text" class="form-control" name="cert_org" placeholder="발급기관"></div>' +
-                            '<div class="col-md-2"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'.cert-row\').remove()" aria-label="자격증 행 삭제">삭제</button></div>' +
-                            '</div>';
-                        document.getElementById('cert-container').insertAdjacentHTML('beforeend', html);
-                    }
-                    </script>
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">이력서</legend>
-                    <div class="mb-3">
-                        <label for="resume" class="form-label fw-semibold">이력서 파일 (PDF, 최대 10MB)</label>
-                        <input type="file" class="form-control" id="resume" name="resume" accept="application/pdf">
-                    </div>
-                    {% if profile and profile.resume_path %}
-                    <div class="mt-2">
-                        <i class="fas fa-file-pdf text-danger me-1"></i>
-                        <a href="{{ profile.resume_path }}" target="_blank">현재 이력서 보기</a>
-                    </div>
-                    {% endif %}
-                </fieldset>
-
-                                <fieldset class="mb-4 p-3 border rounded">
-                    <legend class="fw-bold fs-6 px-2">개인정보 동의</legend>
-                    {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-lock text-muted"></i>
-                        <span class="text-muted">장애정보 동의가 철회된 상태입니다.</span>
-                        <a href="/account/consent" class="btn btn-outline-primary btn-sm ms-2">개인정보 관리에서 다시 동의</a>
-                    </div>
-                    <input type="hidden" name="consent_sensitive" value="0">
-                    {% else %}
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="consent_sensitive"
-                            name="consent_sensitive" value="1"
-                            {% if profile and profile.consent_sensitive %}checked{% endif %} required>
-                        <label class="form-check-label fw-semibold" for="consent_sensitive">
-                            민감정보 제공에 동의합니다. <span class="text-danger">*</span>
-                        </label>
-                    </div>
-                    <div class="form-text">장애유형, 장애정도 등 민감정보는 취업 알선 목적으로만 사용됩니다.</div>
-                    {% endif %}
-                </fieldset>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fas fa-save me-1"></i>저장
-                    </button>
-                    <a href="/" class="btn btn-outline-secondary">취소</a>
+            {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+                <i class="fas fa-lock"></i>
+                <div>
+                    장애정보 동의가 철회된 상태입니다.
+                    <a href="/account/consent" class="alert-link">개인정보 관리</a>에서 다시 동의할 수 있습니다.
                 </div>
+            </div>
+            {% endif %}
 
-            </form>
+            <div {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}class="field-disabled"{% endif %}>
+            <div class="mb-3">
+                <label for="disability_type_id" class="form-label fw-semibold">장애유형 <span class="text-danger">*</span></label>
+                <select class="form-select" id="disability_type_id" name="disability_type_id" required>
+                    <option value="">-- 선택 --</option>
+                    {% for dt in disability_types %}
+                    <option value="{{ dt.id }}" {% if profile and profile.disability_type_id == dt.id %}selected{% endif %}>{{ dt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <fieldset class="mb-3">
+                <legend class="form-label fw-semibold">장애정도</legend>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="severity" id="severity_light" value="경증"
+                        {% if not profile or profile.severity == '경증' %}checked{% endif %}>
+                    <label class="form-check-label" for="severity_light">경증</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="severity" id="severity_heavy" value="중증"
+                        {% if profile and profile.severity == '중증' %}checked{% endif %}>
+                    <label class="form-check-label" for="severity_heavy">중증</label>
+                </div>
+            </fieldset>
+
+            <div class="mb-3">
+                <label for="gender" class="form-label fw-semibold">성별</label>
+                <select class="form-select" id="gender" name="gender">
+                    <option value="">-- 선택 안 함 --</option>
+                    <option value="남" {% if profile and profile.gender == '남' %}selected{% endif %}>남</option>
+                    <option value="여" {% if profile and profile.gender == '여' %}selected{% endif %}>여</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="birth_year" class="form-label fw-semibold">출생연도</label>
+                <input type="number" class="form-control" id="birth_year" name="birth_year"
+                    min="1920" max="2010"
+                    value="{{ profile.birth_year if profile and profile.birth_year else '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="mobility_type" class="form-label fw-semibold">이동수단</label>
+                <select class="form-select" id="mobility_type" name="mobility_type">
+                    <option value="">-- 선택 --</option>
+                    {% for mt in mobility_types %}
+                    <option value="{{ mt }}" {% if profile and profile.mobility_type == mt %}selected{% endif %}>{{ mt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="commute_max_minutes" class="form-label fw-semibold">최대 통근 시간 (편도)</label>
+                <select class="form-select" id="commute_max_minutes" name="commute_max_minutes">
+                    <option value="">-- 선택 --</option>
+                    {% for cm in commute_options %}
+                    <option value="{{ cm }}" {% if profile and profile.commute_max_minutes == cm %}selected{% endif %}>
+                        {% if cm < 60 %}{{ cm }}분{% elif cm % 60 == 0 %}{{ cm // 60 }}시간{% else %}{{ cm // 60 }}시간 {{ cm % 60 }}분{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">의사소통 선호</label>
+                {% for co in communication_options %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="communication_pref" value="{{ co }}"
+                        id="comm_{{ loop.index }}"
+                        {% if co in communication_pref %}checked{% endif %}>
+                    <label class="form-check-label" for="comm_{{ loop.index }}">{{ co }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">사용 중인 보조기기</label>
+                {% for at in assistive_tech_options %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="assistive_tech" value="{{ at }}"
+                        id="at_{{ loop.index }}"
+                        {% if at in assistive_tech %}checked{% endif %}>
+                    <label class="form-check-label" for="at_{{ loop.index }}">{{ at }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            </div>
+
         </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-briefcase"></i>근무 조건</legend>
+        <div class="form-section-body">
+
+            <div class="mb-3">
+                <label for="desired_job" class="form-label fw-semibold">희망 직종</label>
+                <input type="text" class="form-control" id="desired_job" name="desired_job"
+                    value="{{ profile.desired_job if profile else '' }}"
+                    placeholder="예: 사무보조, 웹개발">
+            </div>
+
+            <fieldset class="mb-3">
+                <legend class="form-label fw-semibold">근무 형태 선호</legend>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="work_pref" id="wp_remote" value="재택"
+                        {% if profile and profile.work_pref == '재택' %}checked{% endif %}>
+                    <label class="form-check-label" for="wp_remote">재택</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="work_pref" id="wp_office" value="출근"
+                        {% if profile and profile.work_pref == '출근' %}checked{% endif %}>
+                    <label class="form-check-label" for="wp_office">출근</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="work_pref" id="wp_any" value="무관"
+                        {% if not profile or profile.work_pref == '무관' %}checked{% endif %}>
+                    <label class="form-check-label" for="wp_any">무관</label>
+                </div>
+            </fieldset>
+
+            <fieldset class="mb-3">
+                <legend class="form-label fw-semibold">일일 근무 가능 시간</legend>
+                {% for dh in daily_hours_options %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="daily_work_hours" value="{{ dh }}"
+                        id="dh_{{ dh }}"
+                        {% if (profile and profile.daily_work_hours == dh) or (not profile and dh == 8) %}checked{% endif %}>
+                    <label class="form-check-label" for="dh_{{ dh }}">{{ dh }}시간</label>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="mb-3">
+                <legend class="form-label fw-semibold">선호 시간대</legend>
+                {% for pt in preferred_time_options %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="preferred_time" value="{{ pt }}"
+                        id="pt_{{ loop.index }}"
+                        {% if (profile and profile.preferred_time == pt) or (not profile and pt == '풀타임') %}checked{% endif %}>
+                    <label class="form-check-label" for="pt_{{ loop.index }}">{{ pt }}</label>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="mb-3">
+                <legend class="form-label fw-semibold">휴식 필요 빈도</legend>
+                {% for rf in rest_frequency_options %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="rest_frequency" value="{{ rf }}"
+                        id="rf_{{ loop.index }}"
+                        {% if (profile and profile.rest_frequency == rf) or (not profile and rf == '불필요') %}checked{% endif %}>
+                    <label class="form-check-label" for="rf_{{ loop.index }}">{{ rf }}</label>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">필요한 편의제공</label>
+                <div class="row">
+                {% for ao in accommodation_options %}
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="accommodation_needs" value="{{ ao }}"
+                            id="ao_{{ loop.index }}"
+                            {% if ao in accommodation_needs %}checked{% endif %}>
+                        <label class="form-check-label" for="ao_{{ loop.index }}">{{ ao }}</label>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-map-marker-alt"></i>거주 지역</legend>
+        <div class="form-section-body">
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="region_sido" class="form-label fw-semibold">시/도</label>
+                    <select id="region_sido" class="form-select" onchange="loadSigungu(this.value,'region_id',{{ (profile.region_id or '')|tojson }})">
+                        <option value="">-- 선택 --</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="region_id" class="form-label fw-semibold">구/군</label>
+                    <select id="region_id" name="region_id" class="form-select">
+                        <option value="">-- 시/도를 먼저 선택 --</option>
+                    </select>
+                </div>
+            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                loadSidoList('region_sido', {{ selected_sido|tojson }});
+                {% if selected_sido %}
+                loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (profile.region_id or '')|tojson }});
+                {% endif %}
+            });
+            </script>
+
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-graduation-cap"></i>학력</legend>
+        <div class="form-section-body">
+
+            <div class="mb-3">
+                <label for="education_level" class="form-label fw-semibold">최종학력</label>
+                <select class="form-select" id="education_level" name="education_level">
+                    <option value="">-- 선택 --</option>
+                    {% for el in education_levels %}
+                    <option value="{{ el }}" {% if profile and profile.education_level == el %}selected{% endif %}>{{ el }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="school_name" class="form-label fw-semibold">학교명</label>
+                <input type="text" class="form-control" id="school_name" name="school_name"
+                    value="{{ profile.school_name if profile else '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="major" class="form-label fw-semibold">전공</label>
+                <input type="text" class="form-control" id="major" name="major"
+                    value="{{ profile.major if profile else '' }}">
+            </div>
+
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-building"></i>경력</legend>
+        <div class="form-section-body">
+
+            <div class="mb-3">
+                <label for="career_years" class="form-label fw-semibold">경력 연수</label>
+                <input type="number" class="form-control" id="career_years" name="career_years"
+                    min="0" max="50"
+                    value="{{ profile.career_years if profile else 0 }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="recent_company" class="form-label fw-semibold">최근 직장명</label>
+                <input type="text" class="form-control" id="recent_company" name="recent_company"
+                    value="{{ profile.recent_company if profile else '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="recent_job_title" class="form-label fw-semibold">최근 직무</label>
+                <input type="text" class="form-control" id="recent_job_title" name="recent_job_title"
+                    value="{{ profile.recent_job_title if profile else '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label for="experience_summary" class="form-label fw-semibold">경력 요약</label>
+                <textarea class="form-control" id="experience_summary" name="experience_summary" rows="4"
+                    placeholder="강점, 경험, 희망사항 등을 자유롭게 작성해 주세요.">{{ profile.experience_summary if profile else '' }}</textarea>
+            </div>
+
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-certificate"></i>자격증</legend>
+        <div class="form-section-body">
+
+            <div id="cert-container">
+                {% if certifications %}
+                {% for cert in certifications %}
+                <div class="row g-2 mb-2 cert-row">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="cert_name" value="{{ cert.cert_name }}" placeholder="자격증명">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="month" class="form-control" name="cert_date" value="{{ cert.cert_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="cert_org" value="{{ cert.issuing_org }}" placeholder="발급기관">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm cert-del">삭제</button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCertRow()">
+                <i class="fas fa-plus me-1"></i>자격증 추가
+            </button>
+            <script>
+            function addCertRow() {
+                var html = '<div class="row g-2 mb-2 cert-row">' +
+                    '<div class="col-md-4"><input type="text" class="form-control" name="cert_name" placeholder="자격증명"></div>' +
+                    '<div class="col-md-3"><input type="month" class="form-control" name="cert_date"></div>' +
+                    '<div class="col-md-3"><input type="text" class="form-control" name="cert_org" placeholder="발급기관"></div>' +
+                    '<div class="col-md-2"><button type="button" class="btn btn-outline-danger btn-sm cert-del">삭제</button></div>' +
+                    '</div>';
+                document.getElementById('cert-container').insertAdjacentHTML('beforeend', html);
+            }
+            document.getElementById('cert-container').addEventListener('click', function(e) {
+                if (e.target.classList.contains('cert-del')) e.target.closest('.cert-row').remove();
+            });
+            </script>
+
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-file-pdf"></i>이력서</legend>
+        <div class="form-section-body">
+
+            <div class="mb-3">
+                <label for="resume" class="form-label fw-semibold">이력서 파일 (PDF, 최대 10MB)</label>
+                <input type="file" class="form-control" id="resume" name="resume" accept="application/pdf">
+            </div>
+            {% if profile and profile.resume_path %}
+            <div class="mt-2">
+                <i class="fas fa-file-pdf text-danger me-1"></i>
+                <a href="{{ profile.resume_path }}" target="_blank">현재 이력서 보기</a>
+            </div>
+            {% endif %}
+
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-shield-alt"></i>개인정보 동의</legend>
+        <div class="form-section-body">
+
+            {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-lock text-muted"></i>
+                <span class="text-muted">장애정보 동의가 철회된 상태입니다.</span>
+                <a href="/account/consent" class="btn btn-outline-primary btn-sm ms-2">개인정보 관리에서 다시 동의</a>
+            </div>
+            <input type="hidden" name="consent_sensitive" value="0">
+            {% else %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="consent_sensitive"
+                    name="consent_sensitive" value="1"
+                    {% if profile and profile.consent_sensitive %}checked{% endif %} required>
+                <label class="form-check-label fw-semibold" for="consent_sensitive">
+                    민감정보 제공에 동의합니다. <span class="text-danger">*</span>
+                </label>
+            </div>
+            <div class="form-text">장애유형, 장애정도 등 민감정보는 취업 알선 목적으로만 사용됩니다.</div>
+            {% endif %}
+
+        </div>
+    </fieldset>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-save me-1"></i>저장
+        </button>
+        <a href="/" class="btn btn-outline-secondary">취소</a>
+    </div>
+
+</form>
 {% endblock %}

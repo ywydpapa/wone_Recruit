@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}구직자 관리 - WONE Recruit{% endblock %}
 {% block content %}
-<h2 class="mb-4">구직자 관리</h2>
+<div class="page-header"><h2><i class="fas fa-users me-2"></i>구직자 관리</h2></div>
 
 <div class="container filter-section">
     <div class="filter-card">
@@ -10,11 +10,11 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label for="q" class="visually-hidden">검색어</label>
-                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="이름, 아이디 검색" value="{{ q }}">
+                    <input type="text" id="q" name="q" class="form-control" placeholder="이름, 아이디 검색" value="{{ q }}">
                 </div>
                 <div class="col-md-2">
                     <label for="disability_type_id" class="visually-hidden">장애 유형</label>
-                    <select id="disability_type_id" name="disability_type_id" class="form-select form-select-lg">
+                    <select id="disability_type_id" name="disability_type_id" class="form-select">
                         <option value="">장애유형 (전체)</option>
                         {% for dt in disability_types %}
                         <option value="{{ dt['id'] }}" {% if selected_disability == dt['id'] %}selected{% endif %}>{{ dt['name'] }}</option>
@@ -23,7 +23,7 @@
                 </div>
                 <div class="col-md-2">
                     <label for="severity" class="visually-hidden">중증도</label>
-                    <select id="severity" name="severity" class="form-select form-select-lg">
+                    <select id="severity" name="severity" class="form-select">
                         <option value="">중증도 (전체)</option>
                         <option value="경증" {% if selected_severity == "경증" %}selected{% endif %}>경증</option>
                         <option value="중증" {% if selected_severity == "중증" %}selected{% endif %}>중증</option>
@@ -31,13 +31,13 @@
                 </div>
                 <div class="col-md-2">
                     <label for="sido" class="visually-hidden">지역</label>
-                    <select id="sido" name="sido" class="form-select form-select-lg">
+                    <select id="sido" name="sido" class="form-select">
                         <option value="">지역 (전체)</option>
                     </select>
                 </div>
                 <div class="col-md-1">
                     <label for="consent" class="visually-hidden">동의 여부</label>
-                    <select id="consent" name="consent" class="form-select form-select-lg">
+                    <select id="consent" name="consent" class="form-select">
                         <option value="">동의</option>
                         <option value="1" {% if selected_consent == "1" %}selected{% endif %}>동의</option>
                         <option value="0" {% if selected_consent == "0" %}selected{% endif %}>미동의</option>

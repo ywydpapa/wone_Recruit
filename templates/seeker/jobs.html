@@ -8,13 +8,13 @@
             <div class="row g-3">
                 <div class="col-md-2">
                     <label for="sido" class="visually-hidden">지역</label>
-                    <select id="sido" name="sido" class="form-select form-select-lg">
+                    <select id="sido" name="sido" class="form-select form-select">
                         <option value="">지역 (전체)</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label for="employment_type" class="visually-hidden">고용 형태</label>
-                    <select id="employment_type" name="employment_type" class="form-select form-select-lg">
+                    <select id="employment_type" name="employment_type" class="form-select form-select">
                         <option value="">고용형태 (전체)</option>
                         {% for et in employment_types %}
                         <option value="{{ et }}" {% if selected_type == et %}selected{% endif %}>{{ et }}</option>
@@ -23,7 +23,7 @@
                 </div>
                 <div class="col-md-2">
                     <label for="category" class="visually-hidden">직무</label>
-                    <select id="category" name="category" class="form-select form-select-lg">
+                    <select id="category" name="category" class="form-select form-select">
                         <option value="">직무 (전체)</option>
                         {% for cat in categories %}
                         <option value="{{ cat['id'] }}" {% if selected_category == cat['id']|string %}selected{% endif %}>{{ cat['minor_name_ko'] }}</option>
@@ -32,7 +32,7 @@
                 </div>
                 <div class="col-md-4">
                     <label for="q" class="visually-hidden">검색어</label>
-                    <input type="text" id="q" name="q" class="form-control form-control-lg" placeholder="공고명, 기업명, 직무 검색" value="{{ q }}">
+                    <input type="text" id="q" name="q" class="form-control form-control" placeholder="공고명, 기업명, 직무 검색" value="{{ q }}">
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
@@ -55,6 +55,23 @@
                         {% for opt in accommodation_options %}
                         <option value="{{ opt }}" {% if selected_accommodation == opt %}selected{% endif %}>{{ opt }}</option>
                         {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="disability_type" class="visually-hidden">장애유형</label>
+                    <select id="disability_type" name="disability_type" class="form-select">
+                        <option value="">장애유형 (전체)</option>
+                        {% for dt in disability_types %}
+                        <option value="{{ dt['name'] }}" {% if selected_disability_type == dt['name'] %}selected{% endif %}>{{ dt['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="severity" class="visually-hidden">장애정도</label>
+                    <select id="severity" name="severity" class="form-select">
+                        <option value="">장애정도 (전체)</option>
+                        <option value="경증" {% if selected_severity == '경증' %}selected{% endif %}>경증</option>
+                        <option value="중증" {% if selected_severity == '중증' %}selected{% endif %}>중증</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-center">
@@ -117,7 +134,11 @@
         {% include "common/pagination.html" %}
         {% else %}
         <div class="content-card">
-            <p class="text-muted text-center py-5">조건에 맞는 공고가 없습니다.</p>
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-search"></i></div>
+                <p class="empty-state-text">조건에 맞는 공고가 없습니다.</p>
+                <a href="/jobs" class="btn btn-primary btn-sm">전체 공고 보기</a>
+            </div>
         </div>
         {% endif %}
 {% endblock %}

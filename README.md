@@ -40,4 +40,4 @@ docs/            # 설계 문서
 - 로그인 / 회원가입
 - 대시보드 (실데이터 연동)
 
-다음 단계는 [docs/plan.md의 12번 섹션](docs/plan.md) 참고.
+다음 단계는 [docs/plan.md의 12번 섹션](docs/plan.md) 참고

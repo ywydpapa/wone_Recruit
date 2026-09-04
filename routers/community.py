@@ -1,6 +1,3 @@
-import json
-from typing import Optional
-
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -13,9 +10,7 @@ router = APIRouter()
 PER_PAGE = 10
 
 
-def _require_login(request):
-    if not check_login(request):
-        raise Exception("not logged in")
+def _get_session_user(request):
     return {
         "user_id": request.session["user_id"],
         "user_name": request.session.get("user_name", ""),
@@ -30,10 +25,9 @@ async def community_list(
     q: str = Query(""),
     page: int = Query(1),
 ):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
+    user = _get_session_user(request)
 
     conn = get_sqlite()
     try:
@@ -96,10 +90,9 @@ async def community_list(
 
 @router.get("/write_post", response_class=HTMLResponse)
 async def write_post_form(request: Request):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
+    user = _get_session_user(request)
     return templates.TemplateResponse(
         request=request,
         name="community/write_post.html",
@@ -120,10 +113,9 @@ async def create_post(
     title: str = Form(...),
     content: str = Form(...),
 ):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         conn.execute(
@@ -138,10 +130,9 @@ async def create_post(
 
 @router.get("/post/{post_id}", response_class=HTMLResponse)
 async def post_detail(request: Request, post_id: int):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         post = conn.execute("SELECT * FROM posts WHERE id=?", (post_id,)).fetchone()
@@ -190,10 +181,9 @@ async def post_detail(request: Request, post_id: int):
 
 @router.post("/api/posts/{post_id}/comments")
 async def add_comment(request: Request, post_id: int, content: str = Form(...)):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         conn.execute(
@@ -208,10 +198,9 @@ async def add_comment(request: Request, post_id: int, content: str = Form(...)):
 
 @router.post("/api/posts/{post_id}/like")
 async def toggle_like(request: Request, post_id: int):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         existing = conn.execute(
@@ -241,10 +230,9 @@ async def toggle_like(request: Request, post_id: int):
 
 @router.post("/api/posts/{post_id}/bookmark")
 async def toggle_bookmark(request: Request, post_id: int):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         existing = conn.execute(
@@ -271,10 +259,9 @@ async def toggle_bookmark(request: Request, post_id: int):
 
 @router.delete("/api/posts/{post_id}")
 async def delete_post(request: Request, post_id: int):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         post = conn.execute("SELECT user_id FROM posts WHERE id=?", (post_id,)).fetchone()
@@ -292,10 +279,9 @@ async def delete_post(request: Request, post_id: int):
 
 @router.delete("/api/comments/{comment_id}")
 async def delete_comment(request: Request, comment_id: int):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         comment = conn.execute("SELECT user_id FROM comments WHERE id=?", (comment_id,)).fetchone()
@@ -310,10 +296,9 @@ async def delete_comment(request: Request, comment_id: int):
 
 @router.get("/my_posts", response_class=HTMLResponse)
 async def my_posts(request: Request):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         posts = conn.execute(
@@ -345,10 +330,9 @@ async def my_posts(request: Request):
 
 @router.get("/my_bookmarks_posts", response_class=HTMLResponse)
 async def my_bookmarked_posts(request: Request):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         posts = conn.execute(
@@ -376,10 +360,9 @@ async def my_bookmarked_posts(request: Request):
 
 @router.get("/api/messages/thread")
 async def message_thread(request: Request, with_name: str = Query(...)):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         messages = conn.execute(
@@ -399,10 +382,9 @@ async def send_message(
     to_name: str = Form(...),
     body: str = Form(...),
 ):
-    try:
-        user = _require_login(request)
-    except Exception:
+    if not check_login(request):
         return JSONResponse({"error": "login required"}, status_code=401)
+    user = _get_session_user(request)
     conn = get_sqlite()
     try:
         from datetime import datetime
