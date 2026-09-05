@@ -12,10 +12,13 @@ DISABILITY_TYPES = [
 def init():
     conn = get_sqlite()
 
-    for t in ("bookmarks", "notifications", "seeker_certifications", "job_categories", "access_log", "placements", "status_history", "candidacies",
+    for t in ("bookmarks", "notifications", "seeker_certifications",
+              "education_history", "career_history", "language_skills",
+              "awards_activities", "portfolio_links", "self_intro_items", "self_intro_presets",
+              "job_categories", "access_log", "placements", "status_history", "candidacies",
               "job_postings", "seeker_profiles", "companies",
               "regions", "levy_rates", "disability_types", "users",
-              "job_applications"):  # 기존 테이블 정리
+              "job_applications"):
         conn.execute(f"DROP TABLE IF EXISTS {t}")
 
     conn.executescript("""
@@ -70,6 +73,8 @@ def init():
         rest_frequency TEXT NOT NULL DEFAULT '불필요',
         accommodation_needs TEXT NOT NULL DEFAULT '[]',
         resume_path TEXT NOT NULL DEFAULT '',
+        photo_path TEXT NOT NULL DEFAULT '',
+        disability_visibility TEXT NOT NULL DEFAULT 'manager_only',
         consent_sensitive INTEGER NOT NULL DEFAULT 0,
         consented_at TEXT,
         consent_withdrawn_at TEXT,
@@ -85,6 +90,89 @@ def init():
         created_at TEXT DEFAULT (datetime('now','localtime'))
     );
     CREATE INDEX IF NOT EXISTS idx_cert_user ON seeker_certifications(user_id);
+    CREATE TABLE IF NOT EXISTS education_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        education_level TEXT NOT NULL DEFAULT '',
+        school_name TEXT NOT NULL DEFAULT '',
+        major TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        graduation_status TEXT NOT NULL DEFAULT '',
+        gpa TEXT NOT NULL DEFAULT '',
+        gpa_scale TEXT NOT NULL DEFAULT '',
+        is_transfer INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_edu_user ON education_history(user_id);
+    CREATE TABLE IF NOT EXISTS career_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        company_name TEXT NOT NULL DEFAULT '',
+        department TEXT NOT NULL DEFAULT '',
+        position TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        is_current INTEGER NOT NULL DEFAULT 0,
+        employment_type TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_career_user ON career_history(user_id);
+    CREATE TABLE IF NOT EXISTS language_skills (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        language TEXT NOT NULL DEFAULT '',
+        test_name TEXT NOT NULL DEFAULT '',
+        score TEXT NOT NULL DEFAULT '',
+        level TEXT NOT NULL DEFAULT '',
+        test_date TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_lang_user ON language_skills(user_id);
+    CREATE TABLE IF NOT EXISTS awards_activities (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        category TEXT NOT NULL DEFAULT '',
+        title TEXT NOT NULL DEFAULT '',
+        organizer TEXT NOT NULL DEFAULT '',
+        activity_date TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_award_user ON awards_activities(user_id);
+    CREATE TABLE IF NOT EXISTS portfolio_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        link_type TEXT NOT NULL DEFAULT '',
+        url TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_port_user ON portfolio_links(user_id);
+    CREATE TABLE IF NOT EXISTS self_intro_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        title TEXT NOT NULL DEFAULT '',
+        content TEXT NOT NULL DEFAULT '',
+        char_limit INTEGER NOT NULL DEFAULT 1000,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_intro_user ON self_intro_items(user_id);
+    CREATE TABLE IF NOT EXISTS self_intro_presets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
     CREATE TABLE IF NOT EXISTS companies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER UNIQUE NOT NULL,
@@ -510,6 +598,21 @@ def init():
         conn.execute(
             "INSERT INTO seeker_certifications (user_id, cert_name, cert_date, issuing_org) VALUES (?,?,?,?)",
             cert,
+        )
+
+    _intro_presets = [
+        ("성장과정", "본인의 성장 배경과 가치관을 소개해 주세요"),
+        ("지원동기", "이 분야/직무에 관심을 갖게 된 계기를 알려주세요"),
+        ("직무역량 및 경험", "관련 경험, 프로젝트, 보유 역량을 구체적으로 작성해 주세요"),
+        ("성격의 장단점", "자신의 성격에서 업무에 도움이 되는 점을 중심으로 작성해 주세요"),
+        ("입사 후 포부", "입사 후 이루고 싶은 목표를 구체적으로 작성해 주세요"),
+        ("프로젝트 경험", "참여한 프로젝트의 역할과 성과를 알려주세요"),
+        ("근무 시 참고사항", "업무 수행 시 필요한 배려나 환경을 자유롭게 작성해 주세요"),
+    ]
+    for idx, (title, desc) in enumerate(_intro_presets):
+        conn.execute(
+            "INSERT OR IGNORE INTO self_intro_presets (title, description, sort_order) VALUES (?,?,?)",
+            (title, desc, idx),
         )
 
     company_id = conn.execute(

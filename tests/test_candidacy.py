@@ -71,6 +71,7 @@ def test_company_status_change(client):
 
 def test_candidacy_transition_logic():
     from core.candidacy import can_transition
+    # conn=None이면 기본 파이프라인으로 검증
     assert can_transition("pending", "reviewing")
     assert can_transition("pending", "rejected")
     assert not can_transition("pending", "hired")

@@ -43,6 +43,24 @@ ACCOMMODATION_OPTIONS = [
     '활동보조인출입', '휴게공간', '주차지원',
 ]
 
+EDUCATION_LEVELS_DETAIL = [
+    '고등학교', '전문대(2/3년)', '대학교(4년)', '대학원(석사)', '대학원(박사)',
+]
+
+GRADUATION_STATUS = ['졸업', '재학', '휴학', '중퇴', '수료', '졸업예정']
+
+GPA_SCALES = ['4.0', '4.3', '4.5', '100']
+
+CAREER_EMPLOYMENT_TYPES = ['정규직', '계약직', '인턴', '파견직', '프리랜서', '아르바이트']
+
+LANGUAGE_LIST = ['영어', '일본어', '중국어', '기타']
+
+LANGUAGE_LEVELS = ['네이티브', '비즈니스', '일상회화', '기초']
+
+AWARD_CATEGORIES = ['수상', '봉사활동', '동아리', '대외활동', '교육이수', '기타']
+
+PORTFOLIO_LINK_TYPES = ['GitHub', '블로그', '포트폴리오', '노션', '기타']
+
 COMPANY_SIZES = [
     '소기업(50인미만)',
     '중소기업(50~299인)',

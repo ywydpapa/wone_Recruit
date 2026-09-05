@@ -1,9 +1,13 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import dotenv
+
+from core.logger import log
+from core.deps import templates
 
 dotenv.load_dotenv()
 
@@ -208,6 +212,103 @@ def _ensure_db():
                 UNIQUE(company_id, stage_key)
             );
         """,
+        "education_history": """
+            CREATE TABLE IF NOT EXISTS education_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                education_level TEXT NOT NULL DEFAULT '',
+                school_name TEXT NOT NULL DEFAULT '',
+                major TEXT NOT NULL DEFAULT '',
+                start_date TEXT NOT NULL DEFAULT '',
+                end_date TEXT NOT NULL DEFAULT '',
+                graduation_status TEXT NOT NULL DEFAULT '',
+                gpa TEXT NOT NULL DEFAULT '',
+                gpa_scale TEXT NOT NULL DEFAULT '',
+                is_transfer INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_edu_user ON education_history(user_id);
+        """,
+        "career_history": """
+            CREATE TABLE IF NOT EXISTS career_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                company_name TEXT NOT NULL DEFAULT '',
+                department TEXT NOT NULL DEFAULT '',
+                position TEXT NOT NULL DEFAULT '',
+                start_date TEXT NOT NULL DEFAULT '',
+                end_date TEXT NOT NULL DEFAULT '',
+                is_current INTEGER NOT NULL DEFAULT 0,
+                employment_type TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_career_user ON career_history(user_id);
+        """,
+        "language_skills": """
+            CREATE TABLE IF NOT EXISTS language_skills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                language TEXT NOT NULL DEFAULT '',
+                test_name TEXT NOT NULL DEFAULT '',
+                score TEXT NOT NULL DEFAULT '',
+                level TEXT NOT NULL DEFAULT '',
+                test_date TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_lang_user ON language_skills(user_id);
+        """,
+        "awards_activities": """
+            CREATE TABLE IF NOT EXISTS awards_activities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                category TEXT NOT NULL DEFAULT '',
+                title TEXT NOT NULL DEFAULT '',
+                organizer TEXT NOT NULL DEFAULT '',
+                activity_date TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_award_user ON awards_activities(user_id);
+        """,
+        "portfolio_links": """
+            CREATE TABLE IF NOT EXISTS portfolio_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                link_type TEXT NOT NULL DEFAULT '',
+                url TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_port_user ON portfolio_links(user_id);
+        """,
+        "self_intro_items": """
+            CREATE TABLE IF NOT EXISTS self_intro_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                title TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL DEFAULT '',
+                char_limit INTEGER NOT NULL DEFAULT 1000,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_intro_user ON self_intro_items(user_id);
+        """,
+        "self_intro_presets": """
+            CREATE TABLE IF NOT EXISTS self_intro_presets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+        """,
     }
     existing_tables = {
         row[0] for row in conn.execute(
@@ -220,6 +321,8 @@ def _ensure_db():
 
     _COLUMN_MIGRATIONS = [
         ("seeker_profiles", "consent_withdrawn_at", "ALTER TABLE seeker_profiles ADD COLUMN consent_withdrawn_at TEXT"),
+        ("seeker_profiles", "photo_path", "ALTER TABLE seeker_profiles ADD COLUMN photo_path TEXT NOT NULL DEFAULT ''"),
+        ("seeker_profiles", "disability_visibility", "ALTER TABLE seeker_profiles ADD COLUMN disability_visibility TEXT NOT NULL DEFAULT 'manager_only'"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:
@@ -228,6 +331,24 @@ def _ensure_db():
         if col not in _col_cache[tbl]:
             conn.execute(ddl)
             conn.commit()
+
+    if "self_intro_presets" not in existing_tables or \
+       conn.execute("SELECT COUNT(*) FROM self_intro_presets").fetchone()[0] == 0:
+        _presets = [
+            ("성장과정", "본인의 성장 배경과 가치관을 소개해 주세요"),
+            ("지원동기", "이 분야/직무에 관심을 갖게 된 계기를 알려주세요"),
+            ("직무역량 및 경험", "관련 경험, 프로젝트, 보유 역량을 구체적으로 작성해 주세요"),
+            ("성격의 장단점", "자신의 성격에서 업무에 도움이 되는 점을 중심으로 작성해 주세요"),
+            ("입사 후 포부", "입사 후 이루고 싶은 목표를 구체적으로 작성해 주세요"),
+            ("프로젝트 경험", "참여한 프로젝트의 역할과 성과를 알려주세요"),
+            ("근무 시 참고사항", "업무 수행 시 필요한 배려나 환경을 자유롭게 작성해 주세요"),
+        ]
+        for idx, (title, desc) in enumerate(_presets):
+            conn.execute(
+                "INSERT OR IGNORE INTO self_intro_presets (title, description, sort_order) VALUES (?,?,?)",
+                (title, desc, idx),
+            )
+        conn.commit()
 
     conn.close()
 
@@ -240,10 +361,43 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+
+@app.exception_handler(404)
+async def not_found(request: Request, exc):
+    return templates.TemplateResponse(
+        request=request, name="error.html",
+        context={
+            "request": request, "page_title": "404",
+            "user_name": request.session.get("user_name", ""),
+            "user_role": request.session.get("user_role", "seeker"),
+            "status_code": 404,
+            "message": "페이지를 찾을 수 없습니다",
+            "detail": "요청하신 페이지가 존재하지 않거나 이동되었습니다.",
+        },
+        status_code=404,
+    )
+
+
+@app.exception_handler(500)
+async def server_error(request: Request, exc):
+    log.exception("500 에러: %s %s", request.method, request.url.path)
+    return templates.TemplateResponse(
+        request=request, name="error.html",
+        context={
+            "request": request, "page_title": "오류",
+            "user_name": request.session.get("user_name", ""),
+            "user_role": request.session.get("user_role", "seeker"),
+            "status_code": 500,
+            "message": "서버 오류가 발생했습니다",
+            "detail": "잠시 후 다시 시도해 주세요.",
+        },
+        status_code=500,
+    )
+
 _secret = os.getenv("SESSION_SECRET_KEY", "")
 if not _secret:
     import warnings
-    warnings.warn("SESSION_SECRET_KEY not set, using insecure default for development only", stacklevel=1)
+    warnings.warn("SESSION_SECRET_KEY 미설정, 개발용 임시키 사용", stacklevel=1)
     _secret = "recruit-dev-key-insecure"
 
 app.add_middleware(

@@ -1,4 +1,5 @@
 from core.security import hash_password, MIN_PASSWORD_LENGTH
+from core.logger import log
 import json
 from typing import Optional
 
@@ -423,6 +424,7 @@ async def op_propose(
         create_notification(conn, seeker_user_id, f"[{job_title}] 운영자가 매칭을 제안했습니다.", "/proposals")
         conn.commit()
     except Exception:
+        log.exception("매칭 제안 실패: job_id=%s seeker=%s", job_id, seeker_user_id)
         conn.rollback()
     finally:
         conn.close()

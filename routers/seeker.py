@@ -1,7 +1,9 @@
 import json
-from typing import Optional
+import os
+from datetime import datetime
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
+from core.logger import log
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
@@ -11,6 +13,9 @@ from core.constants import (
     COMMUNICATION_OPTIONS, ASSISTIVE_TECH_OPTIONS,
     DAILY_HOURS_OPTIONS, PREFERRED_TIME_OPTIONS,
     REST_FREQUENCY_OPTIONS, ACCOMMODATION_OPTIONS,
+    EDUCATION_LEVELS_DETAIL, GRADUATION_STATUS, GPA_SCALES,
+    CAREER_EMPLOYMENT_TYPES, LANGUAGE_LIST, LANGUAGE_LEVELS,
+    AWARD_CATEGORIES, PORTFOLIO_LINK_TYPES,
 )
 from core.upload import save_upload
 from core.pagination import page_info, PER_PAGE
@@ -30,6 +35,33 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
             "SELECT * FROM seeker_certifications WHERE user_id=? ORDER BY id",
             (user["user_id"],),
         ).fetchall()
+        education_list = conn.execute(
+            "SELECT * FROM education_history WHERE user_id=? ORDER BY sort_order",
+            (user["user_id"],),
+        ).fetchall()
+        career_list = conn.execute(
+            "SELECT * FROM career_history WHERE user_id=? ORDER BY sort_order",
+            (user["user_id"],),
+        ).fetchall()
+        language_list = conn.execute(
+            "SELECT * FROM language_skills WHERE user_id=? ORDER BY sort_order",
+            (user["user_id"],),
+        ).fetchall()
+        awards_list = conn.execute(
+            "SELECT * FROM awards_activities WHERE user_id=? ORDER BY sort_order",
+            (user["user_id"],),
+        ).fetchall()
+        portfolio_list = conn.execute(
+            "SELECT * FROM portfolio_links WHERE user_id=? ORDER BY sort_order",
+            (user["user_id"],),
+        ).fetchall()
+        intro_list = conn.execute(
+            "SELECT * FROM self_intro_items WHERE user_id=? ORDER BY sort_order",
+            (user["user_id"],),
+        ).fetchall()
+        intro_presets = conn.execute(
+            "SELECT * FROM self_intro_presets WHERE is_active=1 ORDER BY sort_order",
+        ).fetchall()
         selected_sido = ""
         if profile and profile["region_id"]:
             region_row = conn.execute("SELECT sido FROM regions WHERE id=?", (profile["region_id"],)).fetchone()
@@ -44,13 +76,29 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
         request=request, name="seeker/profile_form.html", context={
             "request": request, "page_title": "내 프로필",
             "user_name": user["user_name"], "user_role": "seeker",
+            "user": user,
             "profile": profile, "disability_types": disability_types,
             "certifications": certifications,
+            "education_list": education_list,
+            "career_list": career_list,
+            "language_list": language_list,
+            "awards_list": awards_list,
+            "portfolio_list": portfolio_list,
+            "intro_list": intro_list,
+            "intro_presets": intro_presets,
             "selected_sido": selected_sido,
             "communication_pref": communication_pref,
             "assistive_tech": assistive_tech,
             "accommodation_needs": accommodation_needs,
             "education_levels": EDUCATION_LEVELS,
+            "education_levels_detail": EDUCATION_LEVELS_DETAIL,
+            "graduation_status_list": GRADUATION_STATUS,
+            "gpa_scales": GPA_SCALES,
+            "career_employment_types": CAREER_EMPLOYMENT_TYPES,
+            "language_options": LANGUAGE_LIST,
+            "language_levels": LANGUAGE_LEVELS,
+            "award_categories": AWARD_CATEGORIES,
+            "portfolio_link_types": PORTFOLIO_LINK_TYPES,
             "mobility_types": MOBILITY_TYPES,
             "commute_options": COMMUTE_OPTIONS,
             "communication_options": COMMUNICATION_OPTIONS,
@@ -64,8 +112,42 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
     )
 
 
+def _calc_education_level(rows):
+    rank = {'대학원(박사)': 5, '대학원(석사)': 4, '대학교(4년)': 3, '전문대(2/3년)': 2, '고등학교': 1}
+    level_map = {'대학원(박사)': '박사', '대학원(석사)': '석사', '대학교(4년)': '대졸', '전문대(2/3년)': '전문대졸', '고등학교': '고졸'}
+    best = ''
+    best_rank = 0
+    for r in rows:
+        lv = r.get('education_level', '')
+        if rank.get(lv, 0) > best_rank:
+            best_rank = rank[lv]
+            best = level_map.get(lv, '')
+    return best
+
+
+def _calc_career_years(rows):
+    total_months = 0
+    for r in rows:
+        start = r.get('start_date', '')
+        end = r.get('end_date', '')
+        if not start:
+            continue
+        try:
+            s = datetime.strptime(start, "%Y-%m")
+            if end:
+                e = datetime.strptime(end, "%Y-%m")
+            else:
+                e = datetime.now()
+            diff = (e.year - s.year) * 12 + (e.month - s.month)
+            if diff > 0:
+                total_months += diff
+        except ValueError:
+            continue
+    return max(0, round(total_months / 12))
+
+
 @router.post("/profile")
-async def profile_save(request: Request, resume: Optional[UploadFile] = File(None)):
+async def profile_save(request: Request, resume: UploadFile = File(None)):
     user = require_role(request, "seeker")
     form = await request.form()
     consent_sensitive = int(form.get("consent_sensitive", 0))
@@ -77,13 +159,6 @@ async def profile_save(request: Request, resume: Optional[UploadFile] = File(Non
     gender = form.get("gender", "")
     birth_year = int(form.get("birth_year") or 0) or None
     region_id = int(form.get("region_id") or 0) or None
-    education_level = form.get("education_level", "")
-    school_name = form.get("school_name", "")
-    major = form.get("major", "")
-    career_years = int(form.get("career_years") or 0)
-    recent_company = form.get("recent_company", "")
-    recent_job_title = form.get("recent_job_title", "")
-    experience_summary = form.get("experience_summary", "")
     desired_job = form.get("desired_job", "")
     work_pref = form.get("work_pref", "무관")
     mobility_type = form.get("mobility_type", "")
@@ -92,6 +167,7 @@ async def profile_save(request: Request, resume: Optional[UploadFile] = File(Non
     preferred_time = form.get("preferred_time", "풀타임")
     rest_frequency = form.get("rest_frequency", "불필요")
 
+    disability_visibility = form.get("disability_visibility", "manager_only")
     communication_pref = json.dumps(form.getlist("communication_pref"), ensure_ascii=False)
     assistive_tech = json.dumps(form.getlist("assistive_tech"), ensure_ascii=False)
     accommodation_needs = json.dumps(form.getlist("accommodation_needs"), ensure_ascii=False)
@@ -103,49 +179,89 @@ async def profile_save(request: Request, resume: Optional[UploadFile] = File(Non
             ["application/pdf"], 10 * 1024 * 1024,
         )
 
+    uid = user["user_id"]
     conn = get_sqlite()
     try:
-        existing = conn.execute("SELECT id, resume_path FROM seeker_profiles WHERE user_id=?", (user["user_id"],)).fetchone()
+        existing = conn.execute("SELECT id, resume_path FROM seeker_profiles WHERE user_id=?", (uid,)).fetchone()
         if not resume_path and existing:
             resume_path = existing["resume_path"] or ""
-        params = (
-            disability_type_id, severity, gender, birth_year, region_id,
-            education_level, school_name, major, career_years,
-            recent_company, recent_job_title, experience_summary,
-            desired_job, work_pref,
-            mobility_type, commute_max_minutes,
-            communication_pref, assistive_tech,
-            daily_work_hours, preferred_time, rest_frequency,
-            accommodation_needs, resume_path, consent_sensitive,
-        )
-        if existing:
-            conn.execute("""UPDATE seeker_profiles SET
-                disability_type_id=?, severity=?, gender=?, birth_year=?, region_id=?,
-                education_level=?, school_name=?, major=?, career_years=?,
-                recent_company=?, recent_job_title=?, experience_summary=?,
-                desired_job=?, work_pref=?,
-                mobility_type=?, commute_max_minutes=?,
-                communication_pref=?, assistive_tech=?,
-                daily_work_hours=?, preferred_time=?, rest_frequency=?,
-                accommodation_needs=?, resume_path=?, consent_sensitive=?,
-                consented_at=datetime('now','localtime'),
-                updated_at=datetime('now','localtime')
-                WHERE user_id=?""",
-                params + (user["user_id"],))
-        else:
-            conn.execute("""INSERT INTO seeker_profiles
-                (user_id, disability_type_id, severity, gender, birth_year, region_id,
-                 education_level, school_name, major, career_years,
-                 recent_company, recent_job_title, experience_summary,
-                 desired_job, work_pref,
-                 mobility_type, commute_max_minutes,
-                 communication_pref, assistive_tech,
-                 daily_work_hours, preferred_time, rest_frequency,
-                 accommodation_needs, resume_path, consent_sensitive, consented_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))""",
-                (user["user_id"],) + params)
 
-        conn.execute("DELETE FROM seeker_certifications WHERE user_id=?", (user["user_id"],))
+        # 학력
+        conn.execute("DELETE FROM education_history WHERE user_id=?", (uid,))
+        edu_levels = form.getlist("edu_level")
+        edu_schools = form.getlist("edu_school")
+        edu_majors = form.getlist("edu_major")
+        edu_grad_statuses = form.getlist("edu_grad_status")
+        edu_starts = form.getlist("edu_start")
+        edu_ends = form.getlist("edu_end")
+        edu_gpas = form.getlist("edu_gpa")
+        edu_gpa_scales = form.getlist("edu_gpa_scale")
+        edu_rows = []
+        for i in range(len(edu_levels)):
+            lv = edu_levels[i].strip() if i < len(edu_levels) else ""
+            school = edu_schools[i].strip() if i < len(edu_schools) else ""
+            if not lv and not school:
+                continue
+            row = {
+                "education_level": lv,
+                "school_name": school,
+                "major": edu_majors[i].strip() if i < len(edu_majors) else "",
+                "graduation_status": edu_grad_statuses[i].strip() if i < len(edu_grad_statuses) else "",
+                "start_date": edu_starts[i].strip() if i < len(edu_starts) else "",
+                "end_date": edu_ends[i].strip() if i < len(edu_ends) else "",
+                "gpa": edu_gpas[i].strip() if i < len(edu_gpas) else "",
+                "gpa_scale": edu_gpa_scales[i].strip() if i < len(edu_gpa_scales) else "",
+                "is_transfer": 1 if form.get(f"edu_transfer_{i}") else 0,
+            }
+            edu_rows.append(row)
+            conn.execute(
+                """INSERT INTO education_history
+                   (user_id, sort_order, education_level, school_name, major, start_date, end_date,
+                    graduation_status, gpa, gpa_scale, is_transfer)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                (uid, i, row["education_level"], row["school_name"], row["major"],
+                 row["start_date"], row["end_date"], row["graduation_status"],
+                 row["gpa"], row["gpa_scale"], row["is_transfer"]),
+            )
+
+        # 경력
+        conn.execute("DELETE FROM career_history WHERE user_id=?", (uid,))
+        car_companies = form.getlist("car_company")
+        car_depts = form.getlist("car_dept")
+        car_positions = form.getlist("car_position")
+        car_emp_types = form.getlist("car_emp_type")
+        car_starts = form.getlist("car_start")
+        car_ends = form.getlist("car_end")
+        car_descs = form.getlist("car_desc")
+        career_rows = []
+        for i in range(len(car_companies)):
+            company = car_companies[i].strip()
+            if not company:
+                continue
+            is_current = 1 if form.get(f"car_current_{i}") else 0
+            row = {
+                "start_date": car_starts[i].strip() if i < len(car_starts) else "",
+                "end_date": "" if is_current else (car_ends[i].strip() if i < len(car_ends) else ""),
+            }
+            career_rows.append(row)
+            conn.execute(
+                """INSERT INTO career_history
+                   (user_id, sort_order, company_name, department, position, start_date, end_date,
+                    is_current, employment_type, description)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (uid, i, company,
+                 car_depts[i].strip() if i < len(car_depts) else "",
+                 car_positions[i].strip() if i < len(car_positions) else "",
+                 row["start_date"], row["end_date"], is_current,
+                 car_emp_types[i].strip() if i < len(car_emp_types) else "",
+                 car_descs[i].strip() if i < len(car_descs) else ""),
+            )
+
+        education_level = _calc_education_level(edu_rows)
+        career_years = _calc_career_years(career_rows)
+
+        # 자격증
+        conn.execute("DELETE FROM seeker_certifications WHERE user_id=?", (uid,))
         cert_names = form.getlist("cert_name")
         cert_dates = form.getlist("cert_date")
         cert_orgs = form.getlist("cert_org")
@@ -157,8 +273,124 @@ async def profile_save(request: Request, resume: Optional[UploadFile] = File(Non
             org = cert_orgs[i].strip() if i < len(cert_orgs) else ""
             conn.execute(
                 "INSERT INTO seeker_certifications (user_id, cert_name, cert_date, issuing_org) VALUES (?,?,?,?)",
-                (user["user_id"], name, date, org),
+                (uid, name, date, org),
             )
+
+        # 어학
+        conn.execute("DELETE FROM language_skills WHERE user_id=?", (uid,))
+        lang_languages = form.getlist("lang_language")
+        lang_tests = form.getlist("lang_test")
+        lang_scores = form.getlist("lang_score")
+        lang_levels = form.getlist("lang_level")
+        lang_dates = form.getlist("lang_date")
+        for i in range(len(lang_languages)):
+            language = lang_languages[i].strip()
+            test = lang_tests[i].strip() if i < len(lang_tests) else ""
+            if not language and not test:
+                continue
+            conn.execute(
+                """INSERT INTO language_skills
+                   (user_id, sort_order, language, test_name, score, level, test_date)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (uid, i, language, test,
+                 lang_scores[i].strip() if i < len(lang_scores) else "",
+                 lang_levels[i].strip() if i < len(lang_levels) else "",
+                 lang_dates[i].strip() if i < len(lang_dates) else ""),
+            )
+
+        # 수상/활동
+        conn.execute("DELETE FROM awards_activities WHERE user_id=?", (uid,))
+        award_cats = form.getlist("award_category")
+        award_titles = form.getlist("award_title")
+        award_orgs = form.getlist("award_org")
+        award_dates = form.getlist("award_date")
+        award_descs = form.getlist("award_desc")
+        for i in range(len(award_titles)):
+            title = award_titles[i].strip()
+            if not title:
+                continue
+            conn.execute(
+                """INSERT INTO awards_activities
+                   (user_id, sort_order, category, title, organizer, activity_date, description)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (uid, i,
+                 award_cats[i].strip() if i < len(award_cats) else "",
+                 title,
+                 award_orgs[i].strip() if i < len(award_orgs) else "",
+                 award_dates[i].strip() if i < len(award_dates) else "",
+                 award_descs[i].strip() if i < len(award_descs) else ""),
+            )
+
+        # 포트폴리오
+        conn.execute("DELETE FROM portfolio_links WHERE user_id=?", (uid,))
+        port_types = form.getlist("port_type")
+        port_urls = form.getlist("port_url")
+        port_descs = form.getlist("port_desc")
+        for i in range(len(port_urls)):
+            url = port_urls[i].strip()
+            if not url:
+                continue
+            conn.execute(
+                """INSERT INTO portfolio_links
+                   (user_id, sort_order, link_type, url, description)
+                   VALUES (?,?,?,?,?)""",
+                (uid, i,
+                 port_types[i].strip() if i < len(port_types) else "",
+                 url,
+                 port_descs[i].strip() if i < len(port_descs) else ""),
+            )
+
+        # 자기소개서
+        conn.execute("DELETE FROM self_intro_items WHERE user_id=?", (uid,))
+        intro_titles = form.getlist("intro_title")
+        intro_contents = form.getlist("intro_content")
+        for i in range(len(intro_titles)):
+            title = intro_titles[i].strip()
+            content = intro_contents[i].strip() if i < len(intro_contents) else ""
+            if not title and not content:
+                continue
+            conn.execute(
+                """INSERT INTO self_intro_items
+                   (user_id, sort_order, title, content)
+                   VALUES (?,?,?,?)""",
+                (uid, i, title, content[:1000]),
+            )
+
+        # seeker_profiles
+        params = (
+            disability_type_id, severity, gender, birth_year, region_id,
+            education_level, career_years,
+            desired_job, work_pref,
+            mobility_type, commute_max_minutes,
+            communication_pref, assistive_tech,
+            daily_work_hours, preferred_time, rest_frequency,
+            accommodation_needs, resume_path, consent_sensitive, disability_visibility,
+        )
+        if existing:
+            conn.execute("""UPDATE seeker_profiles SET
+                disability_type_id=?, severity=?, gender=?, birth_year=?, region_id=?,
+                education_level=?, career_years=?,
+                desired_job=?, work_pref=?,
+                mobility_type=?, commute_max_minutes=?,
+                communication_pref=?, assistive_tech=?,
+                daily_work_hours=?, preferred_time=?, rest_frequency=?,
+                accommodation_needs=?, resume_path=?, consent_sensitive=?, disability_visibility=?,
+                consented_at=datetime('now','localtime'),
+                updated_at=datetime('now','localtime')
+                WHERE user_id=?""",
+                params + (uid,))
+        else:
+            conn.execute("""INSERT INTO seeker_profiles
+                (user_id, disability_type_id, severity, gender, birth_year, region_id,
+                 education_level, career_years,
+                 desired_job, work_pref,
+                 mobility_type, commute_max_minutes,
+                 communication_pref, assistive_tech,
+                 daily_work_hours, preferred_time, rest_frequency,
+                 accommodation_needs, resume_path, consent_sensitive, disability_visibility, consented_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))""",
+                (uid,) + params)
+
         conn.commit()
     finally:
         conn.close()
@@ -168,16 +400,16 @@ async def profile_save(request: Request, resume: Optional[UploadFile] = File(Non
 @router.get("/jobs", response_class=HTMLResponse)
 async def job_search(
     request: Request,
-    q: Optional[str] = Query(None),
-    region_id: Optional[int] = Query(None),
-    sido: Optional[str] = Query(None),
-    employment_type: Optional[str] = Query(None),
-    remote: Optional[str] = Query(None),
-    category: Optional[str] = Query(None),
-    max_hours: Optional[str] = Query(None),
-    accommodation: Optional[str] = Query(None),
-    disability_type: Optional[str] = Query(None),
-    severity: Optional[str] = Query(None),
+    q: str = Query(None),
+    region_id: int = Query(None),
+    sido: str = Query(None),
+    employment_type: str = Query(None),
+    remote: str = Query(None),
+    category: str = Query(None),
+    max_hours: str = Query(None),
+    accommodation: str = Query(None),
+    disability_type: str = Query(None),
+    severity: str = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "seeker")
@@ -343,7 +575,6 @@ async def apply_form(request: Request, job_id: int):
         disability_name = disability_type["name"] if disability_type else ""
         resume_filename = ""
         if profile["resume_path"]:
-            import os
             resume_filename = os.path.basename(profile["resume_path"])
     finally:
         conn.close()
@@ -398,6 +629,7 @@ async def apply_submit(
                 )
             conn.commit()
         except Exception:
+            log.exception("지원서 제출 실패: job_id=%s user_id=%s", job_id, user["user_id"])
             conn.rollback()
             return RedirectResponse(url=f"/apply/{job_id}?error=duplicate", status_code=303)
     finally:

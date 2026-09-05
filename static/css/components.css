@@ -552,7 +552,7 @@ a.stat-card-link:hover .stat-card {
     font-size: 0.95rem;
 }
 
-/* 프로필 폼 */
+/* 프로필 양식 */
 .form-section {
     background: #fff;
     border-radius: 12px;
@@ -608,4 +608,9 @@ a.stat-card-link:hover .stat-card {
 }
 .modal-body {
     padding: 20px 30px 30px;
+}
+
+/* 자기소개 */
+.intro-title-input {
+    max-width: 300px;
 }
