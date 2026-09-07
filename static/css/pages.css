@@ -94,3 +94,51 @@
 .fit-dot.fit-mid { background: #fff3cd; }
 .fit-dot.fit-low { background: #e9ecef; }
 .fit-notes { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #555; }
+
+/* 이력서 상세 */
+.resume-detail { max-width: 800px; margin: 0 auto; }
+.resume-detail .profile-card { page-break-inside: avoid; }
+.resume-header { display: flex; gap: 24px; align-items: flex-start; }
+.resume-header-photo {
+    width: 120px; height: 160px; border-radius: 8px;
+    overflow: hidden; flex-shrink: 0; background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #eee;
+}
+.resume-header-photo img { width: 100%; height: 100%; object-fit: cover; }
+.resume-header-photo .no-photo { color: #ccc; font-size: 2.5rem; }
+.resume-header-info { flex: 1; }
+.resume-header-name {
+    font-size: 1.5rem; font-weight: 700; color: var(--dark-blue); margin-bottom: 12px;
+}
+.resume-header-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.95rem; color: #555; }
+.resume-header-meta i { color: var(--primary-blue); width: 18px; text-align: center; margin-right: 4px; }
+.resume-header-summary { margin: 12px 0 0; font-size: 0.95rem; color: #555; }
+.resume-section-title {
+    font-weight: 700; font-size: 1rem; color: var(--dark-blue);
+    padding: 12px 24px; border-bottom: 1px solid #f0f0f0;
+    background: var(--gray-bg); border-radius: 12px 12px 0 0;
+    display: flex; align-items: center; gap: 10px;
+}
+.resume-section-title i { color: var(--primary-blue); }
+.resume-section-body { padding: 20px 24px; }
+.resume-item { padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+.resume-item:last-child { border-bottom: none; }
+.resume-item-title { font-weight: 600; color: var(--dark-blue); margin-bottom: 4px; }
+.resume-item-sub { font-size: 0.9rem; color: #666; }
+.resume-item-desc { font-size: 0.9rem; color: #555; margin-top: 6px; white-space: pre-line; }
+.resume-field { display: flex; padding: 6px 0; }
+.resume-field-label { flex: 0 0 120px; font-weight: 600; color: #555; font-size: 0.95rem; }
+.resume-field-value { flex: 1; font-size: 0.95rem; }
+.intro-block { margin-bottom: 20px; }
+.intro-block:last-child { margin-bottom: 0; }
+.intro-block-title { font-weight: 600; color: var(--dark-blue); margin-bottom: 8px; }
+.intro-block-content { font-size: 0.95rem; line-height: 1.7; white-space: pre-line; color: #333; }
+
+@media print {
+    .sidebar, .topbar, .page-header .btn, .no-print { display: none !important; }
+    .main-wrap { margin-left: 0 !important; }
+    .content-area { padding: 0 !important; }
+    .resume-detail { max-width: 100%; }
+    .profile-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+}

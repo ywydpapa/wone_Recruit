@@ -138,7 +138,7 @@
     padding: 8px 0;
 }
 .sidebar-section {
-    font-size: 0.68rem;
+    font-size: 0.73rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: rgba(255,255,255,0.6);
@@ -151,7 +151,7 @@
     padding: 9px 20px;
     color: rgba(255,255,255,0.7);
     text-decoration: none;
-    font-size: 0.88rem;
+    font-size: 0.93rem;
     font-weight: 500;
     transition: background 0.15s, color 0.15s;
     gap: 10px;
@@ -436,12 +436,6 @@ button.topbar-icon { background: none; border: none; padding: 0; }
     }
     .job-card-header h3 {
         padding-right: 32px;
-    }
-    .list-section .d-flex.gap-2.mb-2 {
-        flex-wrap: wrap;
-    }
-    .list-section .d-flex.gap-2.mb-2 input.form-control-lg {
-        flex: 1 1 100%;
     }
     .list-section {
         padding: 0 0 30px;

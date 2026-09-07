@@ -15,6 +15,8 @@ def init():
     for t in ("bookmarks", "notifications", "seeker_certifications",
               "education_history", "career_history", "language_skills",
               "awards_activities", "portfolio_links", "self_intro_items", "self_intro_presets",
+              "resume_educations", "resume_careers", "resume_certifications", "resume_languages",
+              "resume_awards", "resume_portfolios", "resume_intros", "resumes",
               "job_categories", "access_log", "placements", "status_history", "candidacies",
               "job_postings", "seeker_profiles", "companies",
               "regions", "levy_rates", "disability_types", "users",
@@ -54,6 +56,7 @@ def init():
         severity TEXT NOT NULL DEFAULT '경증',
         gender TEXT NOT NULL DEFAULT '',
         birth_year INTEGER,
+        birth_date TEXT NOT NULL DEFAULT '',
         region_id INTEGER,
         education_level TEXT NOT NULL DEFAULT '',
         school_name TEXT NOT NULL DEFAULT '',
@@ -173,6 +176,104 @@ def init():
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT DEFAULT (datetime('now','localtime'))
     );
+    CREATE TABLE IF NOT EXISTS resumes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL DEFAULT '기본 이력서',
+        is_default INTEGER NOT NULL DEFAULT 0,
+        desired_job TEXT NOT NULL DEFAULT '',
+        work_pref TEXT NOT NULL DEFAULT '무관',
+        mobility_type TEXT NOT NULL DEFAULT '',
+        commute_max_minutes INTEGER,
+        daily_work_hours INTEGER NOT NULL DEFAULT 8,
+        preferred_time TEXT NOT NULL DEFAULT '풀타임',
+        rest_frequency TEXT NOT NULL DEFAULT '불필요',
+        accommodation_needs TEXT NOT NULL DEFAULT '[]',
+        experience_summary TEXT NOT NULL DEFAULT '',
+        resume_path TEXT NOT NULL DEFAULT '',
+        photo_path TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_resumes_user ON resumes(user_id);
+    CREATE TABLE IF NOT EXISTS resume_educations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        education_level TEXT NOT NULL DEFAULT '',
+        school_name TEXT NOT NULL DEFAULT '',
+        major TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        graduation_status TEXT NOT NULL DEFAULT '',
+        gpa TEXT NOT NULL DEFAULT '',
+        gpa_scale TEXT NOT NULL DEFAULT '',
+        is_transfer INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_edu ON resume_educations(resume_id);
+    CREATE TABLE IF NOT EXISTS resume_careers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        company_name TEXT NOT NULL DEFAULT '',
+        department TEXT NOT NULL DEFAULT '',
+        position TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        is_current INTEGER NOT NULL DEFAULT 0,
+        employment_type TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_career ON resume_careers(resume_id);
+    CREATE TABLE IF NOT EXISTS resume_certifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        cert_name TEXT NOT NULL,
+        cert_date TEXT NOT NULL DEFAULT '',
+        issuing_org TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_cert ON resume_certifications(resume_id);
+    CREATE TABLE IF NOT EXISTS resume_languages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        language TEXT NOT NULL DEFAULT '',
+        test_name TEXT NOT NULL DEFAULT '',
+        score TEXT NOT NULL DEFAULT '',
+        level TEXT NOT NULL DEFAULT '',
+        test_date TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_lang ON resume_languages(resume_id);
+    CREATE TABLE IF NOT EXISTS resume_awards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        category TEXT NOT NULL DEFAULT '',
+        title TEXT NOT NULL DEFAULT '',
+        organizer TEXT NOT NULL DEFAULT '',
+        activity_date TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_award ON resume_awards(resume_id);
+    CREATE TABLE IF NOT EXISTS resume_portfolios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        link_type TEXT NOT NULL DEFAULT '',
+        url TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_port ON resume_portfolios(resume_id);
+    CREATE TABLE IF NOT EXISTS resume_intros (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        title TEXT NOT NULL DEFAULT '',
+        content TEXT NOT NULL DEFAULT '',
+        char_limit INTEGER NOT NULL DEFAULT 1000
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_intro ON resume_intros(resume_id);
     CREATE TABLE IF NOT EXISTS companies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER UNIQUE NOT NULL,
@@ -551,7 +652,7 @@ def init():
         for r in conn.execute("SELECT id, name FROM disability_types").fetchall()
     }
     seeker_profiles = [
-        (uid["seeker1"], dt["시각"], "중증", "여", 1996,
+        (uid["seeker1"], dt["시각"], "중증", "여", 2000, "2000-01-15",
          _region_lookup.get(("부산광역시", "해운대구")),
          "고졸", "", "", 1, "", "", "꼼꼼한 문서 작업이 강점입니다. 스크린리더 사용에 능숙합니다.",
          "사무보조", "재택",
@@ -560,7 +661,7 @@ def init():
          json.dumps(["스크린리더"], ensure_ascii=False),
          6, "오전", "2시간마다",
          json.dumps(["점자자료", "재택근무", "보조기기지원"], ensure_ascii=False)),
-        (uid["seeker2"], dt["지체"], "경증", "남", 1993,
+        (uid["seeker2"], dt["지체"], "경증", "남", 1998, "1998-07-22",
          _region_lookup.get(("서울특별시", "강남구")),
          "대졸", "한국대학교", "컴퓨터공학", 3, "테크컴퍼니", "프론트엔드 개발자",
          "웹 접근성 마크업 경험 3년차 개발자입니다.",
@@ -574,7 +675,7 @@ def init():
     for p in seeker_profiles:
         conn.execute(
             """INSERT OR IGNORE INTO seeker_profiles
-               (user_id, disability_type_id, severity, gender, birth_year, region_id,
+               (user_id, disability_type_id, severity, gender, birth_year, birth_date, region_id,
                 education_level, school_name, major, career_years,
                 recent_company, recent_job_title, experience_summary,
                 desired_job, work_pref,
@@ -583,7 +684,7 @@ def init():
                 daily_work_hours, preferred_time, rest_frequency,
                 accommodation_needs,
                 consent_sensitive, consented_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,datetime('now','localtime'))""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,datetime('now','localtime'))""",
             p,
         )
 

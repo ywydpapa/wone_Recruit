@@ -1,4 +1,5 @@
 /* 폼 */
+.gpa-scale-select { max-width: 100px; }
 .form-label {
     font-weight: 600;
 }
@@ -613,4 +614,133 @@ a.stat-card-link:hover .stat-card {
 /* 자기소개 */
 .intro-title-input {
     max-width: 300px;
+}
+
+/* 이력서 증명사진 */
+.resume-photo-wrap {
+    flex-shrink: 0;
+    width: 120px;
+    text-align: center;
+}
+.resume-photo-preview {
+    width: 120px;
+    height: 160px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    overflow: hidden;
+    color: #ccc;
+    font-size: 2.5rem;
+}
+.resume-photo-preview:has(img) {
+    cursor: pointer;
+    position: relative;
+}
+.resume-photo-preview:has(img)::after {
+    content: '\f044';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 6px;
+}
+.resume-photo-preview:has(img):hover::after {
+    opacity: 1;
+}
+.resume-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 사진 크롭 */
+.crop-container {
+    max-height: 400px;
+    background: #111;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.crop-container img {
+    display: block;
+    max-width: 100%;
+}
+.crop-zoom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 0 8px;
+}
+.crop-zoom-icon {
+    color: #888;
+    font-size: 0.85rem;
+}
+.crop-zoom-slider {
+    flex: 1;
+    accent-color: var(--primary-blue);
+}
+.crop-ratio-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+.crop-ratio-btn {
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #555;
+}
+.crop-ratio-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+.crop-ratio-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: #fff;
+}
+.crop-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.crop-ctrl-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #555;
+    white-space: nowrap;
+}
+.crop-ctrl-btn i {
+    margin-right: 4px;
+}
+.crop-ctrl-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+.crop-size-info {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: #666;
 }

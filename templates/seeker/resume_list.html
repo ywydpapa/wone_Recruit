@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}이력서 관리 | WONE Recruit{% endblock %}
+{% block content %}
+
+{% set err = request.query_params.get('error') %}
+{% set suc = request.query_params.get('success') %}
+
+{% if err == 'default' %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    기본 이력서는 삭제할 수 없습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif suc == 'deleted' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    이력서가 삭제되었습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif suc == 'default' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    기본 이력서가 변경되었습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2><i class="fas fa-file-alt me-2"></i>이력서 관리</h2>
+    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newResumeModal">
+        <i class="fas fa-plus me-1"></i>새 이력서
+    </button>
+</div>
+
+{% if resumes %}
+    {% for r in resumes %}
+    {% set counts = item_counts.get(r.id, {}) %}
+    <div class="content-card mb-3">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                {% if r.is_default %}
+                <span class="badge bg-primary mb-1">기본 이력서</span>
+                {% endif %}
+                <h5 class="fw-bold mb-1">{{ r.name }}</h5>
+                <div class="text-muted small mb-1">
+                    {% if r.desired_job %}희망직종: {{ r.desired_job }}{% endif %}
+                    {% if r.desired_job and r.work_pref %}&nbsp;|&nbsp;{% endif %}
+                    {% if r.work_pref %}근무형태: {{ r.work_pref }}{% endif %}
+                </div>
+                {% if item_summaries.get(r.id) %}
+                <div class="small mb-1">
+                    <span class="text-secondary">{{ item_summaries[r.id] }}</span>
+                </div>
+                {% endif %}
+                <div class="text-muted small">최종 수정: {{ updated_dates.get(r.id, '-') }}</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/resumes/{{ r.id }}/edit" class="btn btn-sm btn-outline-secondary">수정</a>
+
+                <form method="post" action="/resumes/new">
+                    <input type="hidden" name="copy_from" value="{{ r.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">복사</button>
+                </form>
+
+                {% if not r.is_default %}
+                <form method="post" action="/resumes/{{ r.id }}/default">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">기본설정</button>
+                </form>
+                {% endif %}
+
+                {% if not r.is_default %}
+                <form method="post" action="/resumes/{{ r.id }}/delete"
+                      onsubmit="return confirm('이력서를 삭제하시겠습니까?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="content-card text-center py-5">
+    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+    <p class="text-muted mb-3">아직 작성한 이력서가 없습니다.</p>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newResumeModal">
+        <i class="fas fa-plus me-1"></i>첫 이력서 작성하기
+    </button>
+</div>
+{% endif %}
+
+<div class="modal fade" id="newResumeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/resumes/new">
+                <div class="modal-header">
+                    <h5 class="modal-title">새 이력서 작성</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resume_name" class="form-label fw-semibold">이력서 이름</label>
+                        <input type="text" class="form-control" id="resume_name" name="name"
+                               placeholder="예: 하이닉스용, 기본 이력서">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">시작 방법</label>
+                        <select class="form-select" name="copy_from">
+                            <option value="">빈 이력서로 시작</option>
+                            {% for r in resumes %}
+                            <option value="{{ r.id }}">{{ r.name }}에서 복사</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-1"></i>작성 시작</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -73,6 +73,9 @@
         <a href="/profile" class="sidebar-link{% if request.url.path == '/profile' %} active{% endif %}">
             <i class="fas fa-id-card"></i><span>내 프로필</span>
         </a>
+        <a href="/resumes" class="sidebar-link{% if '/resumes' in request.url.path %} active{% endif %}">
+            <i class="fas fa-file-alt"></i><span>이력서 관리</span>
+        </a>
         <a href="/profile/views" class="sidebar-link{% if request.url.path == '/profile/views' %} active{% endif %}">
             <i class="fas fa-eye"></i><span>열람 현황</span>
         </a>
@@ -156,7 +159,7 @@
             </a>
             <div class="dropdown">
                 <button type="button" class="topbar-profile" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ user_name }} 계정 메뉴">
-                    <img src="https://ui-avatars.com/api/?name={{ user_name|replace(' ', '+') }}&background=eef4fb&color=0056b3&size=32" alt="{{ user_name }} 프로필 사진">
+                    <img src="https://ui-avatars.com/api/?name={{ user_name|replace(' ', '+') }}&background=random&size=32" alt="{{ user_name }} 프로필 사진">
                     <span class="d-none d-md-inline ms-2">{{ user_name }}</span>
                     <i class="fas fa-chevron-down ms-1 small" aria-hidden="true"></i>
                 </button>
@@ -264,6 +267,9 @@
     if (window.innerWidth <= 768) {
         body.classList.remove('sidebar-hidden');
     }
+
+    var act = document.querySelector('.sidebar-link.active');
+    if (act) act.scrollIntoView({block:'nearest'});
 })();
 </script>
 <script>
@@ -281,6 +287,40 @@
         })
         .catch(function(){});
 })();
+</script>
+<script>
+function loadSidoList(selectId, selected) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return;
+    fetch('/api/regions')
+        .then(function(r) { return r.json(); })
+        .then(function(list) {
+            list.forEach(function(sido) {
+                var opt = document.createElement('option');
+                opt.value = sido;
+                opt.textContent = sido;
+                if (sido === selected) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        });
+}
+function loadSigungu(sido, selectId, selected) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- 선택 --</option>';
+    if (!sido) return;
+    fetch('/api/regions?sido=' + encodeURIComponent(sido))
+        .then(function(r) { return r.json(); })
+        .then(function(list) {
+            list.forEach(function(item) {
+                var opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.sigungu;
+                if (item.id === selected || item.id === Number(selected)) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        });
+}
 </script>
 {% block scripts %}{% endblock %}
 </body>

@@ -309,6 +309,119 @@ def _ensure_db():
                 created_at TEXT DEFAULT (datetime('now','localtime'))
             );
         """,
+        "resumes": """
+            CREATE TABLE IF NOT EXISTS resumes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL DEFAULT '기본 이력서',
+                is_default INTEGER NOT NULL DEFAULT 0,
+                desired_job TEXT NOT NULL DEFAULT '',
+                work_pref TEXT NOT NULL DEFAULT '무관',
+                mobility_type TEXT NOT NULL DEFAULT '',
+                commute_max_minutes INTEGER,
+                daily_work_hours INTEGER NOT NULL DEFAULT 8,
+                preferred_time TEXT NOT NULL DEFAULT '풀타임',
+                rest_frequency TEXT NOT NULL DEFAULT '불필요',
+                accommodation_needs TEXT NOT NULL DEFAULT '[]',
+                experience_summary TEXT NOT NULL DEFAULT '',
+                resume_path TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime')),
+                updated_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_resumes_user ON resumes(user_id);
+        """,
+        "resume_educations": """
+            CREATE TABLE IF NOT EXISTS resume_educations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                education_level TEXT NOT NULL DEFAULT '',
+                school_name TEXT NOT NULL DEFAULT '',
+                major TEXT NOT NULL DEFAULT '',
+                start_date TEXT NOT NULL DEFAULT '',
+                end_date TEXT NOT NULL DEFAULT '',
+                graduation_status TEXT NOT NULL DEFAULT '',
+                gpa TEXT NOT NULL DEFAULT '',
+                gpa_scale TEXT NOT NULL DEFAULT '',
+                is_transfer INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_edu ON resume_educations(resume_id);
+        """,
+        "resume_careers": """
+            CREATE TABLE IF NOT EXISTS resume_careers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                company_name TEXT NOT NULL DEFAULT '',
+                department TEXT NOT NULL DEFAULT '',
+                position TEXT NOT NULL DEFAULT '',
+                start_date TEXT NOT NULL DEFAULT '',
+                end_date TEXT NOT NULL DEFAULT '',
+                is_current INTEGER NOT NULL DEFAULT 0,
+                employment_type TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_career ON resume_careers(resume_id);
+        """,
+        "resume_certifications": """
+            CREATE TABLE IF NOT EXISTS resume_certifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                cert_name TEXT NOT NULL,
+                cert_date TEXT NOT NULL DEFAULT '',
+                issuing_org TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_cert ON resume_certifications(resume_id);
+        """,
+        "resume_languages": """
+            CREATE TABLE IF NOT EXISTS resume_languages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                language TEXT NOT NULL DEFAULT '',
+                test_name TEXT NOT NULL DEFAULT '',
+                score TEXT NOT NULL DEFAULT '',
+                level TEXT NOT NULL DEFAULT '',
+                test_date TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_lang ON resume_languages(resume_id);
+        """,
+        "resume_awards": """
+            CREATE TABLE IF NOT EXISTS resume_awards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                category TEXT NOT NULL DEFAULT '',
+                title TEXT NOT NULL DEFAULT '',
+                organizer TEXT NOT NULL DEFAULT '',
+                activity_date TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_award ON resume_awards(resume_id);
+        """,
+        "resume_portfolios": """
+            CREATE TABLE IF NOT EXISTS resume_portfolios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                link_type TEXT NOT NULL DEFAULT '',
+                url TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_port ON resume_portfolios(resume_id);
+        """,
+        "resume_intros": """
+            CREATE TABLE IF NOT EXISTS resume_intros (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                title TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL DEFAULT '',
+                char_limit INTEGER NOT NULL DEFAULT 1000
+            );
+            CREATE INDEX IF NOT EXISTS idx_resume_intro ON resume_intros(resume_id);
+        """,
     }
     existing_tables = {
         row[0] for row in conn.execute(
@@ -323,6 +436,10 @@ def _ensure_db():
         ("seeker_profiles", "consent_withdrawn_at", "ALTER TABLE seeker_profiles ADD COLUMN consent_withdrawn_at TEXT"),
         ("seeker_profiles", "photo_path", "ALTER TABLE seeker_profiles ADD COLUMN photo_path TEXT NOT NULL DEFAULT ''"),
         ("seeker_profiles", "disability_visibility", "ALTER TABLE seeker_profiles ADD COLUMN disability_visibility TEXT NOT NULL DEFAULT 'manager_only'"),
+        ("seeker_profiles", "birth_date", "ALTER TABLE seeker_profiles ADD COLUMN birth_date TEXT NOT NULL DEFAULT ''"),
+        ("candidacies", "resume_id", "ALTER TABLE candidacies ADD COLUMN resume_id INTEGER"),
+        ("candidacies", "resume_snapshot", "ALTER TABLE candidacies ADD COLUMN resume_snapshot TEXT NOT NULL DEFAULT ''"),
+        ("resumes", "photo_path", "ALTER TABLE resumes ADD COLUMN photo_path TEXT NOT NULL DEFAULT ''"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:
@@ -408,13 +525,13 @@ app.add_middleware(
 os.makedirs("static/css", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-from routers import auth, dashboard, company, seeker, info, operator
+from routers import auth, dashboard, company, seeker, info, operator, resume, community
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(company.router)
 app.include_router(company.api_router)
 app.include_router(seeker.router)
+app.include_router(resume.router)
 app.include_router(info.router)
 app.include_router(operator.router)
-from routers import community
 app.include_router(community.router)

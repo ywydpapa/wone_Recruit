@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}{{ resume.name }} | WONE Recruit{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2><i class="fas fa-file-alt me-2"></i>{{ resume.name }}</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm no-print" onclick="window.print()"><i class="fas fa-print me-1"></i>인쇄</button>
+        <a href="/resumes/{{ resume.id }}/edit" class="btn btn-primary btn-sm no-print"><i class="fas fa-edit me-1"></i>편집</a>
+        <a href="/resumes" class="btn btn-outline-secondary btn-sm no-print"><i class="fas fa-arrow-left me-1"></i>목록</a>
+    </div>
+</div>
+
+<div class="resume-detail">
+
+    <!-- 인적사항 -->
+    <div class="profile-card mb-3">
+        <div class="resume-section-body">
+            <div class="resume-header">
+                <div class="resume-header-photo">
+                    {% if photo_url %}
+                    <img src="{{ photo_url }}" alt="증명사진">
+                    {% else %}
+                    <i class="fas fa-user no-photo"></i>
+                    {% endif %}
+                </div>
+                <div class="resume-header-info">
+                    <div class="resume-header-name">{{ user.name or user.user_name }}</div>
+                    <div class="resume-header-meta">
+                        {% if birth_display %}
+                        <span><i class="fas fa-birthday-cake"></i>{{ birth_display }}</span>
+                        {% endif %}
+                        {% if profile and profile.gender %}
+                        <span><i class="fas fa-venus-mars"></i>{{ profile.gender }}</span>
+                        {% endif %}
+                        {% if user.phone %}
+                        <span><i class="fas fa-phone"></i>{{ user.phone }}</span>
+                        {% endif %}
+                        {% if region_name %}
+                        <span><i class="fas fa-map-marker-alt"></i>{{ region_name }}</span>
+                        {% endif %}
+                        {% if user.email %}
+                        <span><i class="fas fa-envelope"></i>{{ user.email }}</span>
+                        {% endif %}
+                    </div>
+                    {% if resume.experience_summary %}
+                    <p class="resume-header-summary">{{ resume.experience_summary }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 학력 -->
+    {% if education_list %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-graduation-cap"></i>학력</div>
+        <div class="resume-section-body">
+            {% for edu in education_list %}
+            <div class="resume-item">
+                <div class="resume-item-title">{{ edu.school_name }}{% if edu.major %} ({{ edu.major }}){% endif %}</div>
+                <div class="resume-item-sub">
+                    {{ edu.education_level }}
+                    {% if edu.start_date or edu.end_date %} &middot; {{ edu.start_date }} ~ {{ edu.end_date }}{% endif %}
+                    {% if edu.graduation_status %} &middot; {{ edu.graduation_status }}{% endif %}
+                    {% if edu.gpa %} &middot; 학점 {{ edu.gpa }}{% if edu.gpa_scale %}/{{ edu.gpa_scale }}{% endif %}{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 경력 -->
+    {% if career_list %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-briefcase"></i>경력</div>
+        <div class="resume-section-body">
+            {% for car in career_list %}
+            <div class="resume-item">
+                <div class="resume-item-title">{{ car.company_name }}{% if car.department %} / {{ car.department }}{% endif %}</div>
+                <div class="resume-item-sub">
+                    {% if car.position %}{{ car.position }}{% endif %}
+                    {% if car.employment_type %} &middot; {{ car.employment_type }}{% endif %}
+                    {% if car.start_date %} &middot; {{ car.start_date }} ~ {% if car.is_current %}재직중{% else %}{{ car.end_date }}{% endif %}{% endif %}
+                </div>
+                {% if car.description %}
+                <div class="resume-item-desc">{{ car.description }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 자격증 -->
+    {% if certifications %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-certificate"></i>자격증</div>
+        <div class="resume-section-body">
+            {% for cert in certifications %}
+            <div class="resume-item">
+                <div class="resume-item-title">{{ cert.cert_name }}</div>
+                <div class="resume-item-sub">
+                    {% if cert.issuing_org %}{{ cert.issuing_org }}{% endif %}
+                    {% if cert.cert_date %} &middot; {{ cert.cert_date }}{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 어학 -->
+    {% if language_list %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-language"></i>어학</div>
+        <div class="resume-section-body">
+            {% for lang in language_list %}
+            <div class="resume-item">
+                <div class="resume-item-title">{{ lang.language }}{% if lang.test_name %} - {{ lang.test_name }}{% endif %}</div>
+                <div class="resume-item-sub">
+                    {% if lang.score %}{{ lang.score }}{% endif %}
+                    {% if lang.level %} &middot; {{ lang.level }}{% endif %}
+                    {% if lang.test_date %} &middot; {{ lang.test_date }}{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 수상/활동 -->
+    {% if awards_list %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-trophy"></i>수상/활동</div>
+        <div class="resume-section-body">
+            {% for aw in awards_list %}
+            <div class="resume-item">
+                <div class="resume-item-title">{{ aw.title }}{% if aw.category %} <span class="badge bg-light text-dark">{{ aw.category }}</span>{% endif %}</div>
+                <div class="resume-item-sub">
+                    {% if aw.organizer %}{{ aw.organizer }}{% endif %}
+                    {% if aw.activity_date %} &middot; {{ aw.activity_date }}{% endif %}
+                </div>
+                {% if aw.description %}
+                <div class="resume-item-desc">{{ aw.description }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 포트폴리오 -->
+    {% if portfolio_list %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-link"></i>포트폴리오</div>
+        <div class="resume-section-body">
+            {% for port in portfolio_list %}
+            <div class="resume-item">
+                <div class="resume-item-title">
+                    {% if port.link_type %}<span class="badge bg-light text-dark me-1">{{ port.link_type }}</span>{% endif %}
+                    <a href="{{ port.url }}" target="_blank" rel="noopener">{{ port.url }}</a>
+                </div>
+                {% if port.description %}
+                <div class="resume-item-sub">{{ port.description }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 자기소개서 -->
+    {% if intro_list %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-pen-nib"></i>자기소개서</div>
+        <div class="resume-section-body">
+            {% for intro in intro_list %}
+            <div class="intro-block">
+                <div class="intro-block-title">{{ intro.title }}</div>
+                <div class="intro-block-content">{{ intro.content }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 근무조건 -->
+    {% if resume.desired_job or resume.mobility_type or accommodation_needs %}
+    <div class="profile-card mb-3">
+        <div class="resume-section-title"><i class="fas fa-building"></i>근무 조건</div>
+        <div class="resume-section-body">
+            {% if resume.desired_job %}
+            <div class="resume-field">
+                <div class="resume-field-label">희망 직종</div>
+                <div class="resume-field-value">{{ resume.desired_job }}</div>
+            </div>
+            {% endif %}
+            {% if resume.work_pref and resume.work_pref != '무관' %}
+            <div class="resume-field">
+                <div class="resume-field-label">근무 형태</div>
+                <div class="resume-field-value">{{ resume.work_pref }}</div>
+            </div>
+            {% endif %}
+            {% if resume.mobility_type %}
+            <div class="resume-field">
+                <div class="resume-field-label">이동수단</div>
+                <div class="resume-field-value">{{ resume.mobility_type }}</div>
+            </div>
+            {% endif %}
+            {% if resume.commute_max_minutes %}
+            <div class="resume-field">
+                <div class="resume-field-label">최대 통근</div>
+                <div class="resume-field-value">
+                    {% if resume.commute_max_minutes < 60 %}{{ resume.commute_max_minutes }}분
+                    {% elif resume.commute_max_minutes % 60 == 0 %}{{ resume.commute_max_minutes // 60 }}시간
+                    {% else %}{{ resume.commute_max_minutes // 60 }}시간 {{ resume.commute_max_minutes % 60 }}분{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% if resume.daily_work_hours and resume.daily_work_hours != 8 %}
+            <div class="resume-field">
+                <div class="resume-field-label">근무 시간</div>
+                <div class="resume-field-value">{{ resume.daily_work_hours }}시간</div>
+            </div>
+            {% endif %}
+            {% if resume.preferred_time and resume.preferred_time != '풀타임' %}
+            <div class="resume-field">
+                <div class="resume-field-label">선호 시간대</div>
+                <div class="resume-field-value">{{ resume.preferred_time }}</div>
+            </div>
+            {% endif %}
+            {% if resume.rest_frequency and resume.rest_frequency != '불필요' %}
+            <div class="resume-field">
+                <div class="resume-field-label">휴식 빈도</div>
+                <div class="resume-field-value">{{ resume.rest_frequency }}</div>
+            </div>
+            {% endif %}
+            {% if accommodation_needs %}
+            <div class="resume-field">
+                <div class="resume-field-label">편의 지원</div>
+                <div class="resume-field-value">{{ accommodation_needs | join(', ') }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

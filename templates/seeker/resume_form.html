@@ -1,0 +1,985 @@
+{% extends "base.html" %}
+{% block title %}이력서 편집 | WONE Recruit{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2>이력서 편집</h2>
+    <a href="/resumes" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록으로</a>
+</div>
+
+{% if success == '1' %}
+<div class="alert alert-success" role="alert">
+    <i class="fas fa-check-circle me-2"></i>이력서가 저장되었습니다.
+</div>
+{% endif %}
+
+{% if error == 'notfound' %}
+<div class="alert alert-danger" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>이력서를 찾을 수 없습니다.
+</div>
+{% endif %}
+
+<div class="section-add mb-4">
+    <label class="form-label fw-semibold">항목 추가</label>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-education" {% if education_list %}data-has-data="1"{% endif %}>학력</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-career" {% if career_list %}data-has-data="1"{% endif %}>경력</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-cert" {% if certifications %}data-has-data="1"{% endif %}>자격증</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-lang" {% if language_list %}data-has-data="1"{% endif %}>어학</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-award" {% if awards_list %}data-has-data="1"{% endif %}>수상/활동</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-portfolio" {% if portfolio_list %}data-has-data="1"{% endif %}>포트폴리오</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-intro" {% if intro_list %}data-has-data="1"{% endif %}>자기소개서</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-resume" {% if resume.resume_path %}data-has-data="1"{% endif %}>파일첨부</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm section-toggle-btn" data-target="sec-work" {% if resume.desired_job %}data-has-data="1"{% endif %}>근무조건</button>
+    </div>
+</div>
+
+<form method="post" action="/resumes/{{ resume.id }}" enctype="multipart/form-data" novalidate>
+
+    <!-- 이력서 기본 정보 -->
+    <fieldset class="form-section" id="sec-name">
+        <legend><i class="fas fa-tag"></i>이력서 정보</legend>
+        <div class="form-section-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="resume_name" class="form-label fw-semibold">이력서 이름</label>
+                    <input type="text" class="form-control" id="resume_name" name="name" value="{{ resume.name }}" placeholder="예: 하이닉스용 이력서">
+                </div>
+                <div class="col-md-6">
+                    <label for="experience_summary" class="form-label fw-semibold">한줄 소개</label>
+                    <input type="text" class="form-control" id="experience_summary" name="experience_summary" value="{{ resume.experience_summary or '' }}" placeholder="예: 3년차 사무보조 경력">
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- 기본 인적사항 -->
+    <fieldset class="form-section" id="sec-basic">
+        <legend><i class="fas fa-user"></i>기본 정보</legend>
+        <div class="form-section-body">
+            <div class="d-flex gap-4 mb-3">
+                <div class="resume-photo-wrap">
+                    <div class="resume-photo-preview" id="photoPreview">
+                        {% if resume_photo_url %}
+                        <img src="{{ resume_photo_url }}" alt="증명사진">
+                        {% else %}
+                        <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" class="d-none">
+                    <input type="hidden" id="photoDelete" name="photo_delete" value="">
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2 w-100" id="photoSelectBtn">{{ photo_btn_label }}</button>
+                    {% if resume_photo_url %}
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-1 w-100" id="photoDeleteBtn">삭제</button>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">이름</label>
+                            <input type="text" class="form-control" value="{{ user.name or user.user_name }}" disabled>
+                            <div class="form-text">본인인증 완료</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">생년월일</label>
+                            <input type="text" class="form-control" value="{{ birth_display }}" disabled>
+                            <div class="form-text">본인인증 완료</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="phone" class="form-label fw-semibold">연락처</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}" placeholder="010-0000-0000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">성별</label>
+                            <input type="text" class="form-control" value="{{ profile.gender if profile and profile.gender else '' }}" disabled>
+                            <div class="form-text">본인인증 완료</div>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="region_sido" class="form-label fw-semibold">시/도</label>
+                            <select id="region_sido" class="form-select" onchange="loadSigungu(this.value,'region_id',{{ (profile.region_id if profile else '')|tojson }})">
+                                <option value="">-- 선택 --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="region_id" class="form-label fw-semibold">구/군</label>
+                            <select id="region_id" name="region_id" class="form-select">
+                                <option value="">-- 시/도를 먼저 선택 --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                loadSidoList('region_sido', {{ selected_sido|tojson }});
+                {% if selected_sido %}
+                loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (profile.region_id if profile else '')|tojson }});
+                {% endif %}
+            });
+            </script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+            <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                var photoInput = document.getElementById('photo');
+                var photoPreview = document.getElementById('photoPreview');
+                var photoSelectBtn = document.getElementById('photoSelectBtn');
+                var photoDeleteBtn = document.getElementById('photoDeleteBtn');
+                var photoDeleteFlag = document.getElementById('photoDelete');
+                var cropModal = null;
+                var cropper = null;
+                var baseRatio = 1;
+                var zoomRange = document.getElementById('cropZoomRange');
+
+                photoSelectBtn.addEventListener('click', function(){ photoInput.click(); });
+
+                photoInput.addEventListener('change', function(){
+                    var file = this.files[0];
+                    if (!file) return;
+                    var srcUrl = URL.createObjectURL(file);
+
+                    var tmp = new Image();
+                    tmp.onload = function(){
+                        var c = document.createElement('canvas');
+                        c.width = 480; c.height = 640;
+                        var ctx = c.getContext('2d');
+                        var scale = Math.max(480 / tmp.width, 640 / tmp.height);
+                        var sw = 480 / scale, sh = 640 / scale;
+                        var sx = (tmp.width - sw) / 2, sy = (tmp.height - sh) / 2;
+                        ctx.drawImage(tmp, sx, sy, sw, sh, 0, 0, 480, 640);
+                        c.toBlob(function(blob){
+                            var dt = new DataTransfer();
+                            dt.items.add(new File([blob], 'photo.jpg', { type: 'image/jpeg' }));
+                            photoInput.files = dt.files;
+                            setPhotoPreview(blob, srcUrl);
+                        }, 'image/jpeg', 0.85);
+                    };
+                    tmp.src = srcUrl;
+                });
+
+                var lastSrcUrl = null;
+
+                function setPhotoPreview(blob, srcUrl) {
+                    lastSrcUrl = srcUrl;
+                    photoPreview.innerHTML = '<img src="' + URL.createObjectURL(blob) + '" alt="증명사진">';
+                    photoSelectBtn.textContent = '변경';
+                    photoDeleteFlag.value = '';
+                    if (!photoDeleteBtn) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-danger btn-sm mt-1 w-100';
+                        btn.id = 'photoDeleteBtn';
+                        btn.textContent = '삭제';
+                        photoSelectBtn.after(btn);
+                        photoDeleteBtn = btn;
+                        photoDeleteBtn.addEventListener('click', removePhoto);
+                    }
+                }
+
+                /* 미리보기 클릭 시 편집 모달 */
+                photoPreview.addEventListener('click', function(){
+                    if (!lastSrcUrl) return;
+                    document.getElementById('cropImg').src = lastSrcUrl;
+                    if (!cropModal) cropModal = new bootstrap.Modal(document.getElementById('photoCropModal'));
+                    cropModal.show();
+                });
+
+                /* 모달 열릴 때 Cropper 초기화 */
+                document.getElementById('photoCropModal').addEventListener('shown.bs.modal', function(){
+                    var img = document.getElementById('cropImg');
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(img, {
+                        aspectRatio: 3 / 4,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        minContainerWidth: 270,
+                        minContainerHeight: 360,
+                        ready: function(){
+                            var d = cropper.getCanvasData();
+                            baseRatio = d.width / d.naturalWidth;
+                            zoomRange.value = 0;
+                            updateSizeInfo();
+                        },
+                        zoom: function(e){
+                            var v = Math.round((e.detail.ratio / baseRatio - 1) * 100);
+                            zoomRange.value = Math.max(0, Math.min(200, v));
+                            updateSizeInfo();
+                        },
+                        cropend: function(){ updateSizeInfo(); }
+                    });
+                });
+
+                /* 모달 닫힐 때 정리 */
+                document.getElementById('photoCropModal').addEventListener('hidden.bs.modal', function(){
+                    if (cropper) { cropper.destroy(); cropper = null; }
+                    if (!photoPreview.querySelector('img')) photoInput.value = '';
+                });
+
+                document.getElementById('cropRotateLeft').addEventListener('click', function(){
+                    if (cropper) { cropper.rotate(-90); updateSizeInfo(); }
+                });
+                document.getElementById('cropRotateRight').addEventListener('click', function(){
+                    if (cropper) { cropper.rotate(90); updateSizeInfo(); }
+                });
+
+                zoomRange.addEventListener('input', function(){
+                    if (!cropper) return;
+                    var ratio = baseRatio * (1 + parseInt(this.value) / 100);
+                    cropper.zoomTo(ratio);
+                    updateSizeInfo();
+                });
+
+                document.getElementById('cropReset').addEventListener('click', function(){
+                    if (!cropper) return;
+                    cropper.reset();
+                    zoomRange.value = 0;
+                    var d = cropper.getCanvasData();
+                    baseRatio = d.width / d.naturalWidth;
+                    updateSizeInfo();
+                });
+
+                /* 비율 프리셋 */
+                document.querySelectorAll('.crop-ratio-btn').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        if (!cropper) return;
+                        document.querySelectorAll('.crop-ratio-btn').forEach(function(b){ b.classList.remove('active'); });
+                        btn.classList.add('active');
+                        var r = parseFloat(btn.dataset.ratio);
+                        cropper.setAspectRatio(r || NaN);
+                        updateSizeInfo();
+                    });
+                });
+
+                function getCropSize() {
+                    if (!cropper) return { maxHeight: 640 };
+                    var d = cropper.getCropBoxData();
+                    var r = d.width / d.height;
+                    if (r >= 1) return { maxWidth: 640 };
+                    return { maxHeight: 640 };
+                }
+
+                var sizeTimer = null;
+                function updateSizeInfo() {
+                    clearTimeout(sizeTimer);
+                    sizeTimer = setTimeout(function(){
+                        if (!cropper) return;
+                        var canvas = cropper.getCroppedCanvas(getCropSize());
+                        if (!canvas) return;
+                        canvas.toBlob(function(blob){
+                            var el = document.getElementById('cropSizeInfo');
+                            if (blob && el) el.textContent = '예상 크기: ' + Math.round(blob.size / 1024) + ' KB';
+                        }, 'image/jpeg', 0.85);
+                    }, 300);
+                }
+
+                document.getElementById('cropApplyBtn').addEventListener('click', function(){
+                    if (!cropper) return;
+                    var canvas = cropper.getCroppedCanvas(getCropSize());
+                    if (!canvas) return;
+                    canvas.toBlob(function(blob){
+                        var dt = new DataTransfer();
+                        dt.items.add(new File([blob], 'photo.jpg', { type: 'image/jpeg' }));
+                        photoInput.files = dt.files;
+                        photoPreview.innerHTML = '<img src="' + URL.createObjectURL(blob) + '" alt="증명사진">';
+                        cropModal.hide();
+                    }, 'image/jpeg', 0.85);
+                });
+
+                function removePhoto(){
+                    photoPreview.innerHTML = '<i class="fas fa-user"></i>';
+                    photoInput.value = '';
+                    lastSrcUrl = null;
+                    photoSelectBtn.textContent = '사진 등록';
+                    photoDeleteFlag.value = '1';
+                    if (photoDeleteBtn) { photoDeleteBtn.remove(); photoDeleteBtn = null; }
+                }
+                if (photoDeleteBtn) photoDeleteBtn.addEventListener('click', removePhoto);
+            });
+            </script>
+        </div>
+    </fieldset>
+
+    <!-- 학력 -->
+    <fieldset class="form-section optional-section d-none" id="sec-education">
+        <legend><i class="fas fa-graduation-cap"></i>학력</legend>
+        <div class="form-section-body" id="edu-rows">
+            {% for edu in education_list %}
+            <div class="edu-row border rounded p-3 mb-3 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">학교급</label>
+                        <select class="form-select" name="edu_level">
+                            <option value="">선택</option>
+                            {% for lv in education_levels_detail %}
+                            <option value="{{ lv }}" {% if edu.education_level == lv %}selected{% endif %}>{{ lv }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">학교명</label>
+                        <input type="text" class="form-control" name="edu_school" value="{{ edu.school_name or '' }}" placeholder="학교명">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">전공</label>
+                        <input type="text" class="form-control" name="edu_major" value="{{ edu.major or '' }}" placeholder="전공">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">입학</label>
+                        <input type="month" class="form-control" name="edu_start" value="{{ edu.start_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">졸업(예정)</label>
+                        <input type="month" class="form-control" name="edu_end" value="{{ edu.end_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">졸업상태</label>
+                        <select class="form-select" name="edu_grad_status">
+                            <option value="">선택</option>
+                            {% for gs in graduation_status_list %}
+                            <option value="{{ gs }}" {% if edu.graduation_status == gs %}selected{% endif %}>{{ gs }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 edu-gpa-wrap {% if not edu.gpa %}d-none{% endif %}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">학점</label>
+                                <input type="text" class="form-control" name="edu_gpa" value="{{ edu.gpa or '' }}" placeholder="3.8">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">만점 기준</label>
+                                <select class="form-select gpa-scale-select" name="edu_gpa_scale">
+                                    <option value="">선택</option>
+                                    {% for sc in gpa_scales %}
+                                    <option value="{{ sc }}" {% if edu.gpa_scale == sc %}selected{% endif %}>{{ sc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 {% if edu.gpa %}d-none{% endif %}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm edu-gpa-toggle"><i class="fas fa-plus me-1"></i>학점 추가</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addEduRow()"><i class="fas fa-plus me-1"></i>학력 추가</button>
+    </fieldset>
+
+    <!-- 경력 -->
+    <fieldset class="form-section optional-section d-none" id="sec-career">
+        <legend><i class="fas fa-briefcase"></i>경력</legend>
+        <div class="form-section-body" id="career-rows">
+            {% for car in career_list %}
+            <div class="career-row border rounded p-3 mb-3 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">회사명</label>
+                        <input type="text" class="form-control" name="car_company" value="{{ car.company_name or '' }}" placeholder="회사명">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">부서</label>
+                        <input type="text" class="form-control" name="car_dept" value="{{ car.department or '' }}" placeholder="부서">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">직책/직위</label>
+                        <input type="text" class="form-control" name="car_position" value="{{ car.position or '' }}" placeholder="직책">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">고용형태</label>
+                        <select class="form-select" name="car_emp_type">
+                            <option value="">선택</option>
+                            {% for et in career_employment_types %}
+                            <option value="{{ et }}" {% if car.employment_type == et %}selected{% endif %}>{{ et }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">입사</label>
+                        <input type="month" class="form-control" name="car_start" value="{{ car.start_date or '' }}">
+                    </div>
+                    <div class="col-md-3 car-end-wrap">
+                        <label class="form-label">퇴사</label>
+                        <input type="month" class="form-control" name="car_end" value="{{ car.end_date or '' }}" {% if car.is_current %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end pb-1">
+                        <div class="form-check">
+                            <input class="form-check-input car-current-cb" type="checkbox" name="car_current_{{ loop.index0 }}" id="car_current_{{ loop.index0 }}" value="1" {% if car.is_current %}checked{% endif %}>
+                            <label class="form-check-label" for="car_current_{{ loop.index0 }}">재직중</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">업무 내용</label>
+                        <textarea class="form-control" name="car_desc" rows="2" placeholder="주요 업무를 간략히 작성하세요">{{ car.description or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addCareerRow()"><i class="fas fa-plus me-1"></i>경력 추가</button>
+    </fieldset>
+
+    <!-- 자격증 -->
+    <fieldset class="form-section optional-section d-none" id="sec-cert">
+        <legend><i class="fas fa-certificate"></i>자격증</legend>
+        <div class="form-section-body" id="cert-rows">
+            {% for cert in certifications %}
+            <div class="cert-row border rounded p-3 mb-3 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">자격증명</label>
+                        <input type="text" class="form-control" name="cert_name" value="{{ cert.cert_name or '' }}" placeholder="자격증명">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">발급기관</label>
+                        <input type="text" class="form-control" name="cert_org" value="{{ cert.issuing_org or '' }}" placeholder="발급기관">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">취득일</label>
+                        <input type="month" class="form-control" name="cert_date" value="{{ cert.cert_date or '' }}">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addCertRow()"><i class="fas fa-plus me-1"></i>자격증 추가</button>
+    </fieldset>
+
+    <!-- 어학 -->
+    <fieldset class="form-section optional-section d-none" id="sec-lang">
+        <legend><i class="fas fa-language"></i>어학</legend>
+        <div class="form-section-body" id="lang-rows">
+            {% for lang in language_list %}
+            <div class="lang-row border rounded p-3 mb-3 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">언어</label>
+                        <select class="form-select" name="lang_language">
+                            <option value="">선택</option>
+                            {% for lo in language_options %}
+                            <option value="{{ lo }}" {% if lang.language == lo %}selected{% endif %}>{{ lo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">시험명</label>
+                        <input type="text" class="form-control" name="lang_test" value="{{ lang.test_name or '' }}" placeholder="TOEIC, JLPT 등">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">점수/등급</label>
+                        <input type="text" class="form-control" name="lang_score" value="{{ lang.score or '' }}" placeholder="890">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">회화수준</label>
+                        <select class="form-select" name="lang_level">
+                            <option value="">선택</option>
+                            {% for ll in language_levels %}
+                            <option value="{{ ll }}" {% if lang.level == ll %}selected{% endif %}>{{ ll }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">취득일</label>
+                        <input type="month" class="form-control" name="lang_date" value="{{ lang.test_date or '' }}">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addLangRow()"><i class="fas fa-plus me-1"></i>어학 추가</button>
+    </fieldset>
+
+    <!-- 수상/활동 -->
+    <fieldset class="form-section optional-section d-none" id="sec-award">
+        <legend><i class="fas fa-trophy"></i>수상/활동</legend>
+        <div class="form-section-body" id="award-rows">
+            {% for aw in awards_list %}
+            <div class="award-row border rounded p-3 mb-3 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">구분</label>
+                        <select class="form-select" name="award_category">
+                            <option value="">선택</option>
+                            {% for ac in award_categories %}
+                            <option value="{{ ac }}" {% if aw.category == ac %}selected{% endif %}>{{ ac }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">제목</label>
+                        <input type="text" class="form-control" name="award_title" value="{{ aw.title or '' }}" placeholder="수상명 또는 활동명">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">주최기관</label>
+                        <input type="text" class="form-control" name="award_org" value="{{ aw.organizer or '' }}" placeholder="주최기관">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">날짜</label>
+                        <input type="month" class="form-control" name="award_date" value="{{ aw.activity_date or '' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">설명</label>
+                        <textarea class="form-control" name="award_desc" rows="2" placeholder="간략한 설명">{{ aw.description or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addAwardRow()"><i class="fas fa-plus me-1"></i>항목 추가</button>
+    </fieldset>
+
+    <!-- 포트폴리오 -->
+    <fieldset class="form-section optional-section d-none" id="sec-portfolio">
+        <legend><i class="fas fa-link"></i>포트폴리오</legend>
+        <div class="form-section-body" id="port-rows">
+            {% for port in portfolio_list %}
+            <div class="port-row border rounded p-3 mb-3 position-relative">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">유형</label>
+                        <select class="form-select" name="port_type">
+                            <option value="">선택</option>
+                            {% for pt in portfolio_link_types %}
+                            <option value="{{ pt }}" {% if port.link_type == pt %}selected{% endif %}>{{ pt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">URL</label>
+                        <input type="url" class="form-control" name="port_url" value="{{ port.url or '' }}" placeholder="https://...">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">설명</label>
+                        <input type="text" class="form-control" name="port_desc" value="{{ port.description or '' }}" placeholder="간단한 설명">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addPortRow()"><i class="fas fa-plus me-1"></i>링크 추가</button>
+    </fieldset>
+
+    <!-- 자기소개서 -->
+    <fieldset class="form-section optional-section d-none" id="sec-intro">
+        <legend><i class="fas fa-pen-nib"></i>자기소개서</legend>
+        <div class="form-section-body">
+            {% if intro_presets %}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">자주 쓰는 항목</label>
+                <div class="d-flex flex-wrap gap-2" id="intro-presets">
+                    {% for preset in intro_presets %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm preset-chip"
+                        data-title="{{ preset.title }}"
+                        data-desc="{{ preset.description }}">{{ preset.title }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <div id="intro-rows">
+                {% for intro in intro_list %}
+                <div class="intro-row border rounded p-3 mb-3 position-relative">
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                    <div class="mb-2">
+                        <label class="form-label">항목 제목</label>
+                        <input type="text" class="form-control" name="intro_title" value="{{ intro.title or '' }}" placeholder="예: 지원동기">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">글자수 제한</label>
+                        <input type="number" class="form-control intro-limit-input" name="intro_char_limit" value="{{ intro.char_limit or '' }}" placeholder="0이면 제한 없음" min="0">
+                    </div>
+                    <div>
+                        <label class="form-label">내용</label>
+                        <textarea class="form-control intro-textarea" name="intro_content" rows="6" placeholder="내용을 입력하세요" {% if intro.char_limit %}maxlength="{{ intro.char_limit }}"{% endif %}>{{ intro.content or '' }}</textarea>
+                        <div class="form-text intro-counter text-end"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addIntroRow()"><i class="fas fa-plus me-1"></i>항목 추가</button>
+        </div>
+    </fieldset>
+
+    <!-- 파일 첨부 -->
+    <fieldset class="form-section optional-section d-none" id="sec-resume">
+        <legend><i class="fas fa-file-pdf"></i>이력서 파일</legend>
+        <div class="form-section-body">
+            {% if resume.resume_path %}
+            <div class="mb-3">
+                <span class="text-muted small">현재 파일: </span>
+                <span class="fw-semibold">{{ resume_filename }}</span>
+            </div>
+            {% endif %}
+            <div>
+                <label for="resume_file" class="form-label">파일 업로드 (PDF, 최대 10MB)</label>
+                <input type="file" class="form-control" id="resume_file" name="resume_file" accept=".pdf">
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- 근무 조건 -->
+    <fieldset class="form-section optional-section d-none" id="sec-work">
+        <legend><i class="fas fa-building"></i>근무 조건</legend>
+        <div class="form-section-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="desired_job" class="form-label fw-semibold">희망 직종</label>
+                    <input type="text" class="form-control" id="desired_job" name="desired_job" value="{{ resume.desired_job or '' }}" placeholder="예: 사무보조, 데이터입력">
+                </div>
+                <div class="col-md-6">
+                    <label for="work_pref" class="form-label fw-semibold">근무 형태</label>
+                    <select class="form-select" id="work_pref" name="work_pref">
+                        <option value="무관" {% if not resume.work_pref or resume.work_pref == '무관' %}selected{% endif %}>무관</option>
+                        <option value="정규직" {% if resume.work_pref == '정규직' %}selected{% endif %}>정규직</option>
+                        <option value="계약직" {% if resume.work_pref == '계약직' %}selected{% endif %}>계약직</option>
+                        <option value="파트타임" {% if resume.work_pref == '파트타임' %}selected{% endif %}>파트타임</option>
+                        <option value="재택" {% if resume.work_pref == '재택' %}selected{% endif %}>재택</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label for="mobility_type" class="form-label fw-semibold">이동수단</label>
+                    <select class="form-select" id="mobility_type" name="mobility_type">
+                        <option value="">선택 안 함</option>
+                        {% for mt in mobility_types %}
+                        <option value="{{ mt }}" {% if resume.mobility_type == mt %}selected{% endif %}>{{ mt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="commute_max_minutes" class="form-label fw-semibold">최대 통근 시간 (편도)</label>
+                    <select class="form-select" id="commute_max_minutes" name="commute_max_minutes">
+                        <option value="">선택 안 함</option>
+                        {% for cm in commute_options %}
+                        <option value="{{ cm }}" {% if resume.commute_max_minutes == cm %}selected{% endif %}>
+                            {% if cm < 60 %}{{ cm }}분{% elif cm % 60 == 0 %}{{ cm // 60 }}시간{% else %}{{ cm // 60 }}시간 {{ cm % 60 }}분{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="daily_work_hours" class="form-label fw-semibold">하루 근무 시간</label>
+                    <select class="form-select" id="daily_work_hours" name="daily_work_hours">
+                        {% for h in daily_hours_options %}
+                        <option value="{{ h }}" {% if resume.daily_work_hours == h %}selected{% elif not resume.daily_work_hours and h == 8 %}selected{% endif %}>{{ h }}시간</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="preferred_time" class="form-label fw-semibold">선호 근무 시간대</label>
+                    <select class="form-select" id="preferred_time" name="preferred_time">
+                        {% for pt in preferred_time_options %}
+                        <option value="{{ pt }}" {% if resume.preferred_time == pt %}selected{% elif not resume.preferred_time and pt == '풀타임' %}selected{% endif %}>{{ pt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="rest_frequency" class="form-label fw-semibold">휴식 빈도</label>
+                    <select class="form-select" id="rest_frequency" name="rest_frequency">
+                        {% for rf in rest_frequency_options %}
+                        <option value="{{ rf }}" {% if resume.rest_frequency == rf %}selected{% elif not resume.rest_frequency and rf == '불필요' %}selected{% endif %}>{{ rf }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">필요 편의 지원</label>
+                <div class="row g-2">
+                    {% for opt in accommodation_options %}
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="accommodation_needs" value="{{ opt }}"
+                                id="acc_{{ loop.index }}"
+                                {% if opt in accommodation_needs %}checked{% endif %}>
+                            <label class="form-check-label" for="acc_{{ loop.index }}">{{ opt }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>저장</button>
+        <a href="/resumes" class="btn btn-outline-secondary">취소</a>
+    </div>
+
+</form>
+
+<div class="modal fade" id="photoCropModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">사진 조정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="crop-container">
+                    <img id="cropImg" alt="">
+                </div>
+                <div class="crop-zoom-row">
+                    <i class="fas fa-search-minus crop-zoom-icon"></i>
+                    <input type="range" class="crop-zoom-slider" id="cropZoomRange" min="0" max="200" value="0">
+                    <i class="fas fa-search-plus crop-zoom-icon"></i>
+                </div>
+                <div class="crop-ratio-row">
+                    <button type="button" class="crop-ratio-btn active" data-ratio="0.75">3:4</button>
+                    <button type="button" class="crop-ratio-btn" data-ratio="0.8">4:5</button>
+                    <button type="button" class="crop-ratio-btn" data-ratio="1">1:1</button>
+                    <button type="button" class="crop-ratio-btn" data-ratio="0">자유</button>
+                </div>
+                <div class="crop-controls">
+                    <button type="button" class="crop-ctrl-btn" id="cropRotateLeft"><i class="fas fa-rotate-left"></i> 좌회전</button>
+                    <button type="button" class="crop-ctrl-btn" id="cropRotateRight"><i class="fas fa-rotate-right"></i> 우회전</button>
+                    <button type="button" class="crop-ctrl-btn" id="cropReset"><i class="fas fa-arrows-rotate"></i> 초기화</button>
+                </div>
+                <div class="crop-size-info" id="cropSizeInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="cropApplyBtn">적용</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    /* 섹션 토글 */
+    document.querySelectorAll('.section-toggle-btn').forEach(function (btn) {
+        var targetId = btn.dataset.target;
+        var sec = document.getElementById(targetId);
+        if (!sec) return;
+        if (btn.dataset.hasData) {
+            sec.classList.remove('d-none');
+            btn.classList.add('active');
+        }
+        btn.addEventListener('click', function () {
+            if (sec.classList.contains('d-none')) {
+                sec.classList.remove('d-none');
+                btn.classList.add('active');
+            } else {
+                sec.classList.add('d-none');
+                btn.classList.remove('active');
+            }
+        });
+    });
+
+    /* 행 삭제 */
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('delete-row')) {
+            e.target.closest('[class$="-row"]') && e.target.closest('[class$="-row"]').remove();
+        }
+        if (e.target.closest('.edu-gpa-toggle')) {
+            var row = e.target.closest('.edu-row');
+            if (!row) return;
+            row.querySelector('.edu-gpa-wrap').classList.remove('d-none');
+            e.target.closest('.col-12').classList.add('d-none');
+        }
+    });
+
+    /* 경력 재직중 체크박스 */
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('car-current-cb')) {
+            var wrap = e.target.closest('.career-row').querySelector('.car-end-wrap input');
+            if (wrap) wrap.disabled = e.target.checked;
+        }
+    });
+
+    /* 자기소개서 글자수 카운터 */
+    function updateCounter(textarea) {
+        var row = textarea.closest('.intro-row');
+        if (!row) return;
+        var counter = row.querySelector('.intro-counter');
+        var limitInput = row.querySelector('.intro-limit-input');
+        if (!counter) return;
+        var len = textarea.value.length;
+        var limit = limitInput ? parseInt(limitInput.value) : 0;
+        counter.textContent = limit ? len + ' / ' + limit : len + '자';
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('intro-textarea')) updateCounter(e.target);
+        if (e.target.classList.contains('intro-limit-input')) {
+            var row = e.target.closest('.intro-row');
+            if (!row) return;
+            var ta = row.querySelector('.intro-textarea');
+            var lim = parseInt(e.target.value) || 0;
+            if (lim > 0) ta.setAttribute('maxlength', lim);
+            else ta.removeAttribute('maxlength');
+            updateCounter(ta);
+        }
+    });
+
+    document.querySelectorAll('.intro-textarea').forEach(updateCounter);
+
+    /* 자기소개서 프리셋 칩 */
+    document.querySelectorAll('.preset-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            addIntroRow(chip.dataset.title, chip.dataset.desc);
+        });
+    });
+}());
+
+var _eduIdx = {{ education_list | length }};
+var _carIdx = {{ career_list | length }};
+var _certIdx = {{ certifications | length }};
+var _langIdx = {{ language_list | length }};
+var _awardIdx = {{ awards_list | length }};
+var _portIdx = {{ portfolio_list | length }};
+var _introIdx = {{ intro_list | length }};
+
+function addEduRow() {
+    var i = _eduIdx++;
+    var html = '<div class="edu-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="row g-3">' +
+        '<div class="col-md-4"><label class="form-label">학교급</label>' +
+        '<select class="form-select" name="edu_level"><option value="">선택</option>' +
+        {% for lv in education_levels_detail %}'<option value="{{ lv }}">{{ lv }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-md-4"><label class="form-label">학교명</label><input type="text" class="form-control" name="edu_school" placeholder="학교명"></div>' +
+        '<div class="col-md-4"><label class="form-label">전공</label><input type="text" class="form-control" name="edu_major" placeholder="전공"></div>' +
+        '<div class="col-md-3"><label class="form-label">입학</label><input type="month" class="form-control" name="edu_start"></div>' +
+        '<div class="col-md-3"><label class="form-label">졸업(예정)</label><input type="month" class="form-control" name="edu_end"></div>' +
+        '<div class="col-md-3"><label class="form-label">졸업상태</label>' +
+        '<select class="form-select" name="edu_grad_status"><option value="">선택</option>' +
+        {% for gs in graduation_status_list %}'<option value="{{ gs }}">{{ gs }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-12 edu-gpa-wrap d-none"><div class="row g-3">' +
+        '<div class="col-md-3"><label class="form-label">학점</label><input type="text" class="form-control" name="edu_gpa" placeholder="3.8"></div>' +
+        '<div class="col-md-3"><label class="form-label">만점 기준</label><select class="form-select gpa-scale-select" name="edu_gpa_scale"><option value="">선택</option>' +
+        {% for sc in gpa_scales %}'<option value="{{ sc }}">{{ sc }}</option>' + {% endfor %}
+        '</select></div></div></div>' +
+        '<div class="col-12"><button type="button" class="btn btn-outline-secondary btn-sm edu-gpa-toggle"><i class="fas fa-plus me-1"></i>학점 추가</button></div>' +
+        '</div></div>';
+    document.getElementById('edu-rows').insertAdjacentHTML('beforeend', html);
+}
+
+function addCareerRow() {
+    var i = _carIdx++;
+    var html = '<div class="career-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="row g-3">' +
+        '<div class="col-md-4"><label class="form-label">회사명</label><input type="text" class="form-control" name="car_company" placeholder="회사명"></div>' +
+        '<div class="col-md-4"><label class="form-label">부서</label><input type="text" class="form-control" name="car_dept" placeholder="부서"></div>' +
+        '<div class="col-md-4"><label class="form-label">직책/직위</label><input type="text" class="form-control" name="car_position" placeholder="직책"></div>' +
+        '<div class="col-md-4"><label class="form-label">고용형태</label>' +
+        '<select class="form-select" name="car_emp_type"><option value="">선택</option>' +
+        {% for et in career_employment_types %}'<option value="{{ et }}">{{ et }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-md-3"><label class="form-label">입사</label><input type="month" class="form-control" name="car_start"></div>' +
+        '<div class="col-md-3 car-end-wrap"><label class="form-label">퇴사</label><input type="month" class="form-control" name="car_end"></div>' +
+        '<div class="col-md-2 d-flex align-items-end pb-1"><div class="form-check">' +
+        '<input class="form-check-input car-current-cb" type="checkbox" name="car_current_' + i + '" id="car_current_' + i + '" value="1">' +
+        '<label class="form-check-label" for="car_current_' + i + '">재직중</label>' +
+        '</div></div>' +
+        '<div class="col-12"><label class="form-label">업무 내용</label>' +
+        '<textarea class="form-control" name="car_desc" rows="2" placeholder="주요 업무를 간략히 작성하세요"></textarea></div>' +
+        '</div></div>';
+    document.getElementById('career-rows').insertAdjacentHTML('beforeend', html);
+}
+
+function addCertRow() {
+    var html = '<div class="cert-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="row g-3">' +
+        '<div class="col-md-5"><label class="form-label">자격증명</label><input type="text" class="form-control" name="cert_name" placeholder="자격증명"></div>' +
+        '<div class="col-md-4"><label class="form-label">발급기관</label><input type="text" class="form-control" name="cert_org" placeholder="발급기관"></div>' +
+        '<div class="col-md-3"><label class="form-label">취득일</label><input type="month" class="form-control" name="cert_date"></div>' +
+        '</div></div>';
+    document.getElementById('cert-rows').insertAdjacentHTML('beforeend', html);
+}
+
+function addLangRow() {
+    var html = '<div class="lang-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="row g-3">' +
+        '<div class="col-md-3"><label class="form-label">언어</label>' +
+        '<select class="form-select" name="lang_language"><option value="">선택</option>' +
+        {% for lo in language_options %}'<option value="{{ lo }}">{{ lo }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-md-3"><label class="form-label">시험명</label><input type="text" class="form-control" name="lang_test" placeholder="TOEIC, JLPT 등"></div>' +
+        '<div class="col-md-2"><label class="form-label">점수/등급</label><input type="text" class="form-control" name="lang_score" placeholder="890"></div>' +
+        '<div class="col-md-2"><label class="form-label">회화수준</label>' +
+        '<select class="form-select" name="lang_level"><option value="">선택</option>' +
+        {% for ll in language_levels %}'<option value="{{ ll }}">{{ ll }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-md-2"><label class="form-label">취득일</label><input type="month" class="form-control" name="lang_date"></div>' +
+        '</div></div>';
+    document.getElementById('lang-rows').insertAdjacentHTML('beforeend', html);
+}
+
+function addAwardRow() {
+    var html = '<div class="award-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="row g-3">' +
+        '<div class="col-md-3"><label class="form-label">구분</label>' +
+        '<select class="form-select" name="award_category"><option value="">선택</option>' +
+        {% for ac in award_categories %}'<option value="{{ ac }}">{{ ac }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-md-4"><label class="form-label">제목</label><input type="text" class="form-control" name="award_title" placeholder="수상명 또는 활동명"></div>' +
+        '<div class="col-md-3"><label class="form-label">주최기관</label><input type="text" class="form-control" name="award_org" placeholder="주최기관"></div>' +
+        '<div class="col-md-2"><label class="form-label">날짜</label><input type="month" class="form-control" name="award_date"></div>' +
+        '<div class="col-12"><label class="form-label">설명</label><textarea class="form-control" name="award_desc" rows="2" placeholder="간략한 설명"></textarea></div>' +
+        '</div></div>';
+    document.getElementById('award-rows').insertAdjacentHTML('beforeend', html);
+}
+
+function addPortRow() {
+    var html = '<div class="port-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="row g-3">' +
+        '<div class="col-md-3"><label class="form-label">유형</label>' +
+        '<select class="form-select" name="port_type"><option value="">선택</option>' +
+        {% for pt in portfolio_link_types %}'<option value="{{ pt }}">{{ pt }}</option>' + {% endfor %}
+        '</select></div>' +
+        '<div class="col-md-5"><label class="form-label">URL</label><input type="url" class="form-control" name="port_url" placeholder="https://..."></div>' +
+        '<div class="col-md-4"><label class="form-label">설명</label><input type="text" class="form-control" name="port_desc" placeholder="간단한 설명"></div>' +
+        '</div></div>';
+    document.getElementById('port-rows').insertAdjacentHTML('beforeend', html);
+}
+
+function addIntroRow(title, content) {
+    var i = _introIdx++;
+    var html = '<div class="intro-row border rounded p-3 mb-3 position-relative">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
+        '<div class="mb-2"><label class="form-label">항목 제목</label>' +
+        '<input type="text" class="form-control" name="intro_title" placeholder="예: 지원동기" value="' + (title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label">글자수 제한</label>' +
+        '<input type="number" class="form-control intro-limit-input" name="intro_char_limit" placeholder="0이면 제한 없음" min="0"></div>' +
+        '<div><label class="form-label">내용</label>' +
+        '<textarea class="form-control intro-textarea" name="intro_content" rows="6" placeholder="내용을 입력하세요">' + (content || '') + '</textarea>' +
+        '<div class="form-text intro-counter text-end"></div>' +
+        '</div></div>';
+    document.getElementById('intro-rows').insertAdjacentHTML('beforeend', html);
+    var rows = document.getElementById('intro-rows').querySelectorAll('.intro-textarea');
+    var last = rows[rows.length - 1];
+    if (last) {
+        last.dispatchEvent(new Event('input'));
+    }
+}
+</script>
+
+{% endblock %}
