@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}검색 알림 | WONE Recruit{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0">검색 알림 <span class="text-muted fs-6 fw-normal">({{ searches|length }}개)</span></h4>
+</div>
+
+{% if searches %}
+<div class="row g-3">
+    {% for s in searches %}
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="fw-bold">{{ s.name }}</span>
+                    {% if s.new_count > 0 %}
+                    <span class="badge bg-danger ms-2">{{ s.new_count }}건 새 공고</span>
+                    {% endif %}
+                </div>
+                <span class="text-muted small">{{ s.created_at[:10] if s.created_at else '' }}</span>
+            </div>
+            {% if s.labels %}
+            <div class="mb-2">
+                {% for label in s.labels %}
+                <span class="badge bg-light text-dark me-1">{{ label }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="d-flex gap-2">
+                <a href="{{ s.search_url }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-search me-1"></i>검색 결과 보기
+                </a>
+                {% if s.new_count > 0 %}
+                <form method="post" action="/saved-searches/{{ s.id }}/check">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">확인 완료</button>
+                </form>
+                {% endif %}
+                <button class="btn btn-outline-danger btn-sm"
+                        data-delete-url="/saved-searches/{{ s.id }}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="content-card">
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-bell"></i></div>
+        <p class="empty-state-text">저장한 검색 조건이 없습니다.</p>
+        <p class="text-muted small">공고 검색 페이지에서 필터를 설정한 후 '검색 알림 저장'을 눌러 보세요.</p>
+        <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

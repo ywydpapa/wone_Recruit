@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import dotenv
@@ -422,6 +423,35 @@ def _ensure_db():
             );
             CREATE INDEX IF NOT EXISTS idx_resume_intro ON resume_intros(resume_id);
         """,
+        "saved_searches": """
+            CREATE TABLE IF NOT EXISTS saved_searches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL DEFAULT '',
+                filters TEXT NOT NULL DEFAULT '{}',
+                last_checked_at TEXT DEFAULT (datetime('now','localtime')),
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches(user_id);
+        """,
+        "consultations": """
+            CREATE TABLE IF NOT EXISTS consultations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seeker_user_id INTEGER NOT NULL,
+                operator_user_id INTEGER NOT NULL,
+                physical_note TEXT NOT NULL DEFAULT '',
+                sensory_note TEXT NOT NULL DEFAULT '',
+                cognitive_note TEXT NOT NULL DEFAULT '',
+                communication_note TEXT NOT NULL DEFAULT '',
+                work_capacity_note TEXT NOT NULL DEFAULT '',
+                environment_note TEXT NOT NULL DEFAULT '',
+                summary TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime')),
+                updated_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_consultations_seeker ON consultations(seeker_user_id);
+            CREATE INDEX IF NOT EXISTS idx_consultations_operator ON consultations(operator_user_id);
+        """,
     }
     existing_tables = {
         row[0] for row in conn.execute(
@@ -440,6 +470,17 @@ def _ensure_db():
         ("candidacies", "resume_id", "ALTER TABLE candidacies ADD COLUMN resume_id INTEGER"),
         ("candidacies", "resume_snapshot", "ALTER TABLE candidacies ADD COLUMN resume_snapshot TEXT NOT NULL DEFAULT ''"),
         ("resumes", "photo_path", "ALTER TABLE resumes ADD COLUMN photo_path TEXT NOT NULL DEFAULT ''"),
+        ("companies", "ceo", "ALTER TABLE companies ADD COLUMN ceo TEXT NOT NULL DEFAULT ''"),
+        ("companies", "est_year", "ALTER TABLE companies ADD COLUMN est_year INTEGER"),
+        ("companies", "biz_type", "ALTER TABLE companies ADD COLUMN biz_type TEXT NOT NULL DEFAULT ''"),
+        ("companies", "address", "ALTER TABLE companies ADD COLUMN address TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "tasks", "ALTER TABLE job_postings ADD COLUMN tasks TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "tools", "ALTER TABLE job_postings ADD COLUMN tools TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "experience_level", "ALTER TABLE job_postings ADD COLUMN experience_level TEXT NOT NULL DEFAULT '무관'"),
+        ("job_postings", "education", "ALTER TABLE job_postings ADD COLUMN education TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "hiring_process", "ALTER TABLE job_postings ADD COLUMN hiring_process TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "headcount", "ALTER TABLE job_postings ADD COLUMN headcount TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "preferred", "ALTER TABLE job_postings ADD COLUMN preferred TEXT NOT NULL DEFAULT ''"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:
@@ -448,6 +489,11 @@ def _ensure_db():
         if col not in _col_cache[tbl]:
             conn.execute(ddl)
             conn.commit()
+
+    _jp_cols = {row[1] for row in conn.execute("PRAGMA table_info(job_postings)").fetchall()}
+    if "requirements" in _jp_cols and "qualifications" not in _jp_cols:
+        conn.execute("ALTER TABLE job_postings RENAME COLUMN requirements TO qualifications")
+        conn.commit()
 
     if "self_intro_presets" not in existing_tables or \
        conn.execute("SELECT COUNT(*) FROM self_intro_presets").fetchone()[0] == 0:
@@ -479,43 +525,59 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.exception_handler(404)
-async def not_found(request: Request, exc):
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    status = exc.status_code
+    if status == 403:
+        tpl = "errors/403.html"
+        title = "접근 권한 없음"
+    elif status == 404:
+        tpl = "errors/404.html"
+        title = "페이지를 찾을 수 없음"
+    else:
+        tpl = "errors/500.html"
+        title = "서버 오류"
+    try:
+        user_name = request.session.get("name", "")
+        user_role = request.session.get("role", "")
+    except Exception:
+        user_name = ""
+        user_role = ""
     return templates.TemplateResponse(
-        request=request, name="error.html",
+        request=request, name=tpl,
+        status_code=status,
         context={
-            "request": request, "page_title": "404",
-            "user_name": request.session.get("user_name", ""),
-            "user_role": request.session.get("user_role", "seeker"),
-            "status_code": 404,
-            "message": "페이지를 찾을 수 없습니다",
-            "detail": "요청하신 페이지가 존재하지 않거나 이동되었습니다.",
+            "request": request, "page_title": title,
+            "user_name": user_name, "user_role": user_role,
+            "status_code": status,
+            "detail": str(exc.detail) if exc.detail else "",
         },
-        status_code=404,
     )
 
 
-@app.exception_handler(500)
-async def server_error(request: Request, exc):
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
     log.exception("500 에러: %s %s", request.method, request.url.path)
+    try:
+        user_name = request.session.get("name", "")
+        user_role = request.session.get("role", "")
+    except Exception:
+        user_name = ""
+        user_role = ""
     return templates.TemplateResponse(
-        request=request, name="error.html",
-        context={
-            "request": request, "page_title": "오류",
-            "user_name": request.session.get("user_name", ""),
-            "user_role": request.session.get("user_role", "seeker"),
-            "status_code": 500,
-            "message": "서버 오류가 발생했습니다",
-            "detail": "잠시 후 다시 시도해 주세요.",
-        },
+        request=request, name="errors/500.html",
         status_code=500,
+        context={
+            "request": request, "page_title": "서버 오류",
+            "user_name": user_name, "user_role": user_role,
+            "status_code": 500,
+            "detail": "",
+        },
     )
 
-_secret = os.getenv("SESSION_SECRET_KEY", "")
+_secret = os.getenv("SESSION_SECRET_KEY")
 if not _secret:
-    import warnings
-    warnings.warn("SESSION_SECRET_KEY 미설정, 개발용 임시키 사용", stacklevel=1)
-    _secret = "recruit-dev-key-insecure"
+    raise RuntimeError("SESSION_SECRET_KEY 환경변수 필수")
 
 app.add_middleware(
     SessionMiddleware,

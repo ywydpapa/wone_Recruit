@@ -67,7 +67,7 @@
                         </td>
                         <td>{{ c['created_at'][:10] if c['created_at'] else '-' }}</td>
                         <td>
-                            <a href="/op/seekers/{{ c['id'] }}" class="btn btn-sm btn-outline-secondary">-</a>
+                            <a href="/op/seekers/{{ c['seeker_user_id'] }}" class="btn btn-sm btn-outline-secondary">상세</a>
                         </td>
                     </tr>
                     {% endfor %}

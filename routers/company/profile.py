@@ -15,7 +15,7 @@ async def company_profile_form(request: Request, success: str = ""):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         selected_sido = ""
         accessibility_facilities = []
         if company:
@@ -30,7 +30,7 @@ async def company_profile_form(request: Request, success: str = ""):
     return templates.TemplateResponse(
         request=request, name="company/profile_form.html", context={
             "request": request, "page_title": "기업 정보",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "company": company, "success": success,
             "selected_sido": selected_sido,
             "company_sizes": COMPANY_SIZES,
@@ -57,6 +57,10 @@ async def company_profile_save(
     hiring_experience: str = Form("0"),
     retention_note: str = Form(""),
     benefits: str = Form(""),
+    ceo: str = Form(""),
+    est_year: int = Form(None),
+    biz_type: str = Form(""),
+    address: str = Form(""),
     logo: Optional[UploadFile] = File(None),
 ):
     user = require_role(request, "company")
@@ -67,39 +71,44 @@ async def company_profile_save(
     logo_path = ""
     if logo and logo.filename:
         logo_path = await save_upload(
-            logo, "logos", user["user_id"],
+            logo, "logos", user["id"],
             ["image/jpeg", "image/png", "image/webp"], 5 * 1024 * 1024,
         )
 
     conn = get_sqlite()
     try:
-        existing = conn.execute("SELECT id, logo_path FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        existing = conn.execute("SELECT id, logo_path FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not logo_path and existing:
             logo_path = existing["logo_path"] or ""
+        est_year_val = est_year if est_year else None
         if existing:
             conn.execute("""UPDATE companies SET
                 company_name=?, biz_no=?, industry=?, employee_count=?, disabled_count=?,
                 region_id=?, intro=?, website=?, company_size=?,
                 accessibility_facilities=?, accessibility_note=?,
                 hiring_experience=?, retention_note=?, benefits=?, logo_path=?,
+                ceo=?, est_year=?, biz_type=?, address=?,
                 updated_at=datetime('now','localtime')
                 WHERE user_id=?""",
                 (company_name, biz_no, industry, employee_count, disabled_count,
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
                  hiring_exp_val, retention_note, benefits, logo_path,
-                 user["user_id"]))
+                 ceo, est_year_val, biz_type, address,
+                 user["id"]))
         else:
             conn.execute("""INSERT INTO companies
                 (user_id, company_name, biz_no, industry, employee_count, disabled_count,
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
-                 hiring_experience, retention_note, benefits, logo_path)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (user["user_id"], company_name, biz_no, industry, employee_count, disabled_count,
+                 hiring_experience, retention_note, benefits, logo_path,
+                 ceo, est_year, biz_type, address)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (user["id"], company_name, biz_no, industry, employee_count, disabled_count,
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
-                 hiring_exp_val, retention_note, benefits, logo_path))
+                 hiring_exp_val, retention_note, benefits, logo_path,
+                 ceo, est_year_val, biz_type, address))
         conn.commit()
     finally:
         conn.close()

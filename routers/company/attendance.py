@@ -33,7 +33,7 @@ async def attendance_daily(request: Request, date: str = ""):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
 
@@ -53,7 +53,7 @@ async def attendance_daily(request: Request, date: str = ""):
     return templates.TemplateResponse(
         request=request, name="company/attendance.html", context={
             "request": request, "page_title": "근태관리",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "work_date": work_date,
             "employees": employees,
             "records": records,
@@ -68,7 +68,7 @@ async def attendance_save(request: Request):
     form = await request.form()
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT id FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT id FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         work_date = form.get("work_date", "")
@@ -109,7 +109,7 @@ async def attendance_monthly(
 
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
 
@@ -145,7 +145,7 @@ async def attendance_monthly(
     return templates.TemplateResponse(
         request=request, name="company/attendance_monthly.html", context={
             "request": request, "page_title": "월간 근태 현황",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "year": year, "month": month,
             "days_in_month": days_in_month,
             "employees": employees,

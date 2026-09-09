@@ -52,6 +52,7 @@
                 <div class="text-muted small">최종 수정: {{ updated_dates.get(r.id, '-') }}</div>
             </div>
             <div class="d-flex gap-2 flex-wrap">
+                <a href="/resumes/{{ r.id }}" class="btn btn-sm btn-outline-secondary">보기</a>
                 <a href="/resumes/{{ r.id }}/edit" class="btn btn-sm btn-outline-secondary">수정</a>
 
                 <form method="post" action="/resumes/new">

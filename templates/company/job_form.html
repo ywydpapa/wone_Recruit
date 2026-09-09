@@ -56,6 +56,10 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="col-md-3">
+                        <label for="headcount" class="form-label fw-semibold">채용 인원</label>
+                        <input type="number" id="headcount" name="headcount" class="form-control" min="1" value="{{ job['headcount'] if job else '' }}" placeholder="0명">
+                    </div>
                 </div>
 
                 <div class="mb-3 form-check">
@@ -161,15 +165,55 @@
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <label for="tasks" class="form-label fw-semibold">주요 업무</label>
+                    <textarea id="tasks" name="tasks" class="form-control" rows="4" placeholder="줄바꿈으로 구분하여 입력하세요">{{ job['tasks'] if job else '' }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tools" class="form-label fw-semibold">사용 도구</label>
+                    <textarea id="tools" name="tools" class="form-control" rows="2" placeholder="쉼표로 구분 (예: Excel, Photoshop, Jira)">{{ job['tools'] if job else '' }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="qualifications" class="form-label fw-semibold">자격요건</label>
+                    <textarea id="qualifications" name="qualifications" class="form-control" rows="2" placeholder="자격증, 경력 요건 등">{{ job['qualifications'] if job else '' }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="preferred" class="form-label fw-semibold">우대사항</label>
+                    <textarea id="preferred" name="preferred" class="form-control" rows="2" placeholder="우대하는 경험, 기술 등">{{ job['preferred'] if job else '' }}</textarea>
+                </div>
+
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label for="benefits" class="form-label fw-semibold">복리후생</label>
                         <textarea id="benefits" name="benefits" class="form-control" rows="2" placeholder="4대보험, 식대, 교통비 등">{{ job['benefits'] if job else '' }}</textarea>
                     </div>
+                </div>
+
+                <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label for="requirements" class="form-label fw-semibold">우대사항/필수자격</label>
-                        <textarea id="requirements" name="requirements" class="form-control" rows="2" placeholder="자격증, 경력 요건 등">{{ job['requirements'] if job else '' }}</textarea>
+                        <label for="experience_level" class="form-label fw-semibold">경력</label>
+                        <select id="experience_level" name="experience_level" class="form-select">
+                            {% for lvl in ['무관', '신입', '경력 1년 이상', '경력 3년 이상', '경력 5년 이상'] %}
+                            <option value="{{ lvl }}" {% if job and job['experience_level'] == lvl %}selected{% endif %}>{{ lvl }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
+                    <div class="col-md-6">
+                        <label for="education" class="form-label fw-semibold">학력</label>
+                        <select id="education" name="education" class="form-select">
+                            {% for edu in ['', '학력무관', '고졸 이상', '전문대졸 이상', '대졸 이상'] %}
+                            <option value="{{ edu }}" {% if job and job['education'] == edu %}selected{% endif %}>{{ edu or '-- 선택 --' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="hiring_process" class="form-label fw-semibold">채용 절차</label>
+                    <textarea id="hiring_process" name="hiring_process" class="form-control" rows="2" placeholder="서류전형 > 면접 > 최종합격">{{ job['hiring_process'] if job else '' }}</textarea>
                 </div>
 
                 <div class="mb-3">

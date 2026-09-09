@@ -143,6 +143,11 @@
         .back-to-home:hover {
             color: var(--text-color);
         }
+        .test-row:hover { background-color: #f0f4ff; cursor: pointer; }
+        .login-divider { border-color: #e9ecef; }
+        .test-hint { font-size: 0.8rem; }
+        .test-table { font-size: 0.82rem; }
+        .test-hint-sm { font-size: 0.75rem; }
     </style>
 </head>
 <body>
@@ -151,10 +156,6 @@
     <div class="login-card">
         <a href="/login" class="brand-logo"><span>WONE</span> Recruit</a>
         <div class="login-title">채용 관리 시스템에 오신 것을 환영합니다</div>
-
-        <div class="alert alert-info py-2 small text-center mb-3">
-            <i class="fas fa-info-circle me-1"></i>테스트 계정: <strong>op1</strong>(운영자) / <strong>comp1</strong>(기업) / <strong>seeker1</strong>(구직자), 비밀번호: <strong>admin1234</strong>
-        </div>
 
         <form action="/login_check" method="post">
             {% if error == 'deleted' %}
@@ -192,8 +193,42 @@
             <span class="text-muted fs-095">계정이 없으신가요?</span>
             <a href="/signup" class="link-custom ms-1">회원가입</a>
         </div>
+
+        <hr class="my-4 login-divider">
+        <div class="text-center">
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#testAccounts">
+                <i class="fas fa-flask me-1"></i>테스트 계정 확인
+            </button>
+        </div>
+        <div class="collapse mt-3" id="testAccounts">
+            <div class="small">
+                <p class="text-muted mb-2 test-hint">비밀번호는 모두 <strong>admin1234</strong> 입니다.</p>
+                <table class="table table-sm mb-0 test-table">
+                    <thead class="table-light">
+                        <tr><th>역할</th><th>아이디</th><th>설명</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr class="test-row" data-user="op1"><td>운영자</td><td><code>op1</code></td><td>플랫폼 관리</td></tr>
+                        <tr class="test-row" data-user="counsel1"><td>채용매니저</td><td><code>counsel1</code></td><td>이상담</td></tr>
+                        <tr class="test-row" data-user="comp1"><td>기업</td><td><code>comp1</code></td><td>기업 담당자</td></tr>
+                        <tr class="test-row" data-user="seeker1"><td>구직자</td><td><code>seeker1</code></td><td>구직자 1</td></tr>
+                        <tr class="test-row" data-user="seeker2"><td>구직자</td><td><code>seeker2</code></td><td>구직자 2</td></tr>
+                    </tbody>
+                </table>
+                <p class="text-muted mt-2 mb-0 test-hint-sm">행을 클릭하면 자동 입력됩니다.</p>
+            </div>
+        </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('.test-row').forEach(function(row) {
+    row.addEventListener('click', function() {
+        document.querySelector('input[name="username"]').value = this.dataset.user;
+        document.querySelector('input[name="password"]').value = 'admin1234';
+    });
+});
+</script>
 </body>
 </html>

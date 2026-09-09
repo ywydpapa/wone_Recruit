@@ -20,7 +20,7 @@ async def job_list(
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         where = ["jp.company_id=?"]
@@ -31,7 +31,10 @@ async def job_list(
         if status and status in ("open", "draft", "closed", "filled"):
             where.append("jp.status=?")
             params.append(status)
-        sql = f"""SELECT jp.*, r.sido AS region_sido, r.sigungu AS region_sigungu
+        sql = f"""SELECT jp.*, r.sido AS region_sido, r.sigungu AS region_sigungu,
+                      (SELECT COUNT(*) FROM candidacies c2
+                       WHERE c2.job_id=jp.id
+                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS applicant_count
                FROM job_postings jp
                LEFT JOIN regions r ON jp.region_id = r.id
                WHERE {' AND '.join(where)} ORDER BY jp.created_at DESC"""
@@ -51,7 +54,7 @@ async def job_list(
     return templates.TemplateResponse(
         request=request, name="company/jobs.html", context={
             "request": request, "page_title": "공고 관리",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "jobs": jobs, "q": q or "", "selected_status": status or "",
             "pagination": pagination, "base_qs": base_qs,
         }
@@ -70,7 +73,7 @@ async def job_new_form(request: Request):
     return templates.TemplateResponse(
         request=request, name="company/job_form.html", context={
             "request": request, "page_title": "새 공고 작성",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "job": None,
             "selected_sido": "",
             "employment_types": EMPLOYMENT_TYPES,
@@ -100,7 +103,12 @@ async def job_create(
     preferred_severity: str = Form("무관"),
     min_work_hours: int = Form(8),
     benefits: str = Form(""),
-    requirements: str = Form(""),
+    qualifications: str = Form(""),
+    preferred: str = Form(""),
+    tasks: str = Form(""),
+    tools: str = Form(""),
+    experience_level: str = Form("무관"),
+    education: str = Form(""),
     salary: str = Form(""),
     deadline: str = Form(""),
     description: str = Form(""),
@@ -112,9 +120,11 @@ async def job_create(
     flexible_val = 1 if flexible_hours in ("1", "on", "true") else 0
     accommodations_provided = json.dumps(form.getlist("accommodations_provided"), ensure_ascii=False)
     preferred_disability = json.dumps(form.getlist("preferred_disability"), ensure_ascii=False)
+    hiring_process = form.get("hiring_process", "")
+    headcount = form.get("headcount", "")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         conn.execute(
@@ -123,14 +133,18 @@ async def job_create(
                 work_start_time, work_end_time, work_days, flexible_hours,
                 accommodations_provided, accommodations_note,
                 preferred_disability, preferred_severity, min_work_hours,
-                benefits, requirements,
+                benefits, qualifications, preferred,
+                tasks, tools, experience_level, education,
+                hiring_process, headcount,
                 salary, deadline, description, status)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (company["id"], title, category_id, region_id, employment_type, remote_val,
              work_start_time, work_end_time, work_days, flexible_val,
              accommodations_provided, accommodations_note,
              preferred_disability, preferred_severity, min_work_hours,
-             benefits, requirements,
+             benefits, qualifications, preferred,
+             tasks, tools, experience_level, education,
+             hiring_process, headcount,
              salary, deadline, description, status),
         )
         conn.commit()
@@ -144,7 +158,7 @@ async def job_copy(request: Request, job_id: int):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         job = conn.execute("SELECT * FROM job_postings WHERE id=? AND company_id=?", (job_id, company["id"])).fetchone()
@@ -156,15 +170,21 @@ async def job_copy(request: Request, job_id: int):
                 work_start_time, work_end_time, work_days, flexible_hours, salary, deadline,
                 accommodations_provided, accommodations_note,
                 preferred_disability, preferred_severity, min_work_hours,
-                benefits, requirements, description, status)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                benefits, qualifications, preferred,
+                tasks, tools, experience_level, education,
+                hiring_process, headcount,
+                description, status)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (company["id"], job["title"] + " (복사)", job["category_id"], job["region_id"],
              job["employment_type"], job["remote_available"],
              job["work_start_time"], job["work_end_time"], job["work_days"], job["flexible_hours"],
              job["salary"], job["deadline"],
              job["accommodations_provided"], job["accommodations_note"],
              job["preferred_disability"], job["preferred_severity"], job["min_work_hours"],
-             job["benefits"], job["requirements"], job["description"], "draft"),
+             job["benefits"], job["qualifications"], job["preferred"],
+             job["tasks"], job["tools"], job["experience_level"], job["education"],
+             job["hiring_process"], job["headcount"],
+             job["description"], "draft"),
         )
         conn.commit()
     finally:
@@ -181,7 +201,7 @@ async def job_status_change(
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         conn.execute(

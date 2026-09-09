@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>{% if consultation %}상담 기록 수정{% else %}새 상담 기록{% endif %}</h2>
+</div>
+<div class="container narrow-form-lg">
+
+    <p class="text-muted mb-3">구직자: <strong>{{ seeker['name'] }}</strong></p>
+
+    <form method="post" action="{% if consultation %}/op/consultations/{{ consultation['id'] }}{% else %}/op/consultations{% endif %}">
+        <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
+
+        <div class="content-card mb-3">
+            <div class="mb-3">
+                <label for="physical_note" class="form-label">신체 기능</label>
+                <textarea
+                    id="physical_note"
+                    name="physical_note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="이동, 자세 유지, 미세 동작 등"
+>{% if consultation %}{{ consultation['physical_note'] or '' }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="sensory_note" class="form-label">감각 기능</label>
+                <textarea
+                    id="sensory_note"
+                    name="sensory_note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="시각, 청각, 촉각 등 감각 관련"
+                >{% if consultation %}{{ consultation['sensory_note'] or '' }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="cognitive_note" class="form-label">인지 기능</label>
+                <textarea
+                    id="cognitive_note"
+                    name="cognitive_note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="학습, 기억, 판단, 문제해결 등"
+                >{% if consultation %}{{ consultation['cognitive_note'] or '' }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="communication_note" class="form-label">의사소통</label>
+                <textarea
+                    id="communication_note"
+                    name="communication_note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="언어 이해, 표현, 대인관계 등"
+                >{% if consultation %}{{ consultation['communication_note'] or '' }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="work_capacity_note" class="form-label">업무 수행 능력</label>
+                <textarea
+                    id="work_capacity_note"
+                    name="work_capacity_note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="집중력, 지구력, 작업 속도 등"
+                >{% if consultation %}{{ consultation['work_capacity_note'] or '' }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="environment_note" class="form-label">환경 적응</label>
+                <textarea
+                    id="environment_note"
+                    name="environment_note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="소음, 조명, 온도 등 환경 민감도"
+                >{% if consultation %}{{ consultation['environment_note'] or '' }}{% endif %}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="summary" class="form-label">종합 의견</label>
+                <textarea
+                    id="summary"
+                    name="summary"
+                    class="form-control"
+                    rows="5"
+                    placeholder="전반적인 상담 소견을 기록해 주세요"
+                >{% if consultation %}{{ consultation['summary'] or '' }}{% endif %}</textarea>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">저장</button>
+            <a href="/op/consultations?seeker_id={{ seeker['id'] }}" class="btn btn-outline-secondary">취소</a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

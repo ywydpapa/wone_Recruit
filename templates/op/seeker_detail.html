@@ -4,7 +4,7 @@
 <div class="page-header"><h2>{{ seeker['name'] }}</h2></div>
 <div class="container narrow-form-lg">
 
-        <section class="profile-card mb-3">
+        <div class="profile-card mb-3">
             <div class="profile-card-body">
                 <div class="d-flex align-items-center gap-3">
                     <div class="profile-avatar" aria-hidden="true">
@@ -20,13 +20,13 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
         {% if profile %}
         <div class="row g-3 profile-row">
             <div class="col-lg-6 d-flex flex-column">
-                <section class="profile-card flex-grow-1" aria-labelledby="section-disability">
-                    <div class="profile-card-header" id="section-disability">
+                <div class="profile-card flex-grow-1">
+                    <div class="profile-card-header">
                         <i class="fas fa-wheelchair" aria-hidden="true"></i>장애 및 이동
                     </div>
                     <div class="profile-card-body">
@@ -73,10 +73,10 @@
                             <span class="profile-field-value">{{ assistive_tech_display }}</span>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section class="profile-card" aria-labelledby="section-career">
-                    <div class="profile-card-header" id="section-career">
+                <div class="profile-card">
+                    <div class="profile-card-header">
                         <i class="fas fa-graduation-cap" aria-hidden="true"></i>학력 및 경력
                     </div>
                     <div class="profile-card-body">
@@ -111,12 +111,12 @@
                         </div>
                         {% endif %}
                     </div>
-                </section>
+                </div>
             </div>
 
             <div class="col-lg-6 d-flex flex-column">
-                <section class="profile-card flex-grow-1" aria-labelledby="section-work">
-                    <div class="profile-card-header" id="section-work">
+                <div class="profile-card flex-grow-1">
+                    <div class="profile-card-header">
                         <i class="fas fa-briefcase" aria-hidden="true"></i>근무 역량
                     </div>
                     <div class="profile-card-body">
@@ -155,10 +155,10 @@
                             </span>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section class="profile-card" aria-labelledby="section-additional">
-                    <div class="profile-card-header" id="section-additional">
+                <div class="profile-card">
+                    <div class="profile-card-header">
                         <i class="fas fa-folder-open" aria-hidden="true"></i>자격 및 기타
                     </div>
                     <div class="profile-card-body">
@@ -197,7 +197,7 @@
                             </span>
                         </div>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
         {% else %}
@@ -207,6 +207,35 @@
             </div>
         </div>
         {% endif %}
+
+        <div class="content-card mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2" aria-hidden="true"></i>상담 기록 <span class="badge bg-secondary ms-1">{{ consult_count }}</span></h5>
+                <a href="/op/consultations/new?seeker_id={{ seeker['id'] }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1" aria-hidden="true"></i>새 상담 기록
+                </a>
+            </div>
+            {% if recent_consultations %}
+            {% for c in recent_consultations %}
+            <div class="border-top pt-2 mt-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold">{{ c['created_at'][:10] }}</span>
+                    <span class="text-muted small">{{ c['operator_name'] }}</span>
+                </div>
+                {% if c['summary'] %}
+                <p class="text-muted small mb-0">{{ c['summary'][:100] }}{% if c['summary']|length > 100 %}...{% endif %}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if consult_count >= 3 %}
+            <div class="border-top pt-2 mt-2">
+                <a href="/op/consultations?seeker_id={{ seeker['id'] }}" class="text-decoration-none">전체 {{ consult_count }}건 보기 <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i></a>
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-muted mb-0 mt-2">상담 기록이 없습니다.</p>
+            {% endif %}
+        </div>
 
         <div class="content-card mt-3">
             <h5><i class="fas fa-key me-2"></i>비밀번호 초기화</h5>

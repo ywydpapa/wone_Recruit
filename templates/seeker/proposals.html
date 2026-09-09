@@ -20,18 +20,22 @@
                     <tbody>
                     {% for p in proposals %}
                     <tr>
-                        <td class="fw-semibold">{{ p['job_title'] }}</td>
+                        <td class="fw-semibold"><a href="/jobs/{{ p['job_id'] }}">{{ p['job_title'] }}</a></td>
                         <td>{{ p['company_name'] }}</td>
                         <td>{{ (p['region_sido']|default('') ~ ' ' ~ p['region_sigungu']|default(''))|trim or '-' }}</td>
                         <td>{{ p['employment_type'] or '-' }}</td>
                         <td>{{ p['created_at'][:10] if p['created_at'] else '-' }}</td>
                         <td>
+                            {% if p['match_stage'] == 'accepted' %}
+                            <span class="badge bg-success">수락됨</span>
+                            {% else %}
                             <form method="post" action="/proposals/{{ p['id'] }}/respond" class="d-flex gap-1">
                                 <button type="submit" name="action" value="accept" class="btn btn-sm btn-success">수락</button>
                                 <button type="submit" name="action" value="reject"
                                         class="btn btn-sm btn-outline-danger"
                                         onclick="return confirm('제안을 거절하시겠습니까?')">거절</button>
                             </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

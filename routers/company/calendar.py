@@ -19,7 +19,7 @@ async def interview_calendar(request: Request, year: int = 0, month: int = 0):
 
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
 
@@ -31,6 +31,7 @@ async def interview_calendar(request: Request, year: int = 0, month: int = 0):
 
         interviews = conn.execute(
             """SELECT s.interview_date, s.interview_time, s.interview_type, s.location,
+                      s.candidacy_id, c.job_id,
                       u.name AS seeker_name, jp.title AS job_title
                FROM interview_schedules s
                JOIN candidacies c ON s.candidacy_id=c.id
@@ -53,7 +54,7 @@ async def interview_calendar(request: Request, year: int = 0, month: int = 0):
     return templates.TemplateResponse(
         request=request, name="company/calendar.html", context={
             "request": request, "page_title": "면접 캘린더",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "year": year, "month": month,
             "days_in_month": days_in_month,
             "first_weekday": first_weekday,

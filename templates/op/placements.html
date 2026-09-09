@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}배치 관리 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>배치 관리</h2></div>
+<div class="container">
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="content-card text-center py-3">
+                <div class="stat-value">{{ total }}</div>
+                <div class="stat-label text-muted">총 배치</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="content-card text-center py-3">
+                <div class="stat-value">{{ avg_tenure }}</div>
+                <div class="stat-label text-muted">평균 근속일수</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-card mb-3">
+        <form method="get" action="/op/placements" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label for="company_id" class="form-label mb-1">기업 필터</label>
+                <select id="company_id" name="company_id" class="form-select form-select-sm">
+                    <option value="">전체 기업</option>
+                    {% for c in companies %}
+                    <option value="{{ c['id'] }}"{% if selected_company == c['id'] %} selected{% endif %}>{{ c['company_name'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">적용</button>
+                {% if selected_company %}
+                <a href="/op/placements" class="btn btn-sm btn-outline-secondary ms-1">초기화</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="content-card">
+        {% if placements %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <caption class="visually-hidden">배치 목록</caption>
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">구직자</th>
+                        <th scope="col">장애유형</th>
+                        <th scope="col">등급</th>
+                        <th scope="col">기업</th>
+                        <th scope="col">공고</th>
+                        <th scope="col">배치일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in placements %}
+                <tr>
+                    <td>
+                        <a href="/op/seekers/{{ p['seeker_user_id'] }}" class="fw-semibold">{{ p['seeker_name'] }}</a>
+                    </td>
+                    <td>{{ p['disability_name'] or '-' }}</td>
+                    <td>
+                        {% if p['severity'] == '중증' %}
+                            <span class="badge bg-danger">중증</span>
+                        {% elif p['severity'] == '경증' %}
+                            <span class="badge bg-warning text-dark">경증</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ p['company_name'] }}</td>
+                    <td>{{ p['job_title'] }}</td>
+                    <td>{{ p['start_date'][:10] if p['start_date'] else '-' }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">배치 기록이 없습니다.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

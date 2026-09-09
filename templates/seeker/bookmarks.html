@@ -13,7 +13,14 @@
                             {% if job['remote_available'] %}
                             <span class="item-badge badge-green">재택 가능</span>
                             {% endif %}
+                            {% if job['status'] != 'open' %}
+                            <span class="item-badge badge-closed">마감</span>
+                            {% endif %}
+                            {% if job['status'] == 'open' %}
                             <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
+                            {% else %}
+                            <span class="item-title text-muted">{{ job['title'] }}</span>
+                            {% endif %}
                             <div class="item-meta">
                                 <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
                                 <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
@@ -36,7 +43,11 @@
                             {% if job['salary'] %}
                             <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
                             {% endif %}
+                            {% if job['status'] == 'open' %}
                             <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
+                            {% else %}
+                            <span class="btn btn-outline-secondary btn-sm rounded-pill px-3 disabled">마감됨</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

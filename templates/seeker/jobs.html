@@ -88,6 +88,27 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold m-0">채용 공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
+            <div class="d-flex gap-2 align-items-center">
+                {% if base_qs %}
+                <form method="post" action="/saved-searches" class="d-inline">
+                    {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+                    {% if selected_sido %}<input type="hidden" name="sido" value="{{ selected_sido }}">{% endif %}
+                    {% if selected_type %}<input type="hidden" name="employment_type" value="{{ selected_type }}">{% endif %}
+                    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+                    {% if remote_checked %}<input type="hidden" name="remote" value="1">{% endif %}
+                    {% if selected_max_hours %}<input type="hidden" name="max_hours" value="{{ selected_max_hours }}">{% endif %}
+                    {% if selected_accommodation %}<input type="hidden" name="accommodation" value="{{ selected_accommodation }}">{% endif %}
+                    {% if selected_disability_type %}<input type="hidden" name="disability_type" value="{{ selected_disability_type }}">{% endif %}
+                    {% if selected_severity %}<input type="hidden" name="severity" value="{{ selected_severity }}">{% endif %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-bell me-1"></i>검색 알림 저장
+                    </button>
+                </form>
+                {% endif %}
+                <a href="/saved-searches" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-bell me-1"></i>내 알림
+                </a>
+            </div>
         </div>
 
         {% if jobs %}
@@ -100,6 +121,12 @@
                             <span class="item-badge">{{ job['employment_type'] }}</span>
                             {% if job['remote_available'] %}
                             <span class="item-badge badge-green">재택 가능</span>
+                            {% endif %}
+                            {% if job['experience_level'] and job['experience_level'] != '무관' %}
+                            <span class="badge bg-light text-dark">{{ job['experience_level'] }}</span>
+                            {% endif %}
+                            {% if job['education'] %}
+                            <small class="text-muted">{{ job['education'] }}</small>
                             {% endif %}
                             <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
                             <div class="item-meta">

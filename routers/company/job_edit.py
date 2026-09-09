@@ -14,7 +14,7 @@ async def job_edit_form(request: Request, job_id: int):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         job = conn.execute(
@@ -37,7 +37,7 @@ async def job_edit_form(request: Request, job_id: int):
     return templates.TemplateResponse(
         request=request, name="company/job_form.html", context={
             "request": request, "page_title": "공고 수정",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "job": job,
             "selected_sido": selected_sido,
             "employment_types": EMPLOYMENT_TYPES,
@@ -68,7 +68,12 @@ async def job_update(
     preferred_severity: str = Form("무관"),
     min_work_hours: int = Form(8),
     benefits: str = Form(""),
-    requirements: str = Form(""),
+    qualifications: str = Form(""),
+    preferred: str = Form(""),
+    tasks: str = Form(""),
+    tools: str = Form(""),
+    experience_level: str = Form("무관"),
+    education: str = Form(""),
     salary: str = Form(""),
     deadline: str = Form(""),
     description: str = Form(""),
@@ -80,9 +85,11 @@ async def job_update(
     flexible_val = 1 if flexible_hours in ("1", "on", "true") else 0
     accommodations_provided = json.dumps(form.getlist("accommodations_provided"), ensure_ascii=False)
     preferred_disability = json.dumps(form.getlist("preferred_disability"), ensure_ascii=False)
+    hiring_process = form.get("hiring_process", "")
+    headcount = form.get("headcount", "")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         conn.execute(
@@ -91,14 +98,18 @@ async def job_update(
                work_start_time=?, work_end_time=?, work_days=?, flexible_hours=?,
                accommodations_provided=?, accommodations_note=?,
                preferred_disability=?, preferred_severity=?, min_work_hours=?,
-               benefits=?, requirements=?,
+               benefits=?, qualifications=?, preferred=?,
+               tasks=?, tools=?, experience_level=?, education=?,
+               hiring_process=?, headcount=?,
                salary=?, deadline=?, description=?, status=?
                WHERE id=? AND company_id=?""",
             (title, category_id, region_id, employment_type, remote_val,
              work_start_time, work_end_time, work_days, flexible_val,
              accommodations_provided, accommodations_note,
              preferred_disability, preferred_severity, min_work_hours,
-             benefits, requirements,
+             benefits, qualifications, preferred,
+             tasks, tools, experience_level, education,
+             hiring_process, headcount,
              salary, deadline, description, status,
              job_id, company["id"]),
         )

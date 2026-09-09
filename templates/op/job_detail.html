@@ -42,9 +42,9 @@
                     {% endif %}
                 </dd>
 
-                {% if job['accommodations'] %}
+                {% if accommodations %}
                 <dt class="col-sm-3">편의 제공</dt>
-                <dd class="col-sm-9">{{ job['accommodations'] }}</dd>
+                <dd class="col-sm-9">{{ accommodations | join(', ') }}</dd>
                 {% endif %}
 
                 <dt class="col-sm-3 mt-3">공고 내용</dt>

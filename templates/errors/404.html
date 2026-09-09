@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}페이지를 찾을 수 없음 | WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>404</h2>
+</div>
+<div class="content-card text-center py-5">
+    <i class="fas fa-search fa-3x text-muted mb-3" aria-hidden="true"></i>
+    <h4 class="fw-bold mb-2">페이지를 찾을 수 없습니다</h4>
+    <p class="text-muted mb-4">{{ detail if detail else '요청하신 페이지가 존재하지 않거나 이동되었습니다.' }}</p>
+    <a href="/" class="btn btn-primary px-4">홈으로</a>
+</div>
+{% endblock %}

@@ -29,6 +29,7 @@
                     <th scope="col">공고 제목</th>
                     <th scope="col">고용 형태</th>
                     <th scope="col">지역</th>
+                    <th scope="col">지원자</th>
                     <th scope="col">상태</th>
                     <th scope="col">마감일</th>
                     <th scope="col">관리</th>
@@ -40,6 +41,11 @@
                 <td><a href="/company/jobs/{{ job['id'] }}/edit" class="text-decoration-none fw-semibold">{{ job['title'] }}</a></td>
                 <td>{{ job['employment_type'] }}</td>
                 <td>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</td>
+                <td>
+                    <a href="/company/jobs/{{ job['id'] }}/applicants" class="text-decoration-none">
+                        {{ job['applicant_count'] }}명
+                    </a>
+                </td>
                 <td>
                     {% set s = job['status'] %}
                     {% if s == 'open' %}

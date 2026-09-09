@@ -7,7 +7,7 @@
         <div class="content-card mb-3">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                 <div>
-                    <h6 class="fw-bold mb-1">{{ app['title'] }}</h6>
+                    <h6 class="fw-bold mb-1"><a href="/jobs/{{ app['job_id'] }}">{{ app['title'] }}</a></h6>
                     <span class="text-muted small">{{ app['company_name'] }} · {{ app['created_at'][:10] if app['created_at'] else '-' }}</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">

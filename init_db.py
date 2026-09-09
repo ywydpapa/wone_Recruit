@@ -17,7 +17,7 @@ def init():
               "awards_activities", "portfolio_links", "self_intro_items", "self_intro_presets",
               "resume_educations", "resume_careers", "resume_certifications", "resume_languages",
               "resume_awards", "resume_portfolios", "resume_intros", "resumes",
-              "job_categories", "access_log", "placements", "status_history", "candidacies",
+              "consultations", "job_categories", "access_log", "placements", "status_history", "candidacies",
               "job_postings", "seeker_profiles", "companies",
               "regions", "levy_rates", "disability_types", "users",
               "job_applications"):
@@ -30,6 +30,7 @@ def init():
         password TEXT NOT NULL,
         name TEXT NOT NULL DEFAULT '',
         phone TEXT NOT NULL DEFAULT '',
+        email TEXT DEFAULT '',
         role TEXT NOT NULL DEFAULT 'seeker',
         agreed_terms_at TEXT,
         agreed_privacy_at TEXT,
@@ -292,6 +293,10 @@ def init():
         retention_note TEXT NOT NULL DEFAULT '',
         benefits TEXT NOT NULL DEFAULT '',
         logo_path TEXT NOT NULL DEFAULT '',
+        ceo TEXT NOT NULL DEFAULT '',
+        est_year INTEGER,
+        biz_type TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
         updated_at TEXT DEFAULT (datetime('now','localtime'))
     );
     CREATE TABLE IF NOT EXISTS job_categories (
@@ -352,7 +357,14 @@ def init():
         preferred_severity TEXT NOT NULL DEFAULT '무관',
         min_work_hours INTEGER NOT NULL DEFAULT 8,
         benefits TEXT NOT NULL DEFAULT '',
-        requirements TEXT NOT NULL DEFAULT '',
+        qualifications TEXT NOT NULL DEFAULT '',
+        preferred TEXT NOT NULL DEFAULT '',
+        tasks TEXT NOT NULL DEFAULT '',
+        tools TEXT NOT NULL DEFAULT '',
+        experience_level TEXT NOT NULL DEFAULT '무관',
+        education TEXT NOT NULL DEFAULT '',
+        hiring_process TEXT NOT NULL DEFAULT '',
+        headcount TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL DEFAULT 'draft',
         created_at TEXT DEFAULT (datetime('now','localtime'))
@@ -401,6 +413,22 @@ def init():
         purpose TEXT NOT NULL DEFAULT '',
         created_at TEXT DEFAULT (datetime('now','localtime'))
     );
+    CREATE TABLE IF NOT EXISTS consultations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        seeker_user_id INTEGER NOT NULL,
+        operator_user_id INTEGER NOT NULL,
+        physical_note TEXT NOT NULL DEFAULT '',
+        sensory_note TEXT NOT NULL DEFAULT '',
+        cognitive_note TEXT NOT NULL DEFAULT '',
+        communication_note TEXT NOT NULL DEFAULT '',
+        work_capacity_note TEXT NOT NULL DEFAULT '',
+        environment_note TEXT NOT NULL DEFAULT '',
+        summary TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_consultations_seeker ON consultations(seeker_user_id);
+    CREATE INDEX IF NOT EXISTS idx_consultations_operator ON consultations(operator_user_id);
     CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -612,7 +640,11 @@ def init():
 
     users = [
         ("op1", "운영자", "051-000-0000", "operator"),
+        ("counsel1", "이상담", "051-111-0000", "manager"),
         ("comp1", "한빛테크 인사팀", "051-111-2222", "company"),
+        ("comp2", "클로버커머스 인사팀", "02-222-3333", "company"),
+        ("comp3", "넥스트미디어 인사팀", "031-444-5555", "company"),
+        ("comp4", "세종파트너스 총무팀", "02-666-7777", "company"),
         ("seeker1", "김하늘", "010-1234-5678", "seeker"),
         ("seeker2", "박서준", "010-8765-4321", "seeker"),
     ]
@@ -628,24 +660,64 @@ def init():
         for r in conn.execute("SELECT id, username FROM users").fetchall()
     }
 
-    conn.execute(
-        """INSERT OR IGNORE INTO companies
-           (user_id, company_name, biz_no, industry, employee_count, disabled_count,
-            region_id, intro, website, company_size,
-            accessibility_facilities, accessibility_note,
-            hiring_experience, retention_note, benefits)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+    _r_busan = _region_lookup.get(("부산광역시", "해운대구"))
+    _r_seoul_gangnam = _region_lookup.get(("서울특별시", "강남구"))
+    _r_pangyo = _region_lookup.get(("경기도", "성남시"))
+    _r_seoul_jongno = _region_lookup.get(("서울특별시", "종로구"))
+
+    companies = [
         (uid["comp1"], "한빛테크", "123-45-67890", "IT/소프트웨어", 250, 3,
-         _region_lookup.get(("부산광역시", "해운대구")),
+         _r_busan,
          "장애인 재택근무 환경을 갖춘 IT 서비스 기업입니다.",
          "https://hanbit-tech.example.com",
          "중소기업(50~299인)",
          json.dumps(["휠체어접근", "엘리베이터", "장애인화장실", "보조기기지원", "휴게공간"], ensure_ascii=False),
          "1층 전체 무장애 동선, 높이조절 책상 20대 보유",
-         1,
-         "장애인 개발자 3명 재직 중, 평균 근속 2.5년",
-         "4대보험, 유연근무제, 재택근무(주2회), 자기개발비 연 100만원, 장비 지원"),
+         1, "장애인 개발자 3명 재직 중, 평균 근속 2.5년",
+         "4대보험, 유연근무제, 재택근무(주2회), 자기개발비 연 100만원, 장비 지원",
+         "김영호", 2015, "법인", "부산광역시 해운대구 센텀중앙로 97 센텀스카이비즈 12층"),
+        (uid["comp2"], "클로버커머스", "234-56-78901", "유통/전자상거래", 180, 2,
+         _r_seoul_gangnam,
+         "반려동물 용품 전문 이커머스 기업입니다. 네이버 스마트스토어, 쿠팡, 자사몰을 운영하고 있습니다.",
+         "https://clover-commerce.example.com",
+         "중소기업(50~299인)",
+         json.dumps(["휠체어접근", "엘리베이터", "장애인화장실"], ensure_ascii=False),
+         "건물 1층 경사로, 각 층 장애인 화장실 설치",
+         1, "장애인 디자이너 2명 재직, 평균 근속 1.8년",
+         "4대보험, 자율출퇴근, 반려동물 동반 출근, 간식 무한, 생일 반차",
+         "이수진", 2019, "법인", "서울특별시 강남구 테헤란로 152 강남파이낸스센터 8층"),
+        (uid["comp3"], "넥스트미디어", "345-67-89012", "미디어/콘텐츠", 45, 1,
+         _r_pangyo,
+         "유튜브 채널 운영 대행 및 기업 영상 제작 전문 스튜디오입니다.",
+         "https://next-media.example.com",
+         "소기업(10~49인)",
+         json.dumps(["엘리베이터", "보조기기지원"], ensure_ascii=False),
+         "편집실 높이조절 책상, 4K 모니터 2대 기본 지급",
+         0, "",
+         "4대보험, Adobe CC 전직원 지급, 도서구입비 월 5만원, 유연근무",
+         "박준혁", 2021, "법인", "경기도 성남시 분당구 판교역로 235 에이치스퀘어 N동 5층"),
+        (uid["comp4"], "세종파트너스", "456-78-90123", "회계/컨설팅", 320, 5,
+         _r_seoul_jongno,
+         "중견기업 대상 회계감사, 세무자문, 경영컨설팅을 수행하는 종합 회계법인입니다.",
+         "https://sejong-partners.example.com",
+         "중기업(300~999인)",
+         json.dumps(["휠체어접근", "엘리베이터", "장애인화장실", "휴게공간"], ensure_ascii=False),
+         "전 층 무장애 동선, 휴게실 2개소 운영",
+         1, "장애인 직원 5명 재직, 회계 보조 3명 평균 근속 3.2년",
+         "4대보험, 더존 교육 지원, 자격증 응시비, 야간수당, 중식 제공",
+         "최동훈", 2008, "법인", "서울특별시 종로구 종로 33 그랑서울 15층"),
+    ]
+    conn.executemany(
+        """INSERT OR IGNORE INTO companies
+           (user_id, company_name, biz_no, industry, employee_count, disabled_count,
+            region_id, intro, website, company_size,
+            accessibility_facilities, accessibility_note,
+            hiring_experience, retention_note, benefits,
+            ceo, est_year, biz_type, address)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        companies,
     )
+    conn.commit()
 
     dt = {
         r["name"]: r["id"]
@@ -653,7 +725,7 @@ def init():
     }
     seeker_profiles = [
         (uid["seeker1"], dt["시각"], "중증", "여", 2000, "2000-01-15",
-         _region_lookup.get(("부산광역시", "해운대구")),
+         _r_busan,
          "고졸", "", "", 1, "", "", "꼼꼼한 문서 작업이 강점입니다. 스크린리더 사용에 능숙합니다.",
          "사무보조", "재택",
          "대중교통", 60,
@@ -662,7 +734,7 @@ def init():
          6, "오전", "2시간마다",
          json.dumps(["점자자료", "재택근무", "보조기기지원"], ensure_ascii=False)),
         (uid["seeker2"], dt["지체"], "경증", "남", 1998, "1998-07-22",
-         _region_lookup.get(("서울특별시", "강남구")),
+         _r_seoul_gangnam,
          "대졸", "한국대학교", "컴퓨터공학", 3, "테크컴퍼니", "프론트엔드 개발자",
          "웹 접근성 마크업 경험 3년차 개발자입니다.",
          "웹개발", "무관",
@@ -716,455 +788,356 @@ def init():
             (title, desc, idx),
         )
 
-    company_id = conn.execute(
-        "SELECT id FROM companies WHERE user_id=?", (uid["comp1"],)
-    ).fetchone()["id"]
+    cid = {
+        r["company_name"]: r["id"]
+        for r in conn.execute("SELECT id, company_name FROM companies").fetchall()
+    }
 
-    for sort_order, (stage_key, label) in enumerate([
+    _default_stages = [
         ("reviewing", "검토중"), ("shortlisted", "서류합격"),
         ("interview", "면접"), ("offer", "제의"),
-    ], 1):
-        conn.execute(
-            "INSERT OR IGNORE INTO company_pipeline_stages (company_id, stage_key, label, sort_order) VALUES (?,?,?,?)",
-            (company_id, stage_key, label, sort_order),
-        )
+    ]
+    for company_name, company_id in cid.items():
+        for sort_order, (stage_key, label) in enumerate(_default_stages, 1):
+            conn.execute(
+                "INSERT OR IGNORE INTO company_pipeline_stages (company_id, stage_key, label, sort_order) VALUES (?,?,?,?)",
+                (company_id, stage_key, label, sort_order),
+            )
 
     cat = {
         r["minor_code"]: r["id"]
         for r in conn.execute("SELECT id, minor_code FROM job_categories").fetchall()
     }
 
-    _r_busan = _region_lookup.get(("부산광역시", "해운대구"))
-    _r_seoul = _region_lookup.get(("서울특별시", "강남구"))
-    _r_pangyo = _region_lookup.get(("경기도", "성남시"))
+    _job_sql = """INSERT INTO job_postings
+       (company_id, title, region_id, employment_type, remote_available,
+        work_start_time, work_end_time, work_days, flexible_hours,
+        accommodations_provided, accommodations_note,
+        preferred_disability, preferred_severity, min_work_hours,
+        benefits, qualifications,
+        tasks, tools, experience_level, education,
+        hiring_process, headcount,
+        salary, deadline, description, status, category_id)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 
-    jobs = [
-        ("사무지원 담당자", _r_busan, "정규직", 1,
+    # 한빛테크
+    _c1 = cid["한빛테크"]
+    for j in [
+        (_c1, "사무지원 담당자", _r_busan, "정규직", 1,
          "09:00", "18:00", "월~금", 1,
          json.dumps(["재택근무", "보조기기지원", "유연근무"], ensure_ascii=False),
          "스크린리더 지원 문서 양식 제공",
          json.dumps([], ensure_ascii=False), "무관", 8,
          "4대보험, 유연근무제, 스크린리더 지원",
          "컴퓨터활용능력 2급 이상 우대",
+         "고객 정보(이름·연락처·주소·구매이력) CRM/엑셀 입력\n설문지 응답 코딩 (리커트 척도 -> 숫자 변환)\n명함 스캔 후 텍스트 추출·입력\n오타·중복 데이터 검수",
+         "Microsoft Excel, Google Sheets, HWP, Salesforce/더존 iCUBE",
+         "무관", "고졸 이상",
+         "서류전형,면접,최종합격", "1명",
          "월 210만원", "2026-09-30",
-         "고객 DB·설문 응답·명함 등 정형 데이터를 CRM/엑셀에 입력하고 오류를 검수하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 고객 정보(이름·연락처·주소·구매이력) CRM/엑셀 입력\n"
-         "- 설문지 응답 코딩 (리커트 척도 → 숫자 변환)\n"
-         "- 명함 스캔 후 텍스트 추출·입력\n"
-         "- 오타·중복 데이터 검수\n\n"
-         "[사용 도구]\n"
-         "Microsoft Excel, Google Sheets, HWP, Salesforce/더존 iCUBE\n\n"
-         "[목표 성과]\n"
-         "- 일 200~400건 입력 (숙련 후)\n"
-         "- 오류율 0.5% 미만",
+         "고객 DB·설문 응답·명함 등 정형 데이터를 CRM/엑셀에 입력하고 오류를 검수하는 업무입니다.",
          "open", cat.get("ADM-1")),
-        ("문서 스캔·파일링 담당자 (4h)", _r_seoul, "계약직", 1,
-         "09:00", "13:00", "월~금", 0,
-         json.dumps(["휠체어접근", "보조기기지원"], ensure_ascii=False),
-         "높이조절 책상, 스캐너 전용 데스크",
-         json.dumps(["지체"], ensure_ascii=False), "경증", 4,
-         "4대보험(비례), 중식 제공",
-         "",
-         "월 103~110만원 (4h)", "2026-10-15",
-         "종이 서류를 스캐너로 디지털화하고 PDF로 분류·보관하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- Canon/Fujitsu 업무용 스캐너로 서류 투입·품질 확인\n"
-         "- Adobe Acrobat OCR 처리\n"
-         "- 파일명 규칙에 따라 rename 및 폴더 분류\n"
-         "- 손상 페이지 재스캔\n\n"
-         "[목표 성과]\n"
-         "- 일 300~500페이지 처리\n"
-         "- 오분류율 1% 미만\n\n"
-         "[근무 형태]\n"
-         "4시간 파트타임 (오전 또는 오후 선택)",
-         "open", cat.get("ADM-1")),
-        ("경비 영수증 정리 담당", _r_seoul, "정규직", 1,
-         "09:00", "18:00", "월~금", 0,
-         json.dumps(["보조기기지원"], ensure_ascii=False),
-         "더존 ERP 교육 제공, 대형 모니터 지원",
-         json.dumps(["지적"], ensure_ascii=False), "경증", 8,
-         "4대보험, 더존 ERP 교육 지원",
-         "전산회계 2급 우대",
-         "월 209~251만원", "2026-10-31",
-         "법인카드 사용 내역과 영수증을 대조·정산하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 법인카드 내역 은행 앱에서 다운로드\n"
-         "- 임직원 영수증 스캔·수거\n"
-         "- 카드 내역 vs 영수증 1:1 대조 (VLOOKUP)\n"
-         "- 정산 완료 건 더존 Smart A 전표 입력\n\n"
-         "[목표 성과]\n"
-         "- 일 50~150건 처리\n"
-         "- 금액 오류율 0.1% 미만",
-         "open", cat.get("ADM-1")),
-        ("채팅 CS 상담원 (카카오채널)", _r_pangyo, "정규직", 1,
-         "09:00", "18:00", "월~금", 1,
-         json.dumps(["보조기기지원", "유연근무"], ensure_ascii=False),
-         "채팅 전용(음성통화 없음), 소음 차단 헤드셋, 모니터 확대기",
-         json.dumps(["청각"], ensure_ascii=False), "무관", 8,
-         "4대보험, 성과급, 장비 지원",
-         "타이핑 분당 250타 이상",
-         "월 209~251만원", "2026-10-20",
-         "카카오채널·네이버톡톡으로 인입되는 고객 문의를 실시간 채팅으로 응대하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- FAQ 스크립트 조회 후 채팅 답변\n"
-         "- 챗봇 미처리 건 수동 이관\n"
-         "- 상담 내용 CRM 기록\n"
-         "- 복잡 민원 이메일/전화팀 이관\n\n"
-         "[사용 도구]\n"
-         "카카오 비즈니스, 네이버 스마트스토어, 채널톡(Channel.io), Zendesk Chat\n\n"
-         "[목표 성과]\n"
-         "- 일 40~80건 처리\n"
-         "- 평균 응답 시간 2분 이내\n"
-         "- 고객 만족도(CSAT) 4.0/5.0 이상",
-         "open", cat.get("CSR-1")),
-        ("온라인 리뷰 모니터링 (4h 파트타임)", _r_seoul, "계약직", 1,
-         "09:00", "13:00", "월~금", 1,
-         json.dumps(["보조기기지원", "유연근무"], ensure_ascii=False),
-         "듀얼 모니터, 화면 확대 소프트웨어",
-         json.dumps([], ensure_ascii=False), "무관", 4,
-         "4대보험(비례)",
-         "",
-         "월 103~115만원 (4h)", "2026-10-31",
-         "각종 온라인 플랫폼의 리뷰를 수집·분류하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 네이버 쇼핑·쿠팡·구글플레이 리뷰 수집\n"
-         "- 긍정/부정/중립 분류 후 스프레드시트 기록\n"
-         "- 악성 리뷰 캡처·즉시 보고\n\n"
-         "[목표 성과]\n"
-         "- 일 100~300건 리뷰 분류\n"
-         "- 분류 정확도 95% 이상",
-         "open", cat.get("CSR-1")),
-        ("유튜브 영상 편집자 (Vrew·프리미어)", _r_busan, "정규직", 1,
-         "09:00", "18:00", "월~금", 0,
-         json.dumps(["보조기기지원"], ensure_ascii=False),
-         "고성능 편집 PC(RTX 4070+32GB), 듀얼 4K 모니터",
-         json.dumps(["청각"], ensure_ascii=False), "무관", 8,
-         "4대보험, 장비 지원, 자기개발비",
-         "포트폴리오 필수, Vrew/CapCut 경험",
-         "월 272~350만원", "2026-11-15",
-         "유튜브·SNS용 영상 후반 작업을 담당합니다\n\n"
-         "[주요 업무]\n"
-         "- 원본 영상 컷 편집 (불필요 장면 삭제·순서 재배치)\n"
-         "- Vrew AI 자동자막 생성 후 수동 교정\n"
-         "- 유튜브 썸네일 제작 (Canva/Photoshop)\n"
-         "- Shorts/릴스용 세로형 포맷 변환\n"
-         "- 배경음악·효과음 삽입 및 최종 렌더링\n\n"
-         "[사용 도구]\n"
-         "Vrew, CapCut, Adobe Premiere Pro, After Effects, YouTube Studio\n\n"
-         "[목표 성과]\n"
-         "- 주 3~7편 완성\n"
-         "- 자막 오류율 1% 미만",
-         "open", cat.get("CRE-2")),
-        ("한국어 교정·교열 담당", _r_seoul, "계약직", 1,
-         "09:00", "18:00", "월~금", 1,
-         json.dumps(["보조기기지원", "유연근무", "재택근무"], ensure_ascii=False),
-         "대형 모니터, 맞춤법 검사 도구 라이선스",
-         json.dumps(["청각", "지체"], ensure_ascii=False), "무관", 8,
-         "4대보험, 도서 구입비",
-         "국어국문 관련 전공 우대",
-         "월 230~314만원", "2026-10-20",
-         "출판물·웹페이지·홍보물의 맞춤법·문체를 검토하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 맞춤법·띄어쓰기·외래어 표기 검토\n"
-         "- 문체 일관성 확인 (높임말 통일 등)\n"
-         "- HWP/Word 변경 추적으로 수정 표시\n"
-         "- 교정 의견 코멘트 작성\n\n"
-         "[목표 성과]\n"
-         "- 일 10,000~30,000자 처리\n"
-         "- 검수 오류 통과율 1% 미만",
-         "open", cat.get("CRE-2")),
-        ("상품 사진 리터칭 (누끼·색보정)", _r_seoul, "정규직", 1,
-         "09:00", "18:00", "월~금", 0,
-         json.dumps(["보조기기지원"], ensure_ascii=False),
-         "고해상도 모니터, Wacom 타블렛, Photoshop 라이선스",
-         json.dumps(["지체", "뇌병변"], ensure_ascii=False), "경증", 8,
-         "4대보험, Adobe CC 라이선스",
-         "Photoshop 기본 이상",
-         "월 230~334만원", "2026-11-30",
-         "쇼핑몰 상품 사진을 편집·보정하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 상품 사진 배경 제거 (누끼 작업)\n"
-         "- 색보정 (밝기·채도·화이트밸런스)\n"
-         "- 규격 리사이징 (1000×1000px 등)\n"
-         "- 워터마크 삽입, 배치 처리\n\n"
-         "[사용 도구]\n"
-         "Adobe Photoshop (배치 액션), remove.bg, Lightroom Classic\n\n"
-         "[목표 성과]\n"
-         "- 리사이징: 일 50~200장\n"
-         "- 배경제거: 일 30~80장\n"
-         "- 재작업 요청률 5% 미만",
-         "open", cat.get("CRE-2")),
-        ("AI 이미지 데이터 라벨러 (자율주행)", _r_pangyo, "정규직", 1,
+        (_c1, "AI 이미지 데이터 라벨러 (자율주행)", _r_pangyo, "정규직", 0,
          "09:00", "18:00", "월~금", 0,
          json.dumps(["보조기기지원", "휴게공간"], ensure_ascii=False),
          "듀얼 모니터, 고DPI 마우스, 50분 작업·10분 휴식 보장",
          json.dumps(["자폐성", "지적"], ensure_ascii=False), "무관", 8,
          "4대보험, 휴게공간, 간식",
          "색각 이상 없음, 마우스 조작 가능",
+         "바운딩박스: 객체(차량·보행자·신호등) 사각형 표시\n폴리곤: 비정형 객체 외곽선 표시\n동료 교차 검수 (QC 라운드, 10~20% 샘플)\n가이드라인 개선 제안",
+         "CVAT, Label Studio, Crowdworks",
+         "무관", "학력무관",
+         "서류전형,실무면접,최종합격", "2명",
          "월 220~270만원", "2026-12-31",
-         "자율주행 AI 학습용 이미지에 어노테이션을 수행하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 바운딩박스: 객체(차량·보행자·신호등) 사각형 표시\n"
-         "- 폴리곤: 비정형 객체 외곽선 표시\n"
-         "- 동료 교차 검수 (QC 라운드, 10~20% 샘플)\n"
-         "- 가이드라인 개선 제안\n\n"
-         "[사용 도구]\n"
-         "CVAT, Label Studio, Crowdworks\n\n"
-         "[목표 성과]\n"
-         "- 바운딩박스: 200~400객체/시간\n"
-         "- IoU(Intersection over Union) 0.85 이상\n"
-         "- QC 통과율 95% 이상",
+         "자율주행 AI 학습용 이미지에 어노테이션을 수행하는 업무입니다.",
          "open", cat.get("DEV-3A")),
-        ("AI 의료 이미지 라벨러 (X-ray·MRI)", _r_pangyo, "계약직", 1,
+        (_c1, "AI 의료 이미지 라벨러 (X-ray·MRI)", _r_pangyo, "계약직", 0,
          "09:00", "18:00", "월~금", 0,
          json.dumps(["보조기기지원"], ensure_ascii=False),
          "DICOM 뷰어 전용 모니터, 의료 도메인 교육 2주 제공",
          json.dumps(["자폐성"], ensure_ascii=False), "무관", 8,
          "4대보험, 전문 교육 제공",
          "",
+         "세그멘테이션 어노테이션 (픽셀 단위 병변 분류)\n의료 도메인 교육 2주 이수 후 작업 시작\nQC 매니저 샘플 검수 대응",
+         "Label Studio, CVAT, DICOM 뷰어",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
          "월 250~300만원", "2026-12-31",
-         "의료 AI 학습용 X-ray·MRI 이미지에 병변 부위를 표시하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 세그멘테이션 어노테이션 (픽셀 단위 병변 분류)\n"
-         "- 의료 도메인 교육 2주 이수 후 작업 시작\n"
-         "- QC 매니저 샘플 검수 대응\n\n"
-         "[목표 성과]\n"
-         "- 폴리곤: 50~150객체/시간\n"
-         "- QC 통과율 95% 이상",
+         "의료 AI 학습용 X-ray·MRI 이미지에 병변 부위를 표시하는 업무입니다.",
          "open", cat.get("DEV-3A")),
-        ("소프트웨어 QA 테스터", _r_pangyo, "정규직", 1,
+        (_c1, "소프트웨어 QA 테스터", _r_pangyo, "정규직", 0,
          "09:00", "18:00", "월~금", 0,
          json.dumps(["보조기기지원", "휴게공간"], ensure_ascii=False),
          "테스트 기기(Android·iOS) 제공, ISTQB 응시비 지원, 회의 자막 지원",
          json.dumps(["자폐성", "청각"], ensure_ascii=False), "무관", 8,
          "4대보험, 자격증 응시비 지원, 장비 지원",
          "ISTQB CTFL 우대, IT 기본 소양",
+         "기능 테스트 실행 (로그인·결제·폼 제출 시나리오)\nJira 버그 리포트 작성 (재현 절차·스크린샷·환경 정보)\n회귀 테스트 (이전 수정 확인)\n모바일 테스트 (Android·iOS 실기기)\n탐색적 테스트 (시나리오 외 자유 탐색)",
+         "TestRail, Jira, Chrome DevTools, Postman",
+         "무관", "학력무관",
+         "서류전형,실무면접,최종합격", "2명",
          "월 217~267만원", "2026-11-30",
-         "웹·앱 서비스의 기능을 테스트하고 버그를 발견·보고하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 기능 테스트 실행 (로그인·결제·폼 제출 시나리오)\n"
-         "- Jira 버그 리포트 작성 (재현 절차·스크린샷·환경 정보)\n"
-         "- 회귀 테스트 (이전 수정 확인)\n"
-         "- 모바일 테스트 (Android·iOS 실기기)\n"
-         "- 탐색적 테스트 (시나리오 외 자유 탐색)\n\n"
-         "[사용 도구]\n"
-         "TestRail, Jira, Chrome DevTools, Postman\n\n"
-         "[목표 성과]\n"
-         "- 일 50~100건 테스트 케이스 실행\n"
-         "- 버그 재현 성공률 90% 이상",
+         "웹·앱 서비스의 기능을 테스트하고 버그를 발견·보고하는 업무입니다.",
          "open", cat.get("DEV-2")),
-        ("데이터 라벨링 담당자 (텍스트 NLP)", _r_busan, "계약직", 0,
+        (_c1, "데이터 라벨링 담당자 (텍스트 NLP)", _r_busan, "계약직", 0,
          "09:00", "18:00", "월~금", 1,
          json.dumps(["휠체어접근", "주차지원", "유연근무"], ensure_ascii=False),
          "사무실 휠체어 접근, 장애인 전용 주차, 시차출퇴근",
          json.dumps(["지체", "뇌병변"], ensure_ascii=False), "무관", 8,
          "4대보험, 시차출퇴근",
          "",
+         "문장 감성 분류 (긍정/부정/중립)\n개체명 인식 (NER: 사람·장소·기관 태깅)\n챗봇 대화 데이터 품질 검수",
+         "Crowdworks, Selectstar, Label Studio",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "2명",
          "월 200~250만원", "2026-09-15",
-         "AI 학습용 텍스트 데이터를 분류·태깅하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 문장 감성 분류 (긍정/부정/중립)\n"
-         "- 개체명 인식 (NER: 사람·장소·기관 태깅)\n"
-         "- 챗봇 대화 데이터 품질 검수\n\n"
-         "[목표 성과]\n"
-         "- 감성 분류: 500~1,000문장/시간\n"
-         "- NER: 200~400문장/시간",
+         "AI 학습용 텍스트 데이터를 분류·태깅하는 업무입니다.",
          "open", cat.get("DEV-3A")),
-        ("데이터 정제 담당 (Excel·Python)", _r_pangyo, "정규직", 1,
+        (_c1, "데이터 정제 담당 (Excel·Python)", _r_pangyo, "정규직", 1,
          "09:00", "18:00", "월~금", 0,
          json.dumps(["보조기기지원"], ensure_ascii=False),
          "개발 워크스테이션, Python 교육 프로그램 제공",
          json.dumps([], ensure_ascii=False), "무관", 8,
          "4대보험, 교육비 지원",
          "Excel 중급 이상, Python 기초 우대",
+         "결측값 처리 (삭제·대체·플래그)\n중복 행 제거 (VLOOKUP / pandas drop_duplicates)\n이상값 탐지·처리\n데이터 형식 표준화 (날짜·전화번호·주소 포맷 통일)",
+         "Excel, Python + pandas, OpenRefine, Jupyter Notebook",
+         "무관", "학력무관",
+         "서류전형,실무면접,최종합격", "1명",
          "월 200~333만원", "2026-11-15",
-         "원본 데이터셋의 오류를 찾아 정제하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 결측값 처리 (삭제·대체·플래그)\n"
-         "- 중복 행 제거 (VLOOKUP / pandas drop_duplicates)\n"
-         "- 이상값 탐지·처리\n"
-         "- 데이터 형식 표준화 (날짜·전화번호·주소 포맷 통일)\n\n"
-         "[사용 도구]\n"
-         "Excel, Python + pandas, OpenRefine, Jupyter Notebook\n\n"
-         "[목표 성과]\n"
-         "- 엑셀 기준 5,000~10,000행/시간\n"
-         "- 오류 제거율 99% 이상",
+         "원본 데이터셋의 오류를 찾아 정제하는 업무입니다.",
          "open", cat.get("DEV-3A")),
-        ("SNS 채널 관리자", _r_busan, "정규직", 1,
+    ]:
+        conn.execute(_job_sql, j)
+
+    # 클로버커머스
+    _c2 = cid["클로버커머스"]
+    for j in [
+        (_c2, "채팅 CS 상담원 (카카오채널)", _r_seoul_gangnam, "정규직", 1,
+         "09:00", "18:00", "월~금", 1,
+         json.dumps(["보조기기지원", "유연근무"], ensure_ascii=False),
+         "채팅 전용(음성통화 없음), 소음 차단 헤드셋, 모니터 확대기",
+         json.dumps(["청각"], ensure_ascii=False), "무관", 8,
+         "4대보험, 성과급, 장비 지원",
+         "타이핑 분당 250타 이상",
+         "FAQ 스크립트 조회 후 채팅 답변\n챗봇 미처리 건 수동 이관\n상담 내용 CRM 기록\n복잡 민원 이메일/전화팀 이관",
+         "카카오 비즈니스, 네이버 스마트스토어, 채널톡(Channel.io), Zendesk Chat",
+         "무관", "고졸 이상",
+         "서류전형,면접,최종합격", "2명",
+         "월 209~251만원", "2026-10-20",
+         "카카오채널·네이버톡톡으로 인입되는 고객 문의를 실시간 채팅으로 응대하는 업무입니다.",
+         "open", cat.get("CSR-1")),
+        (_c2, "온라인 리뷰 모니터링 (4h 파트타임)", _r_seoul_gangnam, "계약직", 1,
+         "09:00", "13:00", "월~금", 1,
+         json.dumps(["보조기기지원", "유연근무"], ensure_ascii=False),
+         "듀얼 모니터, 화면 확대 소프트웨어",
+         json.dumps([], ensure_ascii=False), "무관", 4,
+         "4대보험(비례)",
+         "",
+         "네이버 쇼핑·쿠팡·구글플레이 리뷰 수집\n긍정/부정/중립 분류 후 스프레드시트 기록\n악성 리뷰 캡처·즉시 보고",
+         "Excel/Google Sheets, 네이버 쇼핑, 쿠팡, Lightshot",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
+         "월 103~115만원 (4h)", "2026-10-31",
+         "각종 온라인 플랫폼의 리뷰를 수집·분류하는 업무입니다.",
+         "open", cat.get("CSR-1")),
+        (_c2, "상품 사진 리터칭 (누끼·색보정)", _r_seoul_gangnam, "정규직", 0,
+         "09:00", "18:00", "월~금", 0,
+         json.dumps(["보조기기지원"], ensure_ascii=False),
+         "고해상도 모니터, Wacom 타블렛, Photoshop 라이선스",
+         json.dumps(["지체", "뇌병변"], ensure_ascii=False), "경증", 8,
+         "4대보험, Adobe CC 라이선스",
+         "Photoshop 기본 이상",
+         "상품 사진 배경 제거 (누끼 작업)\n색보정 (밝기·채도·화이트밸런스)\n규격 리사이징 (1000x1000px 등)\n워터마크 삽입, 배치 처리",
+         "Adobe Photoshop (배치 액션), remove.bg, Lightroom Classic",
+         "무관", "학력무관",
+         "서류전형,포트폴리오심사,면접,최종합격", "1명",
+         "월 230~334만원", "2026-11-30",
+         "쇼핑몰 상품 사진을 편집·보정하는 업무입니다.",
+         "open", cat.get("CRE-2")),
+        (_c2, "SNS 채널 관리자", _r_seoul_gangnam, "정규직", 1,
          "09:00", "18:00", "월~금", 1,
          json.dumps(["보조기기지원", "유연근무"], ensure_ascii=False),
          "Canva Pro 라이선스, Notion 콘텐츠 캘린더",
          json.dumps([], ensure_ascii=False), "무관", 8,
          "4대보험, 도구 라이선스, 성과급",
          "SNS 운영 경험 우대",
+         "인스타그램 피드/릴스 예약 업로드 (Meta Business Suite)\n네이버 블로그 포스팅 편집·발행\n유튜브 영상 썸네일·태그·설명 작성\n댓글·DM 분류 및 답변\n인게이지먼트 지표(좋아요·저장·도달) 기록",
+         "Meta Business Suite, Canva, Notion, YouTube Studio",
+         "경력 1년 이상", "학력무관",
+         "서류전형,실무면접,임원면접,최종합격", "1명",
          "월 220~300만원", "2026-10-31",
-         "자사 SNS 채널의 콘텐츠 업로드·댓글 관리를 담당합니다\n\n"
-         "[주요 업무]\n"
-         "- 인스타그램 피드/릴스 예약 업로드 (Meta Business Suite)\n"
-         "- 네이버 블로그 포스팅 편집·발행\n"
-         "- 유튜브 영상 썸네일·태그·설명 작성\n"
-         "- 댓글·DM 분류 및 답변\n"
-         "- 인게이지먼트 지표(좋아요·저장·도달) 기록\n\n"
-         "[목표 성과]\n"
-         "- 주 5회 이상 게시물 발행\n"
-         "- 월간 팔로워 순증 +3%",
+         "자사 SNS 채널의 콘텐츠 업로드·댓글 관리를 담당합니다.",
          "open", cat.get("MKT-4")),
-        ("경쟁사 시장조사 담당 (4h 가능)", _r_seoul, "계약직", 1,
+        (_c2, "경쟁사 시장조사 담당 (4h 가능)", _r_seoul_gangnam, "계약직", 1,
          "09:00", "13:00", "월~금", 1,
          json.dumps(["보조기기지원", "유연근무"], ensure_ascii=False),
          "듀얼 모니터, 체크리스트 매뉴얼 제공",
          json.dumps(["지적"], ensure_ascii=False), "경증", 4,
          "4대보험",
          "컴퓨터활용능력 2급 우대",
+         "경쟁사 3~10개 사이트·SNS 가격 변동 확인\n네이버 쇼핑·쿠팡 가격 비교 데이터 수집\n경쟁사 리뷰·별점 분석\n주간 벤치마킹 보고서 초안 작성",
+         "Excel/Google Sheets, 네이버 쇼핑, 쿠팡, 아이템스카우트, Notion",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
          "월 210~240만원", "2026-10-15",
-         "경쟁사의 가격·프로모션 변동을 정기 추적하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 경쟁사 3~10개 사이트·SNS 가격 변동 확인\n"
-         "- 네이버 쇼핑·쿠팡 가격 비교 데이터 수집\n"
-         "- 경쟁사 리뷰·별점 분석\n"
-         "- 주간 벤치마킹 보고서 초안 작성\n\n"
-         "[목표 성과]\n"
-         "- 주 1회 동향 보고서 제출\n"
-         "- 가격 데이터 정확도 98% 이상",
+         "경쟁사의 가격·프로모션 변동을 정기 추적하는 업무입니다.",
          "open", cat.get("MKT-4")),
-        ("매입·매출 전표 입력 담당 (더존)", _r_seoul, "정규직", 1,
+    ]:
+        conn.execute(_job_sql, j)
+
+    # 넥스트미디어
+    _c3 = cid["넥스트미디어"]
+    for j in [
+        (_c3, "유튜브 영상 편집자 (Vrew·프리미어)", _r_pangyo, "정규직", 0,
          "09:00", "18:00", "월~금", 0,
          json.dumps(["보조기기지원"], ensure_ascii=False),
-         "더존 Smart A 교육 4주, 대형 모니터",
-         json.dumps(["지적", "지체"], ensure_ascii=False), "경증", 8,
-         "4대보험, 교육비 지원",
-         "전산회계 2급 이상 우대",
-         "월 230~300만원", "2026-11-15",
-         "세금계산서를 분류하고 회계 프로그램에 전표를 입력하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 세금계산서(전자·종이) 분류\n"
-         "- 더존 Smart A 매입·매출 전표 입력 (공급가·부가세·거래처)\n"
-         "- 홈택스 전자세금계산서 대조\n"
-         "- 입력 오류 검토 (차변·대변 불일치 확인)\n\n"
-         "[목표 성과]\n"
-         "- 일 50~100건 전표 입력\n"
-         "- 오류율 1% 미만\n\n"
-         "[자격 요건]\n"
-         "전산회계 2급 이상 우대",
-         "open", cat.get("ACC-1")),
-        ("EN-KR 기술문서 번역가 (SDL Trados)", _r_busan, "정규직", 1,
+         "고성능 편집 PC(RTX 4070+32GB), 듀얼 4K 모니터",
+         json.dumps(["청각"], ensure_ascii=False), "무관", 8,
+         "4대보험, 장비 지원, 자기개발비",
+         "포트폴리오 필수, Vrew/CapCut 경험",
+         "원본 영상 컷 편집 (불필요 장면 삭제·순서 재배치)\nVrew AI 자동자막 생성 후 수동 교정\n유튜브 썸네일 제작 (Canva/Photoshop)\nShorts/릴스용 세로형 포맷 변환\n배경음악·효과음 삽입 및 최종 렌더링",
+         "Vrew, CapCut, Adobe Premiere Pro, After Effects, YouTube Studio",
+         "무관", "전문대졸 이상",
+         "서류전형,포트폴리오심사,실무면접,최종합격", "1명",
+         "월 272~350만원", "2026-11-15",
+         "유튜브·SNS용 영상 후반 작업을 담당합니다.",
+         "open", cat.get("CRE-2")),
+        (_c3, "한국어 교정·교열 담당", _r_pangyo, "계약직", 1,
+         "09:00", "18:00", "월~금", 1,
+         json.dumps(["보조기기지원", "유연근무", "재택근무"], ensure_ascii=False),
+         "대형 모니터, 맞춤법 검사 도구 라이선스",
+         json.dumps(["청각", "지체"], ensure_ascii=False), "무관", 8,
+         "4대보험, 도서 구입비",
+         "국어국문 관련 전공 우대",
+         "맞춤법·띄어쓰기·외래어 표기 검토\n문체 일관성 확인 (높임말 통일 등)\nHWP/Word 변경 추적으로 수정 표시\n교정 의견 코멘트 작성",
+         "HWP, Microsoft Word, 부산대 맞춤법 검사기, Notion",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
+         "월 230~314만원", "2026-10-20",
+         "출판물·웹페이지·홍보물의 맞춤법·문체를 검토하는 업무입니다.",
+         "open", cat.get("CRE-2")),
+        (_c3, "EN-KR 기술문서 번역가 (SDL Trados)", _r_pangyo, "정규직", 1,
          "09:00", "18:00", "월~금", 1,
          json.dumps(["보조기기지원", "유연근무", "휴게공간"], ensure_ascii=False),
          "SDL Trados 라이선스, 용어집 DB, 집중 작업실",
          json.dumps(["청각", "지체"], ensure_ascii=False), "무관", 8,
          "4대보험, 도구 라이선스, 도서구입비",
          "TOEIC 850점 이상, CAT 도구 경험 필수",
+         "SDL Trados/memoQ CAT 도구를 활용한 세그먼트 단위 번역\nTM(번역 메모리)·용어집 관리 및 업데이트\n초벌 번역 완성 후 자가 교정 (QA 체크 도구 실행)",
+         "SDL Trados Studio, memoQ, DeepL Pro, Microsoft Word, Adobe Acrobat",
+         "경력 1년 이상", "전문대졸 이상",
+         "서류전형,실무면접,임원면접,최종합격", "1명",
          "월 270~400만원", "2026-11-30",
-         "IT 기술문서·매뉴얼을 영어에서 한국어로 번역하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- SDL Trados/memoQ CAT 도구를 활용한 세그먼트 단위 번역\n"
-         "- TM(번역 메모리)·용어집 관리 및 업데이트\n"
-         "- 초벌 번역 완성 후 자가 교정 (QA 체크 도구 실행)\n\n"
-         "[목표 성과]\n"
-         "- 일 2,000~3,000단어 (일반 문서 기준)\n"
-         "- 오역률 1% 미만\n\n"
-         "[자격 요건]\n"
-         "TOEIC 850점 이상 또는 동등 수준, CAT 도구 경험 필수",
+         "IT 기술문서·매뉴얼을 영어에서 한국어로 번역하는 업무입니다.",
          "open", cat.get("SPT-1")),
-        ("CCTV 원격 관제사 (클라이언트 빌딩)", _r_seoul, "정규직", 0,
+        (_c3, "문서 스캔·파일링 담당자 (4h)", _r_pangyo, "계약직", 0,
+         "09:00", "13:00", "월~금", 0,
+         json.dumps(["휠체어접근", "보조기기지원"], ensure_ascii=False),
+         "높이조절 책상, 스캐너 전용 데스크",
+         json.dumps(["지체"], ensure_ascii=False), "경증", 4,
+         "4대보험(비례), 중식 제공",
+         "",
+         "Canon/Fujitsu 업무용 스캐너로 서류 투입·품질 확인\nAdobe Acrobat OCR 처리\n파일명 규칙에 따라 rename 및 폴더 분류\n손상 페이지 재스캔",
+         "Canon/Fujitsu 스캐너, Adobe Acrobat, Google Drive",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
+         "월 103~110만원 (4h)", "2026-10-15",
+         "종이 서류를 스캐너로 디지털화하고 PDF로 분류·보관하는 업무입니다.",
+         "open", cat.get("ADM-1")),
+    ]:
+        conn.execute(_job_sql, j)
+
+    # 세종파트너스
+    _c4 = cid["세종파트너스"]
+    for j in [
+        (_c4, "경비 영수증 정리 담당", _r_seoul_jongno, "정규직", 0,
+         "09:00", "18:00", "월~금", 0,
+         json.dumps(["보조기기지원"], ensure_ascii=False),
+         "더존 ERP 교육 제공, 대형 모니터 지원",
+         json.dumps(["지적"], ensure_ascii=False), "경증", 8,
+         "4대보험, 더존 ERP 교육 지원",
+         "전산회계 2급 우대",
+         "법인카드 내역 은행 앱에서 다운로드\n임직원 영수증 스캔·수거\n카드 내역 vs 영수증 1:1 대조 (VLOOKUP)\n정산 완료 건 더존 Smart A 전표 입력",
+         "더존 Smart A, Microsoft Excel, Adobe Acrobat",
+         "무관", "고졸 이상",
+         "서류전형,면접,최종합격", "1명",
+         "월 209~251만원", "2026-10-31",
+         "법인카드 사용 내역과 영수증을 대조·정산하는 업무입니다.",
+         "open", cat.get("ADM-1")),
+        (_c4, "매입·매출 전표 입력 담당 (더존)", _r_seoul_jongno, "정규직", 0,
+         "09:00", "18:00", "월~금", 0,
+         json.dumps(["보조기기지원"], ensure_ascii=False),
+         "더존 Smart A 교육 4주, 대형 모니터",
+         json.dumps(["지적", "지체"], ensure_ascii=False), "경증", 8,
+         "4대보험, 교육비 지원",
+         "전산회계 2급 이상 우대",
+         "세금계산서(전자·종이) 분류\n더존 Smart A 매입·매출 전표 입력 (공급가·부가세·거래처)\n홈택스 전자세금계산서 대조\n입력 오류 검토 (차변·대변 불일치 확인)",
+         "더존 Smart A(iCUBE), 홈택스, Microsoft Excel",
+         "무관", "고졸 이상",
+         "서류전형,면접,최종합격", "1명",
+         "월 230~300만원", "2026-11-15",
+         "세금계산서를 분류하고 회계 프로그램에 전표를 입력하는 업무입니다.",
+         "open", cat.get("ACC-1")),
+        (_c4, "CCTV 원격 관제사 (클라이언트 빌딩)", _r_seoul_jongno, "정규직", 0,
          "00:00", "08:00", "3교대", 0,
          json.dumps(["휴게공간"], ensure_ascii=False),
          "wone 관제 거점 근무, 16채널 모니터월, 조이스틱, 야간수당",
          json.dumps(["자폐성"], ensure_ascii=False), "무관", 8,
          "4대보험, 야간수당 +30%, 교대수당",
          "CCTV관제사 2급 우대",
+         "담당 클라이언트 3~5개 사업장 VMS 채널 실시간 감시\n이상 탐지 시: 영상 캡처 -> 클라이언트 통보 -> 인시던트 기록\n필요 시 경찰·소방 신고 대행\n1시간마다 화질·접속 상태 점검\n일별·주별 감시 리포트 작성",
+         "Milestone XProtect, IDIS Center, Genetec, VPN",
+         "무관", "고졸 이상",
+         "서류전형,면접,최종합격", "2명",
          "월 210~300만원 (야간 +30%)", "2026-12-31",
-         "클라이언트 기업 사업장의 CCTV를 wone 관제 거점에서 원격 감시하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 담당 클라이언트 3~5개 사업장 VMS 채널 실시간 감시\n"
-         "- 이상 탐지 시: 영상 캡처 → 클라이언트 통보 → 인시던트 기록\n"
-         "- 필요 시 경찰·소방 신고 대행\n"
-         "- 1시간마다 화질·접속 상태 점검\n"
-         "- 일별·주별 감시 리포트 작성\n\n"
-         "[사용 도구]\n"
-         "Milestone XProtect, IDIS Center, Genetec / VPN 접속\n\n"
-         "[목표 성과]\n"
-         "- 이상 감지 → 클라이언트 통보: 5분 이내\n"
-         "- 채널 접속 가용률 99% 이상\n\n"
-         "[근무 형태]\n"
-         "3교대 8시간 (24/7 운영)",
+         "클라이언트 기업 사업장의 CCTV를 wone 관제 거점에서 원격 감시하는 업무입니다.",
          "open", cat.get("MON-2")),
-        ("서버·네트워크 모니터링 (NOC 1차 대응)", _r_pangyo, "정규직", 0,
+        (_c4, "서버·네트워크 모니터링 (NOC 1차 대응)", _r_seoul_jongno, "정규직", 0,
          "00:00", "08:00", "3교대", 0,
          json.dumps(["보조기기지원", "휴게공간"], ensure_ascii=False),
          "wone 관제 거점 근무, Zabbix/Grafana 대시보드 전용 모니터, Slack 알람봇",
          json.dumps(["자폐성", "지체"], ensure_ascii=False), "무관", 8,
          "4대보험, 야간수당, 자격증 지원",
          "",
+         "Zabbix/Grafana 대시보드 30분 1회 순환 확인 (녹색->황색->적색)\nCritical 알람: 3분 이내 엔지니어 Slack + 전화 통보\nWarning 알람: Jira SM 티켓 생성 후 이메일 통보\n인시던트 기록 (발생시각·장비명·알람 내용·조치자)\n교대 종료 시 당직 보고서 작성",
+         "Zabbix, Grafana, Jira Service Management, Slack",
+         "무관", "학력무관",
+         "서류전형,실무면접,최종합격", "1명",
          "월 210~320만원", "2026-12-31",
-         "서버·네트워크 장비의 상태 경보를 감시하고 담당 엔지니어에게 에스컬레이션하는 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- Zabbix/Grafana 대시보드 30분 1회 순환 확인 (녹색→황색→적색)\n"
-         "- Critical 알람: 3분 이내 엔지니어 Slack + 전화 통보\n"
-         "- Warning 알람: Jira SM 티켓 생성 후 이메일 통보\n"
-         "- 인시던트 기록 (발생시각·장비명·알람 내용·조치자)\n"
-         "- 교대 종료 시 당직 보고서 작성\n\n"
-         "[목표 성과]\n"
-         "- 알람 → 티켓 생성: 5분 이내\n"
-         "- Critical 에스컬레이션: 3분 이내\n"
-         "- 일 평균 20~80건 알람 처리",
+         "서버·네트워크 장비의 상태 경보를 감시하고 담당 엔지니어에게 에스컬레이션하는 업무입니다.",
          "open", cat.get("MON-2")),
-        ("방재 관제사 (화재·가스·출입)", _r_seoul, "정규직", 0,
+        (_c4, "방재 관제사 (화재·가스·출입)", _r_seoul_jongno, "정규직", 0,
          "00:00", "08:00", "3교대", 0,
          json.dumps(["보조기기지원", "휴게공간"], ensure_ascii=False),
          "wone 관제 거점, 화재수신기 전용석, 시각 LED·진동 보조기기(청각장애 시)",
          json.dumps([], ensure_ascii=False), "무관", 8,
          "4대보험, 자격수당 +10~30만, 야간수당",
          "소방안전관리자 2급 취득 지원",
+         "화재수신기(P/R형)·가스감지기·출입통제(슈프리마 BioStar2) 패널 감시\n화재 경보 시: 해당 구역 CCTV 교차 확인 -> 실화 판단 -> 119 신고 + 대피 방송\n가스 경보 시: 환기 지시 -> 가스 차단 밸브 원격 제어\n2시간마다 수신기 패널 수동 점검·기록\n월 1회 소방훈련 참여",
+         "화재수신기 제어 패널, 슈프리마 BioStar2, CCTV VMS",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
          "월 220~330만원 (자격수당 +10~30만)", "2026-12-31",
-         "건물 내 화재·가스·출입 경보 시스템을 상시 감시하는 방재 관제 업무입니다\n\n"
-         "[주요 업무]\n"
-         "- 화재수신기(P/R형)·가스감지기·출입통제(슈프리마 BioStar2) 패널 감시\n"
-         "- 화재 경보 시: 해당 구역 CCTV 교차 확인 → 실화 판단 → 119 신고 + 대피 방송\n"
-         "- 가스 경보 시: 환기 지시 → 가스 차단 밸브 원격 제어\n"
-         "- 2시간마다 수신기 패널 수동 점검·기록\n"
-         "- 월 1회 소방훈련 참여\n\n"
-         "[자격 요건]\n"
-         "소방안전관리자 2급 취득 지원 (강습교육 24시간, 약 3~4일)\n\n"
-         "[목표 성과]\n"
-         "- 경보 후 1차 조치: 2분 이내\n"
-         "- 실화 탐지율 100%",
+         "건물 내 화재·가스·출입 경보 시스템을 상시 감시하는 방재 관제 업무입니다.",
          "open", cat.get("MON-2")),
-        ("우편·문서 처리 담당 (코워크스페이스)", _r_seoul, "정규직", 0,
+        (_c4, "우편·문서 처리 담당 (코워크스페이스)", _r_seoul_jongno, "정규직", 0,
          "09:00", "18:00", "월~금", 0,
          json.dumps(["휠체어접근", "장애인화장실", "엘리베이터"], ensure_ascii=False),
          "wone 코워크 근무, 복합기·제본기·코팅기 완비, 문서 보안 교육",
          json.dumps(["청각", "자폐성", "지적"], ensure_ascii=False), "경증", 8,
          "4대보험, 중식 제공",
          "HWP·MS Word 기본 조작",
+         "내부 문서 분류 (부서별·수신인별)\n우편물 개봉·스캔·파일명 규칙에 따라 저장 (Google Drive/SharePoint)\n문서 인쇄 요청 처리 (양면·컬러·제본)\n발송 우편물 봉투 작성·등기 발송\n문서 보관 파일링 (물리 보관함·디지털 인덱스 동기화)",
+         "복합기(Canon/Ricoh), Adobe Acrobat, Google Drive, 우체국 사전접수 앱",
+         "무관", "학력무관",
+         "서류전형,면접,최종합격", "1명",
          "월 209만원", "2026-11-30",
-         "wone 코워크스페이스 내 문서 물류를 담당합니다\n\n"
-         "[주요 업무]\n"
-         "- 내부 문서 분류 (부서별·수신인별)\n"
-         "- 우편물 개봉·스캔·파일명 규칙에 따라 저장 (Google Drive/SharePoint)\n"
-         "- 문서 인쇄 요청 처리 (양면·컬러·제본)\n"
-         "- 발송 우편물 봉투 작성·등기 발송\n"
-         "- 문서 보관 파일링 (물리 보관함·디지털 인덱스 동기화)\n\n"
-         "[사용 도구]\n"
-         "복합기(Canon/Ricoh), Adobe Acrobat, Google Drive, 우체국 사전접수 앱\n\n"
-         "[목표 성과]\n"
-         "- 분류 오류율 0.5% 이하\n"
-         "- 인쇄 요청 당일 완료율 98%",
+         "wone 코워크스페이스 내 문서 물류를 담당합니다.",
          "open", cat.get("FAC-4")),
-    ]
-    for j in jobs:
-        conn.execute(
-            """INSERT INTO job_postings
-               (company_id, title, region_id, employment_type, remote_available,
-                work_start_time, work_end_time, work_days, flexible_hours,
-                accommodations_provided, accommodations_note,
-                preferred_disability, preferred_severity, min_work_hours,
-                benefits, requirements,
-                salary, deadline, description, status, category_id)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (company_id,) + j,
-        )
+    ]:
+        conn.execute(_job_sql, j)
+
     conn.commit()
 
     existing = conn.execute("SELECT COUNT(*) FROM candidacies").fetchone()[0]
@@ -1183,7 +1156,7 @@ def init():
 
     conn.commit()
     conn.close()
-    print("DB initialized (schema v2)")
+    print("DB initialized (schema v3)")
 
 
 if __name__ == "__main__":

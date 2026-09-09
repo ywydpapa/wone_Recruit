@@ -125,6 +125,35 @@ def get_recommended_jobs(conn, uid, limit=5):
     return scored[:limit]
 
 
+def _count_new_alert_jobs(conn, uid):
+    import json
+    searches = conn.execute(
+        "SELECT filters, last_checked_at, created_at FROM saved_searches WHERE user_id=?",
+        (uid,),
+    ).fetchall()
+    total = 0
+    for s in searches:
+        filters = json.loads(s["filters"]) if s["filters"] else {}
+        last_checked = s["last_checked_at"] or s["created_at"]
+        sql = (
+            "SELECT COUNT(*) FROM job_postings jp "
+            "LEFT JOIN regions r ON jp.region_id=r.id "
+            "WHERE jp.status='open' AND jp.created_at > ?"
+        )
+        params = [last_checked]
+        if filters.get('sido'):
+            sql += " AND r.sido=?"
+            params.append(filters['sido'])
+        if filters.get('employment_type'):
+            sql += " AND jp.employment_type=?"
+            params.append(filters['employment_type'])
+        if filters.get('category'):
+            sql += " AND jp.category_id=?"
+            params.append(int(filters['category']))
+        total += conn.execute(sql, params).fetchone()[0]
+    return total
+
+
 def get_seeker_dashboard(conn, uid):
     apps = conn.execute("""
         SELECT c.*, jp.title as job_title, co.company_name
@@ -152,10 +181,19 @@ def get_seeker_dashboard(conn, uid):
     ).fetchone()[0]
     completeness = calc_profile_completeness(conn, uid)
     recommended = get_recommended_jobs(conn, uid)
+    alert_new_count = _count_new_alert_jobs(conn, uid)
+    resume_completeness = 0
+    default_resume = conn.execute(
+        "SELECT id FROM resumes WHERE user_id=? AND is_default=1", (uid,)
+    ).fetchone()
+    if default_resume:
+        from core.resume_completeness import calc_completeness
+        resume_completeness = calc_completeness(conn, default_resume["id"])
     return dict(apps=apps, app_count=app_count, proposals=proposals,
                 open_jobs=open_jobs, has_profile=profile is not None,
                 bookmark_count=bookmark_count, profile_completeness=completeness,
-                recommended=recommended)
+                recommended=recommended, alert_new_count=alert_new_count,
+                resume_completeness=resume_completeness)
 
 
 def get_company_dashboard(conn, uid):
@@ -194,6 +232,9 @@ def get_company_dashboard(conn, uid):
             JOIN job_postings jp ON c.job_id=jp.id
             WHERE jp.company_id=? AND c.status='hired' {_filter}
         """, (cid,)).fetchone()[0]
+        placement_count = conn.execute(
+            "SELECT COUNT(*) FROM placements WHERE company_id=?", (cid,)
+        ).fetchone()[0]
         interview_count = conn.execute(f"""
             SELECT COUNT(*) FROM candidacies c
             JOIN job_postings jp ON c.job_id=jp.id
@@ -222,6 +263,7 @@ def get_company_dashboard(conn, uid):
         return dict(company=company, job_count=job_count, open_count=open_count,
                     total_applicants=total_applicants, pending_apps=pending_apps,
                     new_apps_this_week=new_apps_this_week, hired_count=hired_count,
+                    placement_count=placement_count,
                     interview_count=interview_count, pipeline=pipeline,
                     recent_apps=recent_apps,
                     pipeline_stages=pipeline_stages, status_labels=stage_labels,
@@ -229,7 +271,8 @@ def get_company_dashboard(conn, uid):
     else:
         return dict(company=None, job_count=0, open_count=0,
                     total_applicants=0, pending_apps=0, new_apps_this_week=0,
-                    hired_count=0, interview_count=0, pipeline={},
+                    hired_count=0, placement_count=0,
+                    interview_count=0, pipeline={},
                     recent_apps=[], pipeline_stages=[], status_labels={},
                     stage_colors={})
 
@@ -261,7 +304,14 @@ def get_operator_dashboard(conn):
         JOIN companies co ON jp.company_id=co.id
         ORDER BY c.updated_at DESC LIMIT 5
     """).fetchall()
+
+    # 매칭 파이프라인
+    pipeline_rows = conn.execute("""
+        SELECT status, COUNT(*) AS cnt FROM candidacies GROUP BY status
+    """).fetchall()
+    pipeline = {r['status']: r['cnt'] for r in pipeline_rows}
+
     return dict(seeker_count=seeker_count, company_count=company_count,
                 open_jobs=open_jobs, total_candidacies=total_candidacies,
                 pending_matches=pending_matches, hired=hired,
-                recent_candidacies=recent_candidacies)
+                recent_candidacies=recent_candidacies, pipeline=pipeline)

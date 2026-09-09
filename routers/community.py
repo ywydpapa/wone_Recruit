@@ -12,9 +12,9 @@ PER_PAGE = 10
 
 def _get_session_user(request):
     return {
-        "user_id": request.session["user_id"],
-        "user_name": request.session.get("user_name", ""),
-        "user_role": request.session.get("user_role", ""),
+        "id": request.session["id"],
+        "name": request.session.get("name", ""),
+        "role": request.session.get("role", ""),
     }
 
 
@@ -55,14 +55,14 @@ async def community_list(
         posts = conn.execute(sql, params).fetchall()
 
         my_post_count = conn.execute(
-            "SELECT COUNT(*) FROM posts WHERE user_id=?", (user["user_id"],)
+            "SELECT COUNT(*) FROM posts WHERE user_id=?", (user["id"],)
         ).fetchone()[0]
         my_comment_count = conn.execute(
-            "SELECT COUNT(*) FROM comments WHERE user_id=?", (user["user_id"],)
+            "SELECT COUNT(*) FROM comments WHERE user_id=?", (user["id"],)
         ).fetchone()[0]
         my_like_received = conn.execute(
             "SELECT COUNT(*) FROM post_likes pl JOIN posts p ON pl.post_id=p.id WHERE p.user_id=?",
-            (user["user_id"],),
+            (user["id"],),
         ).fetchone()[0]
     finally:
         conn.close()
@@ -73,8 +73,8 @@ async def community_list(
         context={
             "request": request,
             "page_title": "커뮤니티",
-            "user_name": user["user_name"],
-            "user_role": user["user_role"],
+            "user_name": user["name"],
+            "user_role": user["role"],
             "posts": posts,
             "categories": POST_CATEGORIES,
             "current_category": category,
@@ -99,8 +99,8 @@ async def write_post_form(request: Request):
         context={
             "request": request,
             "page_title": "글 작성",
-            "user_name": user["user_name"],
-            "user_role": user["user_role"],
+            "user_name": user["name"],
+            "user_role": user["role"],
             "categories": POST_CATEGORIES,
         },
     )
@@ -120,7 +120,7 @@ async def create_post(
     try:
         conn.execute(
             "INSERT INTO posts (user_id, category, title, content, author) VALUES (?,?,?,?,?)",
-            (user["user_id"], category, title, content, user["user_name"]),
+            (user["id"], category, title, content, user["name"]),
         )
         conn.commit()
     finally:
@@ -149,13 +149,13 @@ async def post_detail(request: Request, post_id: int):
         liked = bool(
             conn.execute(
                 "SELECT 1 FROM post_likes WHERE post_id=? AND user_id=?",
-                (post_id, user["user_id"]),
+                (post_id, user["id"]),
             ).fetchone()
         )
         bookmarked = bool(
             conn.execute(
                 "SELECT 1 FROM post_bookmarks WHERE post_id=? AND user_id=?",
-                (post_id, user["user_id"]),
+                (post_id, user["id"]),
             ).fetchone()
         )
     finally:
@@ -166,14 +166,14 @@ async def post_detail(request: Request, post_id: int):
         context={
             "request": request,
             "page_title": post["title"],
-            "user_name": user["user_name"],
-            "user_role": user["user_role"],
+            "user_name": user["name"],
+            "user_role": user["role"],
             "post": post,
             "comments": comments,
             "like_count": like_count,
             "liked": liked,
             "bookmarked": bookmarked,
-            "session_uid": user["user_id"],
+            "session_uid": user["id"],
             "categories": POST_CATEGORIES,
         },
     )
@@ -188,7 +188,7 @@ async def add_comment(request: Request, post_id: int, content: str = Form(...)):
     try:
         conn.execute(
             "INSERT INTO comments (post_id, user_id, author, content) VALUES (?,?,?,?)",
-            (post_id, user["user_id"], user["user_name"], content),
+            (post_id, user["id"], user["name"], content),
         )
         conn.commit()
     finally:
@@ -205,18 +205,18 @@ async def toggle_like(request: Request, post_id: int):
     try:
         existing = conn.execute(
             "SELECT 1 FROM post_likes WHERE post_id=? AND user_id=?",
-            (post_id, user["user_id"]),
+            (post_id, user["id"]),
         ).fetchone()
         if existing:
             conn.execute(
                 "DELETE FROM post_likes WHERE post_id=? AND user_id=?",
-                (post_id, user["user_id"]),
+                (post_id, user["id"]),
             )
             liked = False
         else:
             conn.execute(
                 "INSERT INTO post_likes (post_id, user_id) VALUES (?,?)",
-                (post_id, user["user_id"]),
+                (post_id, user["id"]),
             )
             liked = True
         conn.commit()
@@ -237,18 +237,18 @@ async def toggle_bookmark(request: Request, post_id: int):
     try:
         existing = conn.execute(
             "SELECT 1 FROM post_bookmarks WHERE post_id=? AND user_id=?",
-            (post_id, user["user_id"]),
+            (post_id, user["id"]),
         ).fetchone()
         if existing:
             conn.execute(
                 "DELETE FROM post_bookmarks WHERE post_id=? AND user_id=?",
-                (post_id, user["user_id"]),
+                (post_id, user["id"]),
             )
             bookmarked = False
         else:
             conn.execute(
                 "INSERT INTO post_bookmarks (post_id, user_id) VALUES (?,?)",
-                (post_id, user["user_id"]),
+                (post_id, user["id"]),
             )
             bookmarked = True
         conn.commit()
@@ -265,7 +265,7 @@ async def delete_post(request: Request, post_id: int):
     conn = get_sqlite()
     try:
         post = conn.execute("SELECT user_id FROM posts WHERE id=?", (post_id,)).fetchone()
-        if not post or post["user_id"] != user["user_id"]:
+        if not post or post["user_id"] != user["id"]:
             return JSONResponse({"error": "unauthorized"}, status_code=403)
         conn.execute("DELETE FROM comments WHERE post_id=?", (post_id,))
         conn.execute("DELETE FROM post_likes WHERE post_id=?", (post_id,))
@@ -285,7 +285,7 @@ async def delete_comment(request: Request, comment_id: int):
     conn = get_sqlite()
     try:
         comment = conn.execute("SELECT user_id FROM comments WHERE id=?", (comment_id,)).fetchone()
-        if not comment or comment["user_id"] != user["user_id"]:
+        if not comment or comment["user_id"] != user["id"]:
             return JSONResponse({"error": "unauthorized"}, status_code=403)
         conn.execute("DELETE FROM comments WHERE id=?", (comment_id,))
         conn.commit()
@@ -304,12 +304,12 @@ async def my_posts(request: Request):
         posts = conn.execute(
             "SELECT p.*, (SELECT COUNT(*) FROM comments c WHERE c.post_id=p.id) AS comment_count "
             "FROM posts p WHERE p.user_id=? ORDER BY p.created_at DESC",
-            (user["user_id"],),
+            (user["id"],),
         ).fetchall()
         comments = conn.execute(
             "SELECT c.*, p.title AS post_title FROM comments c "
             "JOIN posts p ON c.post_id=p.id WHERE c.user_id=? ORDER BY c.created_at DESC",
-            (user["user_id"],),
+            (user["id"],),
         ).fetchall()
     finally:
         conn.close()
@@ -319,8 +319,8 @@ async def my_posts(request: Request):
         context={
             "request": request,
             "page_title": "내 글/댓글",
-            "user_name": user["user_name"],
-            "user_role": user["user_role"],
+            "user_name": user["name"],
+            "user_role": user["role"],
             "posts": posts,
             "comments": comments,
             "categories": POST_CATEGORIES,
@@ -339,7 +339,7 @@ async def my_bookmarked_posts(request: Request):
             "SELECT p.*, (SELECT COUNT(*) FROM comments c WHERE c.post_id=p.id) AS comment_count "
             "FROM posts p JOIN post_bookmarks pb ON p.id=pb.post_id "
             "WHERE pb.user_id=? ORDER BY p.created_at DESC",
-            (user["user_id"],),
+            (user["id"],),
         ).fetchall()
     finally:
         conn.close()
@@ -349,8 +349,8 @@ async def my_bookmarked_posts(request: Request):
         context={
             "request": request,
             "page_title": "스크랩한 글",
-            "user_name": user["user_name"],
-            "user_role": user["user_role"],
+            "user_name": user["name"],
+            "user_role": user["role"],
             "posts": posts,
             "categories": POST_CATEGORIES,
         },
@@ -368,7 +368,7 @@ async def message_thread(request: Request, with_name: str = Query(...)):
         messages = conn.execute(
             "SELECT * FROM messages WHERE user_id=? AND "
             "(sender=? OR recipient=?) ORDER BY created_at DESC LIMIT 20",
-            (user["user_id"], with_name, with_name),
+            (user["id"], with_name, with_name),
         ).fetchall()
         result = [dict(m) for m in reversed(messages)]
     finally:
@@ -392,7 +392,7 @@ async def send_message(
         conn.execute(
             "INSERT INTO messages (user_id, sender, recipient, body, time_label, direction) "
             "VALUES (?,?,?,?,?,?)",
-            (user["user_id"], user["user_name"], to_name, body, now, "out"),
+            (user["id"], user["name"], to_name, body, now, "out"),
         )
         recipient = conn.execute(
             "SELECT id FROM users WHERE name=?", (to_name,)
@@ -401,7 +401,7 @@ async def send_message(
             conn.execute(
                 "INSERT INTO messages (user_id, sender, recipient, body, time_label, direction) "
                 "VALUES (?,?,?,?,?,?)",
-                (recipient["id"], user["user_name"], to_name, body, now, "in"),
+                (recipient["id"], user["name"], to_name, body, now, "in"),
             )
         conn.commit()
     finally:

@@ -72,6 +72,37 @@
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
+                            <label for="ceo" class="form-label fw-semibold">대표자명</label>
+                            <input type="text" class="form-control" id="ceo" name="ceo"
+                                value="{{ company.ceo if company else '' }}" placeholder="예: 김영호">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="est_year" class="form-label fw-semibold">설립연도</label>
+                            <input type="number" class="form-control" id="est_year" name="est_year"
+                                min="1900" max="2026"
+                                value="{{ company.est_year if company and company.est_year else '' }}" placeholder="예: 2015">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="biz_type" class="form-label fw-semibold">기업형태</label>
+                            <select class="form-select" id="biz_type" name="biz_type">
+                                <option value="">-- 선택 --</option>
+                                {% for bt in ['법인', '개인', '비영리', '공공기관', '기타'] %}
+                                <option value="{{ bt }}" {{ 'selected' if company and company.biz_type == bt else '' }}>{{ bt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="address" class="form-label fw-semibold">상세 주소</label>
+                            <input type="text" class="form-control" id="address" name="address"
+                                value="{{ company.address if company else '' }}" placeholder="예: 서울특별시 강남구 테헤란로 152">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
                             <label for="employee_count" class="form-label fw-semibold">전체 직원 수</label>
                             <input type="number" class="form-control" id="employee_count" name="employee_count"
                                 min="0"

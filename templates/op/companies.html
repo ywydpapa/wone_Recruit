@@ -78,7 +78,7 @@
                     <tbody>
                     {% for c in companies %}
                     <tr>
-                        <td class="fw-semibold"><a href="/companies/{{ c['id'] }}" class="link-plain">{{ c['company_name'] }}</a></td>
+                        <td class="fw-semibold"><a href="/op/companies/{{ c['id'] }}" class="link-plain">{{ c['company_name'] }}</a></td>
                         <td>{{ c['industry'] or '-' }}</td>
                         <td>{{ c['company_size'] or '-' }}</td>
                         <td>{{ c['employee_count'] }}</td>
@@ -98,7 +98,7 @@
                             {% endif %}
                         </td>
                         <td>{{ (c['region_sido']|default('') ~ ' ' ~ c['region_sigungu']|default(''))|trim or '-' }}</td>
-                        <td><a href="/companies/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
+                        <td><a href="/op/companies/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
                     </tr>
                     {% endfor %}
                     </tbody>

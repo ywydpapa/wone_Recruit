@@ -2,14 +2,14 @@ from tests.conftest import login
 
 
 def test_css_has_mobile_media_query(client):
-    r = client.get("/static/css/style.css")
+    r = client.get("/static/css/layout.css")
     assert r.status_code == 200
     assert "@media (max-width: 767.98px)" in r.text
     assert "dl.row" in r.text  # dl/dd 스택 레이아웃
 
 
 def test_css_has_small_mobile_query(client):
-    r = client.get("/static/css/style.css")
+    r = client.get("/static/css/layout.css")
     assert r.status_code == 200
     assert "@media (max-width: 479.98px)" in r.text
 

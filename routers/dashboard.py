@@ -12,18 +12,18 @@ async def dashboard(request: Request):
     if not check_login(request):
         return RedirectResponse(url="/login", status_code=303)
     user = get_current_user(request)
-    role = user["user_role"]
+    role = user["role"]
     conn = get_sqlite()
     try:
         ctx = {"request": request, "page_title": "대시보드",
-               "user_name": user["user_name"], "user_role": role}
+               "user_name": user["name"], "user_role": role}
         if role == "seeker":
-            ctx.update(get_seeker_dashboard(conn, user["user_id"]))
+            ctx.update(get_seeker_dashboard(conn, user["id"]))
             tpl = "top/seeker_dash.html"
         elif role == "company":
-            ctx.update(get_company_dashboard(conn, user["user_id"]))
+            ctx.update(get_company_dashboard(conn, user["id"]))
             tpl = "top/company_dash.html"
-        elif role == "operator":
+        elif role in ("operator", "manager"):
             ctx.update(get_operator_dashboard(conn))
             tpl = "top/operator_dash.html"
         else:

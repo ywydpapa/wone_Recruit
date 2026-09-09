@@ -50,22 +50,22 @@ async def terms(request: Request):
 async def notification_count(request: Request):
     if not check_login(request):
         return {"count": 0}
-    user_id = request.session.get("user_id")
+    user_id = request.session.get("id")
     return {"count": get_unread_count(user_id)}
 
 
 @router.get("/notifications", response_class=HTMLResponse)
 async def notifications_page(request: Request):
-    user = require_role(request, "seeker", "company", "operator")
+    user = require_role(request, "seeker", "company", "operator", "manager")
     conn = get_sqlite()
     try:
         notifications = conn.execute(
             "SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100",
-            (user["user_id"],),
+            (user["id"],),
         ).fetchall()
         conn.execute(
             "UPDATE notifications SET is_read=1 WHERE user_id=? AND is_read=0",
-            (user["user_id"],),
+            (user["id"],),
         )
         conn.commit()
     finally:
@@ -73,7 +73,7 @@ async def notifications_page(request: Request):
     return templates.TemplateResponse(
         request=request, name="info/notifications.html", context={
             "request": request, "page_title": "알림",
-            "user_name": user["user_name"], "user_role": user["user_role"],
+            "user_name": user["name"], "user_role": user["role"],
             "notifications": notifications,
         }
     )

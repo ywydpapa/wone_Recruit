@@ -11,6 +11,16 @@
                         <dt class="col-sm-4">이름</dt>
                         <dd class="col-sm-8">{{ cand['seeker_name'] }}</dd>
 
+                        {% if cand['seeker_phone'] %}
+                        <dt class="col-sm-4">연락처</dt>
+                        <dd class="col-sm-8">{{ cand['seeker_phone'] }}</dd>
+                        {% endif %}
+
+                        {% if cand['seeker_email'] %}
+                        <dt class="col-sm-4">이메일</dt>
+                        <dd class="col-sm-8">{{ cand['seeker_email'] }}</dd>
+                        {% endif %}
+
                         {% if profile %}
                         <dt class="col-sm-4">장애 유형</dt>
                         <dd class="col-sm-8">{{ profile['disability_name'] or '-' }}</dd>
@@ -51,6 +61,96 @@
                     {% endif %}
                 </div>
             </div>
+
+            {% if profile and profile['resume_path'] %}
+            <div class="col-12">
+                <div class="content-card">
+                    <a href="/static/uploads/{{ profile['resume_path'] }}" class="btn btn-outline-primary btn-sm" download>
+                        <i class="fas fa-download me-1"></i>이력서 파일 다운로드
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if educations %}
+            <div class="col-12">
+                <div class="profile-card">
+                    <div class="resume-section-title"><i class="fas fa-graduation-cap"></i>학력</div>
+                    <div class="resume-section-body">
+                        {% for edu in educations %}
+                        <div class="resume-item">
+                            <div class="resume-item-title">{{ edu['school_name'] or '-' }}</div>
+                            <div class="resume-item-sub">
+                                {{ edu['education_level'] or '' }}
+                                {% if edu['major'] %} / {{ edu['major'] }}{% endif %}
+                                {% if edu['start_date'] or edu['end_date'] %}
+                                    ({{ edu['start_date'] or '' }} ~ {{ edu['end_date'] or '' }})
+                                {% endif %}
+                                {% if edu['graduation_status'] %} {{ edu['graduation_status'] }}{% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if careers %}
+            <div class="col-12">
+                <div class="profile-card">
+                    <div class="resume-section-title"><i class="fas fa-briefcase"></i>경력</div>
+                    <div class="resume-section-body">
+                        {% for c in careers %}
+                        <div class="resume-item">
+                            <div class="resume-item-title">{{ c['company_name'] or '-' }}{% if c['department'] %} / {{ c['department'] }}{% endif %}</div>
+                            <div class="resume-item-sub">
+                                {{ c['job_title'] or '' }}
+                                {% if c['employment_type'] %} ({{ c['employment_type'] }}){% endif %}
+                                {% if c['start_date'] or c['end_date'] %}
+                                    | {{ c['start_date'] or '' }} ~ {{ c['end_date'] or '재직중' }}
+                                {% endif %}
+                            </div>
+                            {% if c['description'] %}
+                            <div class="resume-item-desc">{{ c['description'] }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if certifications %}
+            <div class="col-12">
+                <div class="profile-card">
+                    <div class="resume-section-title"><i class="fas fa-certificate"></i>자격증</div>
+                    <div class="resume-section-body">
+                        {% for cert in certifications %}
+                        <div class="resume-item">
+                            <div class="resume-item-title">{{ cert['cert_name'] }}</div>
+                            <div class="resume-item-sub">{{ cert['issuing_org'] or '' }}{% if cert['cert_date'] %} | {{ cert['cert_date'] }}{% endif %}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if languages %}
+            <div class="col-12">
+                <div class="profile-card">
+                    <div class="resume-section-title"><i class="fas fa-language"></i>어학</div>
+                    <div class="resume-section-body">
+                        {% for lang in languages %}
+                        <div class="resume-item">
+                            <div class="resume-item-title">{{ lang['language'] }}{% if lang['test_name'] %} - {{ lang['test_name'] }}{% endif %}</div>
+                            <div class="resume-item-sub">{{ lang['score'] or lang['level'] or '' }}{% if lang['test_date'] %} | {{ lang['test_date'] }}{% endif %}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="col-12">
                 <div class="content-card">

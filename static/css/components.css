@@ -312,29 +312,6 @@ a.stat-card-link:hover .stat-card {
     color: #7b1fa2;
 }
 
-.cert-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.cert-list li {
-    padding: 10px 0;
-    border-bottom: 1px solid #f5f5f5;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.cert-list li:last-child {
-    border-bottom: none;
-}
-.cert-name {
-    font-weight: 600;
-    color: var(--dark-blue);
-}
-.cert-meta {
-    font-size: 0.85rem;
-    color: #767676;
-}
 
 .profile-avatar {
     width: 80px;
@@ -397,6 +374,10 @@ a.stat-card-link:hover .stat-card {
 .item-badge.badge-green {
     background-color: #e8f5e9;
     color: #2e7d32;
+}
+.item-badge.badge-closed {
+    background-color: #f0f0f0;
+    color: #888;
 }
 .item-card .btn-sm.rounded-pill {
     padding: 0.35rem 0.85rem;
@@ -743,4 +724,41 @@ a.stat-card-link:hover .stat-card {
     margin-top: 12px;
     font-size: 0.85rem;
     color: #666;
+}
+
+/* 매칭 파이프라인 */
+.pipeline-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+}
+.pipeline-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 56px;
+}
+.pipeline-count {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #333;
+}
+.pipeline-count-out { color: #999; }
+.pipeline-label {
+    font-size: 0.78rem;
+    color: #666;
+}
+.pipeline-arrow {
+    color: #ccc;
+    font-size: 0.65rem;
+    margin-top: -12px;
+}
+.pipeline-divider {
+    width: 1px;
+    height: 40px;
+    background: #ddd;
+    margin: 0 4px;
 }

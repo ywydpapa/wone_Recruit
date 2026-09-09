@@ -58,13 +58,13 @@ async def talent_search(
         talents = conn.execute(sql, params).fetchall()
 
         company = conn.execute(
-            "SELECT id FROM companies WHERE user_id=?", (user["user_id"],)
+            "SELECT id FROM companies WHERE user_id=?", (user["id"],)
         ).fetchone()
         offered_ids = set()
         if company:
             rows = conn.execute(
                 "SELECT seeker_user_id FROM talent_offers WHERE company_user_id=?",
-                (user["user_id"],),
+                (user["id"],),
             ).fetchall()
             offered_ids = {r["seeker_user_id"] for r in rows}
 
@@ -84,7 +84,7 @@ async def talent_search(
         name="company/talents.html",
         context={
             "request": request, "page_title": "인재 검색",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "talents": talents, "offered_ids": offered_ids,
             "disability_types": disability_types,
             "q": q or "", "selected_sido": sido or "",
@@ -120,12 +120,23 @@ async def talent_detail(request: Request, seeker_user_id: int):
 
         offered = bool(conn.execute(
             "SELECT 1 FROM talent_offers WHERE seeker_user_id=? AND company_user_id=?",
-            (seeker_user_id, user["user_id"]),
+            (seeker_user_id, user["id"]),
         ).fetchone())
 
         company = conn.execute(
-            "SELECT company_name FROM companies WHERE user_id=?", (user["user_id"],)
+            "SELECT company_name FROM companies WHERE user_id=?", (user["id"],)
         ).fetchone()
+
+        conn.execute(
+            "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+            (user["id"], seeker_user_id, "talent_search"),
+        )
+        create_notification(
+            conn, seeker_user_id,
+            f"{company['company_name']}에서 프로필을 열람했습니다.",
+            "/profile/views",
+        )
+        conn.commit()
     finally:
         conn.close()
 
@@ -150,7 +161,7 @@ async def talent_detail(request: Request, seeker_user_id: int):
         name="company/talent_detail.html",
         context={
             "request": request, "page_title": "인재 프로필",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "profile": profile, "certs": certs,
             "offered": offered,
             "company_name": company["company_name"] if company else "",
@@ -172,13 +183,13 @@ async def send_talent_offer(
     conn = get_sqlite()
     try:
         company = conn.execute(
-            "SELECT company_name FROM companies WHERE user_id=?", (user["user_id"],)
+            "SELECT company_name FROM companies WHERE user_id=?", (user["id"],)
         ).fetchone()
         company_name = company["company_name"] if company else ""
         conn.execute(
             "INSERT INTO talent_offers (seeker_user_id, company_user_id, company_name, title, message, contact) "
             "VALUES (?,?,?,?,?,?)",
-            (seeker_user_id, user["user_id"], company_name, title, message, contact),
+            (seeker_user_id, user["id"], company_name, title, message, contact),
         )
         create_notification(
             conn, seeker_user_id,

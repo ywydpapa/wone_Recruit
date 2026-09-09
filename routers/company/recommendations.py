@@ -12,7 +12,7 @@ async def recommendations(request: Request):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
-        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["user_id"],)).fetchone()
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
 
@@ -34,7 +34,7 @@ async def recommendations(request: Request):
     return templates.TemplateResponse(
         request=request, name="company/recommendations.html", context={
             "request": request, "page_title": "추천 인재",
-            "user_name": user["user_name"], "user_role": "company",
+            "user_name": user["name"], "user_role": "company",
             "candidates": candidates,
             "status_labels": stage_labels,
             "stage_colors": stage_colors,

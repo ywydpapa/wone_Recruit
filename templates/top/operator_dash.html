@@ -3,33 +3,7 @@
 {% block content %}
 <p class="text-muted mb-4">안녕하세요, {{ user_name }} 님</p>
 
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <a href="/op/seekers" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-blue-light">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>{{ seeker_count }}</h3>
-                            <p>구직자 수</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-4">
-                <a href="/op/companies" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-blue-light">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>{{ company_count }}</h3>
-                            <p>기업 수</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
+        <div class="row mb-4">
             <div class="col-md-4">
                 <a href="/op/jobs" class="stat-card-link">
                     <div class="stat-card">
@@ -43,18 +17,15 @@
                     </div>
                 </a>
             </div>
-        </div>
-
-        <div class="row mb-4">
             <div class="col-md-4">
-                <a href="/op/candidacies" class="stat-card-link">
+                <a href="/op/seekers" class="stat-card-link">
                     <div class="stat-card">
                         <div class="stat-icon bg-blue-light">
-                            <i class="fas fa-paper-plane"></i>
+                            <i class="fas fa-user"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>{{ total_candidacies }}</h3>
-                            <p>전체 지원</p>
+                            <h3>{{ seeker_count }}</h3>
+                            <p>구직자</p>
                         </div>
                     </div>
                 </a>
@@ -66,21 +37,8 @@
                             <i class="fas fa-hourglass-half"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>{{ pending_matches }}</h3>
-                            <p>대기 중 매칭</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-4">
-                <a href="/op/candidacies" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-blue-light">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>{{ hired }}</h3>
-                            <p>채용 완료</p>
+                            <h3>{{ pipeline.get('pending', 0) + pipeline.get('reviewing', 0) + pipeline.get('shortlisted', 0) + pipeline.get('interview', 0) + pipeline.get('offer', 0) }}</h3>
+                            <p>진행 중 매칭</p>
                         </div>
                     </div>
                 </a>
@@ -183,5 +141,37 @@
             </div>
         </div>
 
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="content-card">
+                    <div class="card-title"><span><i class="fas fa-exchange-alt me-2 text-primary"></i>매칭 파이프라인</span></div>
+                    <div class="pipeline-bar">
+                        {% set stages = [
+                            ('pending', '검토 대기'),
+                            ('reviewing', '검토 중'),
+                            ('shortlisted', '서류 통과'),
+                            ('interview', '면접'),
+                            ('offer', '합격 제안'),
+                            ('hired', '채용 완료'),
+                        ] %}
+                        {% set rejected = pipeline.get('rejected', 0) + pipeline.get('withdrawn', 0) %}
+                        {% for key, label in stages %}
+                        <div class="pipeline-stage">
+                            <span class="pipeline-count">{{ pipeline.get(key, 0) }}</span>
+                            <span class="pipeline-label">{{ label }}</span>
+                        </div>
+                        {% if not loop.last %}
+                        <i class="fas fa-chevron-right pipeline-arrow"></i>
+                        {% endif %}
+                        {% endfor %}
+                        <div class="pipeline-divider"></div>
+                        <div class="pipeline-stage">
+                            <span class="pipeline-count pipeline-count-out">{{ rejected }}</span>
+                            <span class="pipeline-label">탈락/취소</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 {% endblock %}

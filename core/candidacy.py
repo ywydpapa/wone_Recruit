@@ -7,7 +7,7 @@ DEFAULT_STAGES = [
 
 TERMINAL = {"hired", "rejected", "withdrawn"}
 
-STAGE_COLORS = ["primary", "primary", "primary", "primary"]
+STAGE_COLORS = ["info", "warning", "secondary", "success"]
 
 
 def get_stages(conn, company_id):

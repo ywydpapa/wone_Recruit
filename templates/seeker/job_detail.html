@@ -1,205 +1,414 @@
 {% extends "base.html" %}
 {% block title %}{{ job['title'] }} | WONE Recruit{% endblock %}
 {% block content %}
-<div class="page-header"><h2>{{ job['title'] }}</h2></div>
-<div class="narrow-form-lg">
+<div class="job-detail-wrap">
 
-            <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
-                {% if not preferred_disability and job['preferred_severity'] == '무관' %}
-                    <span class="badge bg-success">전체 장애유형 지원 가능</span>
-                {% else %}
-                    <span class="badge bg-primary">특정 장애유형 우대</span>
-                {% endif %}
-
-                {% if job['deadline'] %}
-                    <span class="badge bg-secondary">마감 {{ job['deadline'] }}</span>
-                {% else %}
-                    <span class="badge bg-secondary">상시채용</span>
-                {% endif %}
-            </div>
-
-            <div class="content-card mb-3">
-                <div class="d-flex align-items-start gap-3 mb-3">
-                    {% if job['logo_path'] %}
-                    <img src="{{ job['logo_path'] }}" alt="{{ job['company_name'] }} 로고"
-                         class="img-logo-sm">
-                    {% endif %}
-                    <div>
-                        <h5 class="mb-1"><a href="/companies/{{ job['company_id'] }}" class="link-plain">{{ job['company_name'] }}</a></h5>
-                        <span class="text-muted small">
-                            {% if job['industry'] %}{{ job['industry'] }}{% endif %}
-                            {% if job['industry'] and job['company_size'] %} · {% endif %}
-                            {% if job['company_size'] %}{{ job['company_size'] }}{% endif %}
-                        </span>
-                    </div>
-                </div>
-
-                {% if job['employee_count'] and job['disabled_count'] %}
-                <p class="mb-2 small">
-                    전체 {{ job['employee_count'] }}명, 장애인 근로자 {{ job['disabled_count'] }}명
-                    ({{ "%.1f"|format(job['disabled_count'] / job['employee_count'] * 100) }}%)
-                </p>
-                {% endif %}
-
-                {% if job['hiring_experience'] %}
-                <span class="badge bg-success mb-2 fs-075">장애인 고용 경험 있음</span>
-                {% endif %}
-
-                {% if job['website'] %}
-                <div class="mb-2">
-                    <a href="{{ job['website'] }}" target="_blank" rel="noopener" class="small">
-                        <i class="fas fa-external-link-alt me-1"></i>{{ job['website'] }}
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if job['intro'] %}
-                <p class="text-muted small mb-1">{{ job['intro'] }}</p>
-                {% endif %}
-
-                {% if job['retention_note'] %}
-                <p class="text-muted small mb-0">{{ job['retention_note'] }}</p>
-                {% endif %}
-            </div>
-
-            <div class="content-card mb-3">
-                <h6 class="fw-bold mb-3">채용 정보</h6>
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">직무</dt>
-                    <dd class="col-sm-9">
-                        {% if job['major_name_ko'] and job['category_name'] %}
-                            {{ job['major_name_ko'] }} &gt; {{ job['category_name'] }}
-                        {% else %}
-                            {{ job['category_name'] or '-' }}
-                        {% endif %}
-                    </dd>
-
-                    <dt class="col-sm-3">지역</dt>
-                    <dd class="col-sm-9">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</dd>
-
-                    <dt class="col-sm-3">고용 형태</dt>
-                    <dd class="col-sm-9">{{ job['employment_type'] or '-' }}</dd>
-
-                    <dt class="col-sm-3">재택근무</dt>
-                    <dd class="col-sm-9">{{ '가능' if job['remote_available'] else '불가' }}</dd>
-
-                    <dt class="col-sm-3">급여</dt>
-                    <dd class="col-sm-9">{{ job['salary'] or '-' }}</dd>
-
-                    <dt class="col-sm-3">마감일</dt>
-                    <dd class="col-sm-9">{{ job['deadline'] or '상시채용' }}</dd>
-
-                    <dt class="col-sm-3">근무 시간</dt>
-                    <dd class="col-sm-9">
-                        {{ job['work_start_time'] }} ~ {{ job['work_end_time'] }}
-                        {% if job['work_days'] %}({{ job['work_days'] }}){% endif %}
-                        {% if job['flexible_hours'] %}<span class="badge bg-info ms-1">유연근무</span>{% endif %}
-                    </dd>
-
-                    <dt class="col-sm-3">최소 근무시간</dt>
-                    <dd class="col-sm-9">일 {{ job['min_work_hours'] }}시간</dd>
-
-                    {% if job['benefits'] %}
-                    <dt class="col-sm-3">복리후생</dt>
-                    <dd class="col-sm-9">{{ job['benefits'] }}</dd>
-                    {% endif %}
-
-                    {% if job['requirements'] %}
-                    <dt class="col-sm-3">우대/필수 자격</dt>
-                    <dd class="col-sm-9">{{ job['requirements'] }}</dd>
-                    {% endif %}
-                </dl>
-            </div>
-
-            <div class="content-card mb-3">
-                <h6 class="fw-bold mb-3">직장 접근성</h6>
-                {% set accessibility = job['accessibility_facilities']|fromjson %}
-                {% if accessibility %}
-                    <div class="mb-2">
-                        {% for item in accessibility %}
-                        <span class="badge bg-secondary me-1 mb-1">{{ item }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                {% if job['accessibility_note'] %}
-                <p class="small text-muted mb-0">{{ job['accessibility_note'] }}</p>
-                {% endif %}
-                {% if not accessibility and not job['accessibility_note'] %}
-                <p class="text-muted small mb-0">등록된 접근성 정보가 없습니다.</p>
-                {% endif %}
-            </div>
-
-            <div class="content-card mb-3">
-                <h6 class="fw-bold mb-3">편의 제공</h6>
-
-                {% if seeker_needs and accommodations_provided %}
-                    {% set matched = [] %}
-                    {% for item in accommodations_provided %}
-                        {% if item in seeker_needs %}{% set _ = matched.append(item) %}{% endif %}
-                    {% endfor %}
-                    <p class="small mb-2">
-                        내 필요 편의 {{ seeker_needs|length }}개 중
-                        <strong class="text-success">{{ matched|length }}개</strong> 충족
-                    </p>
-                {% endif %}
-
-                {% if accommodations_provided %}
-                    <div class="mb-2">
-                        {% for item in accommodations_provided %}
-                        <span class="badge {% if seeker_needs and item in seeker_needs %}bg-success{% else %}bg-secondary{% endif %} me-1 mb-1">
-                            {{ item }}{% if seeker_needs and item in seeker_needs %} ✓{% endif %}
-                        </span>
-                        {% endfor %}
-                    </div>
-                    {% if seeker_needs %}
-                    <div class="mb-2"><small class="text-success">✓ 표시는 내가 필요한 편의와 일치하는 항목입니다.</small></div>
-                    {% endif %}
-                {% else %}
-                    <p class="text-muted small">등록된 편의 제공 정보가 없습니다.</p>
-                {% endif %}
-
-                {% if job['accommodations_note'] %}
-                <p class="small text-muted mt-1 mb-2">{{ job['accommodations_note'] }}</p>
-                {% endif %}
-
-                <hr class="my-2">
-                <div class="mt-2">
-                    {% if preferred_disability %}
-                        <span class="small text-muted me-2">우대 장애유형</span>
-                        {% for d in preferred_disability %}
-                        <span class="badge bg-primary me-1">{{ d }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="small text-muted">우대 장애유형: 전체 환영</span>
-                    {% endif %}
-                    <span class="ms-3 small text-muted">장애정도: {{ job['preferred_severity'] or '무관' }}</span>
-                </div>
-            </div>
-
-            <div class="content-card mb-3">
-                <h6 class="fw-bold mb-3">상세 내용</h6>
-                <div class="text-prewrap small">{{ job['description'] }}</div>
-            </div>
-
-            <div class="content-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="/jobs" class="btn btn-light px-4">
-                        <i class="fas fa-arrow-left me-2"></i>목록으로
-                    </a>
-                    <div class="d-flex gap-2">
-                        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline-block">
-                            <button type="submit" class="btn {% if is_bookmarked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4"
-                                    aria-label="{% if is_bookmarked %}저장 취소{% else %}공고 저장{% endif %}">
-                                <i class="{% if is_bookmarked %}fas{% else %}far{% endif %} fa-heart me-1"></i>
-                                {% if is_bookmarked %}저장됨{% else %}저장{% endif %}
-                            </button>
-                        </form>
-                        <a href="/apply/{{ job['id'] }}" class="btn btn-primary rounded-pill px-5">
-                            <i class="fas fa-paper-plane me-2"></i>지원하기
-                        </a>
-                    </div>
-                </div>
-            </div>
-
+    <!-- 히어로 -->
+    <div class="job-hero content-card mb-3">
+        <h1>{{ job['title'] }}</h1>
+        <div class="job-hero-company">
+            {% if job['logo_path'] %}
+            <img src="{{ job['logo_path'] }}" alt="{{ job['company_name'] }} 로고">
+            {% endif %}
+            <a href="/companies/{{ job['company_id'] }}">{{ job['company_name'] }}</a>
         </div>
+        <div class="job-hero-badges">
+            {% if not preferred_disability and job['preferred_severity'] == '무관' %}
+                <span class="badge bg-success">전체 장애유형 지원 가능</span>
+            {% else %}
+                <span class="badge bg-primary">특정 장애유형 우대</span>
+            {% endif %}
+            {% if job['employment_type'] %}
+                <span class="badge bg-secondary">{{ job['employment_type'] }}</span>
+            {% endif %}
+            {% if job['deadline'] %}
+                {% if d_day is not none %}
+                    {% if d_day <= 7 %}
+                        <span class="badge badge-dday urgent">D-{{ d_day }}</span>
+                    {% elif d_day <= 14 %}
+                        <span class="badge badge-dday soon">D-{{ d_day }}</span>
+                    {% else %}
+                        <span class="badge badge-dday normal">D-{{ d_day }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="badge badge-dday normal">{{ job['deadline'] }}</span>
+                {% endif %}
+            {% else %}
+                <span class="badge bg-secondary">상시채용</span>
+            {% endif %}
+            <button type="button" id="shareBtn" class="btn btn-sm btn-outline-secondary ms-auto">
+                <i class="fas fa-share-alt me-1"></i>공유
+            </button>
+        </div>
+    </div>
+
+    <!-- 요약 바 -->
+    <div class="job-summary-bar mb-3">
+        <div class="job-summary-item">
+            <i class="fas fa-briefcase"></i>
+            <div class="summary-label">경력</div>
+            <div class="summary-value">{{ job['experience_level'] or '무관' }}</div>
+        </div>
+        <div class="job-summary-item">
+            <i class="fas fa-won-sign"></i>
+            <div class="summary-label">급여</div>
+            <div class="summary-value">{{ job['salary'] or '협의' }}</div>
+        </div>
+        <div class="job-summary-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <div class="summary-label">근무지역</div>
+            <div class="summary-value">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+        </div>
+        <div class="job-summary-item">
+            <i class="fas fa-graduation-cap"></i>
+            <div class="summary-label">학력</div>
+            <div class="summary-value">{{ job['education'] or '무관' }}</div>
+        </div>
+    </div>
+
+    <!-- 채용 정보 -->
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-file-alt"></i> 채용 정보</h5>
+        <div class="job-info-grid">
+            <div class="job-info-row">
+                <span class="job-info-label">직무</span>
+                <span class="job-info-value">
+                    {% if job['major_name_ko'] and job['category_name'] %}
+                        {{ job['major_name_ko'] }} &gt; {{ job['category_name'] }}
+                    {% else %}
+                        {{ job['category_name'] or '-' }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">경력</span>
+                <span class="job-info-value">{{ job['experience_level'] or '-' }}</span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">학력</span>
+                <span class="job-info-value">{{ job['education'] or '-' }}</span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">고용형태</span>
+                <span class="job-info-value">{{ job['employment_type'] or '-' }}</span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">급여</span>
+                <span class="job-info-value">{{ job['salary'] or '-' }}</span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">근무지역</span>
+                <span class="job-info-value">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">근무시간</span>
+                <span class="job-info-value">
+                    {{ job['work_start_time'] }} ~ {{ job['work_end_time'] }}
+                    {% if job['work_days'] %}({{ job['work_days'] }}){% endif %}
+                    {% if job['flexible_hours'] %}<span class="badge bg-info ms-1">유연근무</span>{% endif %}
+                    {% if job['min_work_hours'] %}<span class="text-muted ms-1 small">최소 {{ job['min_work_hours'] }}시간</span>{% endif %}
+                </span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">재택근무</span>
+                <span class="job-info-value">{{ '가능' if job['remote_available'] else '불가' }}</span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">마감일</span>
+                <span class="job-info-value">
+                    {{ job['deadline'] or '상시채용' }}
+                    {% if job['deadline'] and d_day is not none %}
+                        <span class="badge badge-dday {% if d_day <= 7 %}urgent{% elif d_day <= 14 %}soon{% else %}normal{% endif %} ms-1">D-{{ d_day }}</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="job-info-row">
+                <span class="job-info-label">모집인원</span>
+                <span class="job-info-value">{{ job['headcount'] or '-' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 주요 업무 -->
+    {% if job['tasks'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-clipboard-list"></i> 주요 업무</h5>
+        <ul class="mb-0 ps-3">
+            {% for line in job['tasks'].split('\n') %}
+            {% if line.strip() %}
+            <li class="small mb-1">{{ line.strip() }}</li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- 사용 도구 -->
+    {% if job['tools'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-tools"></i> 사용 도구</h5>
+        <div class="d-flex flex-wrap gap-2">
+            {% for tool in job['tools'].split(',') %}
+            {% if tool.strip() %}
+            <span class="badge bg-light text-dark border">{{ tool.strip() }}</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 자격요건 -->
+    {% if job['qualifications'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-user-check"></i> 자격요건</h5>
+        <p class="small mb-0">{{ job['qualifications'] }}</p>
+    </div>
+    {% endif %}
+
+    <!-- 우대사항 -->
+    {% if job['preferred'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-star"></i> 우대사항</h5>
+        <p class="small mb-0">{{ job['preferred'] }}</p>
+    </div>
+    {% endif %}
+
+    <!-- 복리후생 -->
+    {% if job['benefits'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-gift"></i> 복리후생</h5>
+        <div class="d-flex flex-wrap gap-2">
+            {% for b in job['benefits'].split(',') %}
+            {% if b.strip() %}
+            <span class="welfare-badge">{{ b.strip() }}</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 전형절차 -->
+    {% if job['hiring_process'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-route"></i> 전형절차</h5>
+        <div class="hiring-steps">
+            {% set steps = job['hiring_process'].split(',') %}
+            {% for step in steps %}
+            {% if step.strip() %}
+            <span class="hiring-step">{{ step.strip() }}</span>
+            {% if not loop.last %}<span class="hiring-arrow">→</span>{% endif %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 직장 접근성 -->
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-wheelchair"></i> 직장 접근성</h5>
+        {% set accessibility = job['accessibility_facilities']|fromjson %}
+        {% if accessibility %}
+        <div class="mb-2">
+            {% for item in accessibility %}
+            <span class="badge bg-secondary me-1 mb-1">{{ item }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if job['accessibility_note'] %}
+        <p class="small text-muted mb-0">{{ job['accessibility_note'] }}</p>
+        {% endif %}
+        {% if not accessibility and not job['accessibility_note'] %}
+        <p class="text-muted small mb-0">등록된 접근성 정보가 없습니다.</p>
+        {% endif %}
+    </div>
+
+    <!-- 편의 제공 -->
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-hands-helping"></i> 편의 제공</h5>
+        {% if seeker_needs and accommodations_provided %}
+            {% set ns = namespace(matched=0) %}
+            {% for item in accommodations_provided %}
+                {% if item in seeker_needs %}{% set ns.matched = ns.matched + 1 %}{% endif %}
+            {% endfor %}
+            <p class="small mb-2">
+                내 필요 편의 {{ seeker_needs|length }}개 중
+                <strong class="text-success">{{ ns.matched }}개</strong> 충족
+            </p>
+        {% endif %}
+        {% if accommodations_provided %}
+        <div class="mb-2">
+            {% for item in accommodations_provided %}
+            <span class="badge {% if seeker_needs and item in seeker_needs %}bg-success{% else %}bg-secondary{% endif %} me-1 mb-1">
+                {{ item }}{% if seeker_needs and item in seeker_needs %} ✓{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+        {% if seeker_needs %}
+        <div class="mb-2"><small class="text-success">✓ 표시는 내가 필요한 편의와 일치하는 항목입니다.</small></div>
+        {% endif %}
+        {% else %}
+        <p class="text-muted small">등록된 편의 제공 정보가 없습니다.</p>
+        {% endif %}
+        {% if job['accommodations_note'] %}
+        <p class="small text-muted mt-1 mb-2">{{ job['accommodations_note'] }}</p>
+        {% endif %}
+        <div class="mt-2">
+            {% if preferred_disability %}
+                <span class="small text-muted me-2">우대 장애유형</span>
+                {% for d in preferred_disability %}
+                <span class="badge bg-primary me-1">{{ d }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="small text-muted">우대 장애유형: 전체 환영</span>
+            {% endif %}
+            <span class="ms-3 small text-muted">장애정도: {{ job['preferred_severity'] or '무관' }}</span>
+        </div>
+    </div>
+
+    <!-- 기업 정보 -->
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-building"></i> 기업 정보</h5>
+        <div class="d-flex align-items-start gap-3 mb-3">
+            {% if job['logo_path'] %}
+            <img src="{{ job['logo_path'] }}" alt="{{ job['company_name'] }} 로고" class="img-logo-sm">
+            {% endif %}
+            <div>
+                <h6 class="mb-1">
+                    <a href="/companies/{{ job['company_id'] }}" class="link-plain fw-bold">{{ job['company_name'] }}</a>
+                </h6>
+                <div class="text-muted small">
+                    {% if job['industry'] %}{{ job['industry'] }}{% endif %}
+                    {% if job['industry'] and job['biz_type'] %}&middot;{% endif %}
+                    {% if job['biz_type'] %}{{ job['biz_type'] }}{% endif %}
+                    {% if job['company_size'] %}&middot;{{ job['company_size'] }}{% endif %}
+                </div>
+                <div class="text-muted small mt-1">
+                    {% if job['est_year'] %}설립 {{ job['est_year'] }}{% endif %}
+                    {% if job['est_year'] and job['ceo'] %}&middot;{% endif %}
+                    {% if job['ceo'] %}대표 {{ job['ceo'] }}{% endif %}
+                    {% if job['address'] %}&middot;{{ job['address'] }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-3 small text-muted mb-2">
+            {% if job['employee_count'] and job['disabled_count'] %}
+            <span>
+                전체 {{ job['employee_count'] }}명 &middot; 장애인 {{ job['disabled_count'] }}명
+                ({{ "%.1f"|format(job['disabled_count'] / job['employee_count'] * 100) }}%)
+            </span>
+            {% endif %}
+            {% if job['hiring_experience'] %}
+            <span class="badge bg-success fs-075">장애인 고용 경험 있음</span>
+            {% endif %}
+            {% if job['website'] %}
+            <a href="{{ job['website'] }}" target="_blank" rel="noopener" class="small">
+                <i class="fas fa-external-link-alt me-1"></i>홈페이지
+            </a>
+            {% endif %}
+        </div>
+        {% if job['intro'] %}
+        <p class="text-muted small mb-1">{{ job['intro'] }}</p>
+        {% endif %}
+        {% if job['retention_note'] %}
+        <p class="text-muted small mb-0">{{ job['retention_note'] }}</p>
+        {% endif %}
+    </div>
+
+    <!-- 기타 안내 -->
+    {% if job['description'] %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-info-circle"></i> 기타 안내</h5>
+        <div class="text-prewrap small">{{ job['description'] }}</div>
+    </div>
+    {% endif %}
+
+    <!-- 이 회사 다른 공고 -->
+    {% if company_jobs %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-briefcase"></i> 이 회사 다른 공고</h5>
+        <div class="row g-2">
+            {% for cj in company_jobs %}
+            <div class="col-md-6">
+                <div class="item-card p-2">
+                    <a href="/jobs/{{ cj['id'] }}" class="item-title small">{{ cj['title'] }}</a>
+                    <div class="item-meta small">
+                        <span>{{ (cj['region_sido']|default('') ~ ' ' ~ cj['region_sigungu']|default(''))|trim or '전국' }}</span>
+                        <span>{{ cj['employment_type'] or '' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <span class="text-muted small">{{ cj['salary'] or '협의' }}</span>
+                        {% if cj['deadline'] %}
+                        <span class="text-muted small">~ {{ cj['deadline'] }}</span>
+                        {% else %}
+                        <span class="text-muted small">상시채용</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 비슷한 공고 -->
+    {% if similar_jobs %}
+    <div class="content-card mb-3">
+        <h5 class="job-section-title"><i class="fas fa-search"></i> 비슷한 공고</h5>
+        <div class="row g-2">
+            {% for sj in similar_jobs %}
+            <div class="col-md-6">
+                <div class="item-card p-2">
+                    <a href="/jobs/{{ sj['id'] }}" class="item-title small">{{ sj['title'] }}</a>
+                    <div class="item-meta small">
+                        <span>{{ sj['company_name'] }}</span>
+                        <span>{{ (sj['region_sido']|default('') ~ ' ' ~ sj['region_sigungu']|default(''))|trim or '전국' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <span class="badge bg-light text-dark">{{ sj['employment_type'] }}</span>
+                        <span class="text-muted small">
+                            {% if sj['deadline'] %}~ {{ sj['deadline'] }}{% else %}상시채용{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- 스티키 하단 바 -->
+<div class="job-sticky-bar">
+    <a href="/jobs" class="btn btn-light">
+        <i class="fas fa-arrow-left me-2"></i>목록으로
+    </a>
+    <div class="d-flex gap-2 align-items-center">
+        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline-block">
+            <button type="submit" class="btn {% if is_bookmarked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4">
+                <i class="{% if is_bookmarked %}fas{% else %}far{% endif %} fa-heart me-1"></i>
+                {% if is_bookmarked %}저장됨{% else %}저장{% endif %}
+            </button>
+        </form>
+        {% if already_applied %}
+        <button class="btn btn-secondary rounded-pill btn-apply" disabled>
+            <i class="fas fa-check me-2"></i>지원완료
+        </button>
+        {% else %}
+        <a href="/apply/{{ job['id'] }}" class="btn btn-primary rounded-pill btn-apply">
+            <i class="fas fa-paper-plane me-2"></i>지원하기
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.getElementById('shareBtn').addEventListener('click', function() {
+    var btn = this;
+    navigator.clipboard.writeText(window.location.href).then(function() {
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>복사됨';
+        setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt me-1"></i>공유'; }, 2000);
+    });
+});
+</script>
 {% endblock %}

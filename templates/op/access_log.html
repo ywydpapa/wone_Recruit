@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}열람 기록 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>열람 기록</h2></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">열람 기록 <span class="text-muted fs-6 fw-normal">(총 {{ pagination.total }}건)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <caption class="visually-hidden">구직자 열람 기록 목록</caption>
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">열람자</th>
+                        <th scope="col">역할</th>
+                        <th scope="col">열람 대상</th>
+                        <th scope="col">목적</th>
+                        <th scope="col">일시</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    {% set purpose_labels = {
+                        "applicant_review": "지원자 검토",
+                        "talent_search": "인재 검색",
+                        "operator_view": "운영자 조회"
+                    } %}
+                    <tr>
+                        <td>{{ log["viewer_name"] }}</td>
+                        <td>
+                            {% if log["viewer_role"] == "company" %}
+                            <span class="badge bg-primary">기업</span>
+                            {% elif log["viewer_role"] == "operator" %}
+                            <span class="badge bg-secondary">운영자</span>
+                            {% elif log["viewer_role"] == "manager" %}
+                            <span class="badge bg-info text-dark">채용매니저</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">{{ log["viewer_role"] }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log["seeker_name"] }}</td>
+                        <td>{{ purpose_labels.get(log["purpose"], log["purpose"]) }}</td>
+                        <td class="text-nowrap text-muted small">{{ log["created_at"] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include "common/pagination.html" %}
+        {% else %}
+        <p class="text-muted text-center py-5">열람 기록이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

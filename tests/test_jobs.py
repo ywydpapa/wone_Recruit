@@ -45,7 +45,7 @@ def test_job_create_with_accommodations(client):
         ("preferred_severity", "경증"),
         ("min_work_hours", "6"),
         ("benefits", "4대보험, 식대"),
-        ("requirements", "컴활 2급"),
+        ("qualifications", "컴활 2급"),
         ("salary", "월 250만원"),
         ("deadline", "2026-12-31"),
         ("description", "편의시설 테스트"),
@@ -81,7 +81,7 @@ def test_job_create_with_accommodations(client):
     assert job["preferred_severity"] == "경증"
     assert job["min_work_hours"] == 6
     assert job["benefits"] == "4대보험, 식대"
-    assert job["requirements"] == "컴활 2급"
+    assert job["qualifications"] == "컴활 2급"
 
 
 def test_job_search_seeker(client):
@@ -108,12 +108,65 @@ def test_job_detail(client):
     login(client, "seeker1")
     r = client.get("/jobs/1")
     assert r.status_code == 200
+    assert "지원완료" in r.text or "지원하기" in r.text
+
+
+def test_job_detail_already_applied(client):
+    login(client, "seeker1")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
+    assert "지원완료" in r.text
+
+
+def test_job_detail_not_applied(client):
+    login(client, "seeker2")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
     assert "지원하기" in r.text
+
+
+def test_job_detail_dday(client):
+    login(client, "seeker1")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
+    assert "D-" in r.text or "상시채용" in r.text
+
+
+def test_job_detail_summary_bar(client):
+    login(client, "seeker1")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
+    assert "job-summary-bar" in r.text
+    assert "경력" in r.text
+    assert "급여" in r.text
+
+
+def test_job_detail_hiring_process(client):
+    login(client, "seeker1")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
+    assert "전형절차" in r.text
+    assert "서류전형" in r.text
+
+
+def test_job_detail_benefits_welfare(client):
+    login(client, "seeker1")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
+    assert "복리후생" in r.text
+
+
+def test_job_detail_company_section(client):
+    login(client, "seeker1")
+    r = client.get("/jobs/1")
+    assert r.status_code == 200
+    assert "기업 정보" in r.text
+    assert "한빛테크" in r.text
 
 
 def test_job_detail_shows_accommodations(client):
     login(client, "seeker1")
     r = client.get("/jobs/1")
     assert r.status_code == 200
-    assert "근무 시간" in r.text
+    assert "근무시간" in r.text
     assert "편의 제공" in r.text or "추가 편의사항" in r.text

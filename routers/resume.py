@@ -3,10 +3,11 @@ import os
 from datetime import datetime
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.upload import save_upload
+from core.resume_completeness import calc_completeness
 from core.constants import (
     EDUCATION_LEVELS_DETAIL, GRADUATION_STATUS, GPA_SCALES,
     CAREER_EMPLOYMENT_TYPES, LANGUAGE_LIST, LANGUAGE_LEVELS,
@@ -89,7 +90,7 @@ async def resume_list(request: Request):
     try:
         resumes = conn.execute(
             "SELECT * FROM resumes WHERE user_id=? ORDER BY is_default DESC, updated_at DESC",
-            (user["user_id"],),
+            (user["id"],),
         ).fetchall()
         label_map = {'edu': '학력', 'career': '경력', 'cert': '자격증', 'lang': '어학', 'award': '수상', 'portfolio': '포트폴리오'}
         item_counts = {}
@@ -123,17 +124,19 @@ async def resume_list(request: Request):
             parts = [f"{label_map[k]} {v}" for k, v in counts.items() if k in label_map and v > 0]
             item_summaries[rid] = ' | '.join(parts)
         updated_dates = {r["id"]: (r["updated_at"][:10] if r["updated_at"] else '-') for r in resumes}
+        completeness_map = {r["id"]: calc_completeness(conn, r["id"]) for r in resumes}
     finally:
         conn.close()
     return templates.TemplateResponse(
         request=request, name="seeker/resume_list.html", context={
             "request": request, "page_title": "내 이력서",
-            "user_name": user["user_name"], "user_role": "seeker",
+            "user_name": user["name"], "user_role": "seeker",
             "user": user,
             "resumes": resumes,
             "item_counts": item_counts,
             "item_summaries": item_summaries,
             "updated_dates": updated_dates,
+            "completeness_map": completeness_map,
         }
     )
 
@@ -145,7 +148,7 @@ async def resume_new(
     copy_from: int = Form(None),
 ):
     user = require_role(request, "seeker")
-    uid = user["user_id"]
+    uid = user["id"]
     conn = get_sqlite()
     try:
         existing_count = conn.execute(
@@ -269,7 +272,7 @@ async def resume_edit(request: Request, resume_id: int, success: str = "", error
     try:
         resume = conn.execute(
             "SELECT * FROM resumes WHERE id=? AND user_id=?",
-            (resume_id, user["user_id"]),
+            (resume_id, user["id"]),
         ).fetchone()
         if resume is None:
             return RedirectResponse(url="/resumes", status_code=303)
@@ -299,15 +302,14 @@ async def resume_edit(request: Request, resume_id: int, success: str = "", error
         ).fetchall()
         accommodation_needs = json.loads(resume["accommodation_needs"]) if resume["accommodation_needs"] else []
         profile = conn.execute(
-            "SELECT * FROM seeker_profiles WHERE user_id=?", (user["user_id"],)
+            "SELECT * FROM seeker_profiles WHERE user_id=?", (user["id"],)
         ).fetchone()
         selected_sido = ""
         if profile and profile["region_id"]:
             region_row = conn.execute("SELECT sido FROM regions WHERE id=?", (profile["region_id"],)).fetchone()
             if region_row:
                 selected_sido = region_row["sido"]
-        bd = profile["birth_date"] if profile and profile["birth_date"] else ""
-        birth_display = bd.replace("-", ". ") if bd else ""
+        birth_display = str(profile["birth_year"]) if profile and profile["birth_year"] else ""
         resume_filename = resume["resume_path"].split('/')[-1] if resume["resume_path"] else ""
         resume_photo_url = resume["photo_path"] or ""
         photo_btn_label = "변경" if resume_photo_url else "사진 등록"
@@ -316,7 +318,7 @@ async def resume_edit(request: Request, resume_id: int, success: str = "", error
     return templates.TemplateResponse(
         request=request, name="seeker/resume_form.html", context={
             "request": request, "page_title": resume["name"],
-            "user_name": user["user_name"], "user_role": "seeker",
+            "user_name": user["name"], "user_role": "seeker",
             "user": user,
             "profile": profile,
             "selected_sido": selected_sido,
@@ -360,12 +362,12 @@ async def resume_detail(request: Request, resume_id: int):
     try:
         resume = conn.execute(
             "SELECT * FROM resumes WHERE id=? AND user_id=?",
-            (resume_id, user["user_id"]),
+            (resume_id, user["id"]),
         ).fetchone()
         if resume is None:
             return RedirectResponse(url="/resumes", status_code=303)
         profile = conn.execute(
-            "SELECT * FROM seeker_profiles WHERE user_id=?", (user["user_id"],)
+            "SELECT * FROM seeker_profiles WHERE user_id=?", (user["id"],)
         ).fetchone()
         education_list = conn.execute(
             "SELECT * FROM resume_educations WHERE resume_id=? ORDER BY sort_order", (resume_id,)
@@ -389,8 +391,7 @@ async def resume_detail(request: Request, resume_id: int):
             "SELECT * FROM resume_intros WHERE resume_id=? ORDER BY sort_order", (resume_id,)
         ).fetchall()
         accommodation_needs = json.loads(resume["accommodation_needs"]) if resume["accommodation_needs"] else []
-        bd = profile["birth_date"] if profile and profile["birth_date"] else ""
-        birth_display = bd.replace("-", ". ") if bd else ""
+        birth_display = str(profile["birth_year"]) if profile and profile["birth_year"] else ""
         region_name = ""
         if profile and profile["region_id"]:
             rr = conn.execute("SELECT sido, sigungu FROM regions WHERE id=?", (profile["region_id"],)).fetchone()
@@ -402,7 +403,7 @@ async def resume_detail(request: Request, resume_id: int):
     return templates.TemplateResponse(
         request=request, name="seeker/resume_detail.html", context={
             "request": request, "page_title": resume["name"],
-            "user_name": user["user_name"], "user_role": "seeker",
+            "user_name": user["name"], "user_role": "seeker",
             "user": user,
             "profile": profile,
             "resume": resume,
@@ -428,7 +429,7 @@ async def resume_save(request: Request, resume_id: int, resume_file: UploadFile 
     try:
         existing = conn.execute(
             "SELECT * FROM resumes WHERE id=? AND user_id=?",
-            (resume_id, user["user_id"]),
+            (resume_id, user["id"]),
         ).fetchone()
         if existing is None:
             return RedirectResponse(url="/resumes", status_code=303)
@@ -448,7 +449,7 @@ async def resume_save(request: Request, resume_id: int, resume_file: UploadFile 
         resume_path = existing["resume_path"] or ""
         if resume_file and resume_file.filename:
             resume_path = await save_upload(
-                resume_file, "resumes", user["user_id"],
+                resume_file, "resumes", user["id"],
                 ["application/pdf"], 10 * 1024 * 1024,
             )
 
@@ -459,7 +460,7 @@ async def resume_save(request: Request, resume_id: int, resume_file: UploadFile 
         photo_file = form.get("photo")
         if photo_file and hasattr(photo_file, 'filename') and photo_file.filename:
             uploaded = await save_upload(
-                photo_file, "resume_photos", user["user_id"],
+                photo_file, "resume_photos", user["id"],
                 ["image/jpeg", "image/png", "image/webp"], 5 * 1024 * 1024,
             )
             if uploaded:
@@ -469,11 +470,11 @@ async def resume_save(request: Request, resume_id: int, resume_file: UploadFile 
         phone = form.get("phone", "").strip()
         region_id = int(form.get("region_id") or 0) or None
         if phone:
-            conn.execute("UPDATE users SET phone=? WHERE id=?", (phone, user["user_id"]))
+            conn.execute("UPDATE users SET phone=? WHERE id=?", (phone, user["id"]))
         if region_id:
             conn.execute(
                 "UPDATE seeker_profiles SET region_id=?, updated_at=datetime('now','localtime') WHERE user_id=?",
-                (region_id, user["user_id"]),
+                (region_id, user["id"]),
             )
 
         # 학력
@@ -667,24 +668,24 @@ async def resume_save(request: Request, resume_id: int, resume_file: UploadFile 
     return RedirectResponse(url=f"/resumes/{resume_id}/edit?success=1", status_code=303)
 
 
-@router.post("/resumes/{resume_id}/delete")
+@router.delete("/resumes/{resume_id}")
 async def resume_delete(request: Request, resume_id: int):
     user = require_role(request, "seeker")
     conn = get_sqlite()
     try:
         resume = conn.execute(
             "SELECT * FROM resumes WHERE id=? AND user_id=?",
-            (resume_id, user["user_id"]),
+            (resume_id, user["id"]),
         ).fetchone()
         if resume is None:
-            return RedirectResponse(url="/resumes", status_code=303)
+            return JSONResponse({"redirect": "/resumes"})
         if resume["is_default"]:
-            return RedirectResponse(url="/resumes?error=cannot_delete_default", status_code=303)
+            return JSONResponse({"error": "기본 이력서는 삭제할 수 없습니다"}, status_code=400)
         conn.execute("DELETE FROM resumes WHERE id=?", (resume_id,))
         conn.commit()
     finally:
         conn.close()
-    return RedirectResponse(url="/resumes", status_code=303)
+    return JSONResponse({"redirect": "/resumes"})
 
 
 @router.post("/resumes/{resume_id}/default")
@@ -694,12 +695,12 @@ async def resume_set_default(request: Request, resume_id: int):
     try:
         resume = conn.execute(
             "SELECT id FROM resumes WHERE id=? AND user_id=?",
-            (resume_id, user["user_id"]),
+            (resume_id, user["id"]),
         ).fetchone()
         if resume is None:
             return RedirectResponse(url="/resumes", status_code=303)
         conn.execute(
-            "UPDATE resumes SET is_default=0 WHERE user_id=?", (user["user_id"],)
+            "UPDATE resumes SET is_default=0 WHERE user_id=?", (user["id"],)
         )
         conn.execute(
             "UPDATE resumes SET is_default=1 WHERE id=?", (resume_id,)

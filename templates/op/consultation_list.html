@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>{{ seeker['name'] }} - 상담 기록</h2></div>
+<div class="container narrow-form-lg">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/op/seekers/{{ seeker['id'] }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1" aria-hidden="true"></i>구직자 상세로
+        </a>
+        <a href="/op/consultations/new?seeker_id={{ seeker['id'] }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1" aria-hidden="true"></i>새 상담 기록
+        </a>
+    </div>
+
+    {% if not consultations %}
+    <div class="content-card">
+        <p class="text-muted mb-0">상담 기록이 없습니다.</p>
+    </div>
+    {% else %}
+    {% for c in consultations %}
+    <div class="content-card mb-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <span class="fw-semibold">{{ c['created_at'][:10] }}</span>
+                <span class="text-muted ms-2">담당: {{ c['operator_name'] }}</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/op/consultations/{{ c['id'] }}/edit" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-pen me-1" aria-hidden="true"></i>수정
+                </a>
+                <button class="btn btn-outline-danger btn-sm"
+                        data-delete-url="/op/consultations/{{ c['id'] }}"
+                        data-confirm="이 상담 기록을 삭제하시겠습니까?">
+                    <i class="fas fa-trash me-1" aria-hidden="true"></i>삭제
+                </button>
+            </div>
+        </div>
+
+        <dl class="consultation-fields mb-0">
+            {% if c['physical_note'] %}
+            <div class="consultation-field-row">
+                <dt>신체 기능</dt>
+                <dd>{{ c['physical_note'] }}</dd>
+            </div>
+            {% endif %}
+            {% if c['sensory_note'] %}
+            <div class="consultation-field-row">
+                <dt>감각 기능</dt>
+                <dd>{{ c['sensory_note'] }}</dd>
+            </div>
+            {% endif %}
+            {% if c['cognitive_note'] %}
+            <div class="consultation-field-row">
+                <dt>인지 기능</dt>
+                <dd>{{ c['cognitive_note'] }}</dd>
+            </div>
+            {% endif %}
+            {% if c['communication_note'] %}
+            <div class="consultation-field-row">
+                <dt>의사소통</dt>
+                <dd>{{ c['communication_note'] }}</dd>
+            </div>
+            {% endif %}
+            {% if c['work_capacity_note'] %}
+            <div class="consultation-field-row">
+                <dt>업무 수행 능력</dt>
+                <dd>{{ c['work_capacity_note'] }}</dd>
+            </div>
+            {% endif %}
+            {% if c['environment_note'] %}
+            <div class="consultation-field-row">
+                <dt>환경 적응</dt>
+                <dd>{{ c['environment_note'] }}</dd>
+            </div>
+            {% endif %}
+            {% if c['summary'] %}
+            <div class="consultation-field-row">
+                <dt>종합 의견</dt>
+                <dd>{{ c['summary'] }}</dd>
+            </div>
+            {% endif %}
+        </dl>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+</div>
+{% endblock %}

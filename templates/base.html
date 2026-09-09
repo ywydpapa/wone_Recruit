@@ -1,5 +1,5 @@
-{% set user_name = request.session.get('user_name', '') %}
-{% set user_role = request.session.get('user_role', 'seeker') %}
+{% set user_name = request.session.get('name', '') %}
+{% set user_role = request.session.get('role', 'seeker') %}
 {% set _notif = 0 %}
 <!DOCTYPE html>
 <html lang="ko">
@@ -44,7 +44,6 @@
         <a href="/company/calendar" class="sidebar-link{% if '/company/calendar' in request.url.path %} active{% endif %}">
             <i class="fas fa-calendar-alt"></i><span>면접 캘린더</span>
         </a>
-
         <div class="sidebar-section">인재</div>
         <a href="/company/talents" class="sidebar-link{% if '/company/talents' in request.url.path %} active{% endif %}">
             <i class="fas fa-search"></i><span>인재 검색</span>
@@ -104,6 +103,36 @@
             <i class="fas fa-user-circle"></i><span>마이페이지</span>
         </a>
 
+        {% elif user_role == 'manager' %}
+
+        <a href="/" class="sidebar-link{% if request.url.path == '/' %} active{% endif %}">
+            <i class="fas fa-home"></i><span>대시보드</span>
+        </a>
+
+        <div class="sidebar-section">상담</div>
+        <a href="/op/seekers" class="sidebar-link{% if '/op/seekers' in request.url.path %} active{% endif %}">
+            <i class="fas fa-users"></i><span>구직자</span>
+        </a>
+        <a href="/op/companies" class="sidebar-link{% if '/op/companies' in request.url.path %} active{% endif %}">
+            <i class="fas fa-building"></i><span>기업</span>
+        </a>
+        <a href="/op/jobs" class="sidebar-link{% if '/op/jobs' in request.url.path %} active{% endif %}">
+            <i class="fas fa-clipboard-list"></i><span>공고</span>
+        </a>
+
+        <div class="sidebar-section">매칭</div>
+        <a href="/op/matching" class="sidebar-link{% if '/op/matching' in request.url.path %} active{% endif %}">
+            <i class="fas fa-link"></i><span>매칭</span>
+        </a>
+        <a href="/op/candidacies" class="sidebar-link{% if '/op/candidacies' in request.url.path %} active{% endif %}">
+            <i class="fas fa-tasks"></i><span>지원 현황</span>
+        </a>
+
+        <div class="sidebar-section">배치</div>
+        <a href="/op/placements" class="sidebar-link{% if '/op/placements' in request.url.path %} active{% endif %}">
+            <i class="fas fa-user-tie"></i><span>배치 관리</span>
+        </a>
+
         {% elif user_role == 'operator' %}
 
         <a href="/" class="sidebar-link{% if request.url.path == '/' %} active{% endif %}">
@@ -124,6 +153,19 @@
         <div class="sidebar-section">매칭</div>
         <a href="/op/matching" class="sidebar-link{% if '/op/matching' in request.url.path %} active{% endif %}">
             <i class="fas fa-link"></i><span>매칭</span>
+        </a>
+        <a href="/op/candidacies" class="sidebar-link{% if '/op/candidacies' in request.url.path %} active{% endif %}">
+            <i class="fas fa-tasks"></i><span>지원 현황</span>
+        </a>
+
+        <div class="sidebar-section">배치</div>
+        <a href="/op/placements" class="sidebar-link{% if '/op/placements' in request.url.path %} active{% endif %}">
+            <i class="fas fa-user-tie"></i><span>배치 관리</span>
+        </a>
+
+        <div class="sidebar-section">보고서</div>
+        <a href="/op/access-log" class="sidebar-link{% if '/op/access-log' in request.url.path %} active{% endif %}">
+            <i class="fas fa-eye"></i><span>열람 기록</span>
         </a>
 
         {% endif %}
@@ -167,6 +209,7 @@
                     <li><span class="dropdown-item-text text-muted small">
                         {% if user_role == 'seeker' %}구직자
                         {% elif user_role == 'company' %}기업
+                        {% elif user_role == 'manager' %}채용매니저
                         {% elif user_role == 'operator' %}운영자
                         {% endif %}
                     </span></li>
@@ -274,18 +317,25 @@
 </script>
 <script>
 (function() {
-    fetch('/api/notifications/count')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            var badge = document.getElementById('topbar-notif-badge');
-            if (badge && data.count > 0) {
-                badge.textContent = data.count > 99 ? '99+' : data.count;
-                badge.classList.remove('d-none');
-                var btn = document.getElementById('topbar-notif-btn');
-                if (btn) btn.setAttribute('aria-label', '알림, 읽지 않은 알림 ' + data.count + '건');
-            }
-        })
-        .catch(function(){});
+    function checkNotif() {
+        fetch('/api/notifications/count')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var badge = document.getElementById('topbar-notif-badge');
+                if (!badge) return;
+                if (data.count > 0) {
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.classList.remove('d-none');
+                    var btn = document.getElementById('topbar-notif-btn');
+                    if (btn) btn.setAttribute('aria-label', '알림, 읽지 않은 알림 ' + data.count + '건');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            })
+            .catch(function(){});
+    }
+    checkNotif();
+    setInterval(checkNotif, 30000);
 })();
 </script>
 <script>
@@ -321,6 +371,17 @@ function loadSigungu(sido, selectId, selected) {
             });
         });
 }
+</script>
+<!-- 삭제 버튼 공통 -->
+<script>
+document.querySelectorAll('[data-delete-url]').forEach(function(el) {
+    el.addEventListener('click', function() {
+        if (!confirm(this.dataset.confirm || '삭제하시겠습니까?')) return;
+        fetch(this.dataset.deleteUrl, {method: 'DELETE'})
+            .then(function(r) { return r.json(); })
+            .then(function(d) { location.href = d.redirect || location.pathname; });
+    });
+});
 </script>
 {% block scripts %}{% endblock %}
 </body>

@@ -25,9 +25,9 @@ def check_login(request):
 
 def get_current_user(request):
     return {
-        "user_id": request.session.get("user_id"),
-        "user_name": request.session.get("user_name", ""),
-        "user_role": request.session.get("user_role", "seeker"),
+        "id": request.session.get("id"),
+        "name": request.session.get("name", ""),
+        "role": request.session.get("role", "seeker"),
     }
 
 
@@ -35,6 +35,6 @@ def require_role(request, *roles):
     if not check_login(request):
         raise HTTPException(status_code=303, headers={"Location": "/login"})
     user = get_current_user(request)
-    if user["user_role"] not in roles:
+    if user["role"] not in roles:
         raise HTTPException(status_code=403, detail="권한이 없습니다.")
     return user
