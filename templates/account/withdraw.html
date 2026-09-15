@@ -16,6 +16,7 @@
             <div class="alert alert-danger" role="alert">비밀번호가 일치하지 않습니다.</div>
             {% endif %}
             <form method="post" action="/account/withdraw">
+                {{ csrf_input }}
                 <div class="mb-3">
                     <label for="reason" class="form-label">탈퇴 사유 <span class="text-muted small">(선택)</span></label>
                     <select id="reason" name="reason" class="form-select">

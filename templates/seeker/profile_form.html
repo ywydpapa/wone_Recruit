@@ -25,7 +25,7 @@
 {% endif %}
 
 <form method="post" action="/profile" enctype="multipart/form-data" novalidate>
-
+{{ csrf_input }}
     <!-- 기본 정보 -->
     <fieldset class="form-section" id="sec-basic">
         <legend><i class="fas fa-user"></i>기본 정보</legend>
@@ -79,17 +79,69 @@
         </div>
     </fieldset>
 
+    <!-- 근무 지원 항목 -->
+    <fieldset class="form-section" id="sec-support">
+        <legend><i class="fas fa-hands-helping"></i>근무 지원 항목</legend>
+        <div class="form-section-body">
+            <p class="text-muted mb-3">업무 수행을 위해 필요한 지원 항목을 선택해주시면 보다 정확한 매칭이 가능합니다.</p>
+            {% for cat in support_categories %}
+            <div class="mb-2">
+                {% set ns = namespace(cnt=0) %}
+                {% for item in cat.support_items %}{% if item.id in selected_support_ids %}{% set ns.cnt = ns.cnt + 1 %}{% endif %}{% endfor %}
+                <button class="btn btn-outline-secondary btn-sm w-100 text-start" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#cat-{{ cat.id }}" aria-expanded="false">
+                    {{ cat.name }}
+                    {% if ns.cnt > 0 %}<span class="badge bg-primary ms-2">{{ ns.cnt }}</span>{% endif %}
+                </button>
+                <div class="collapse" id="cat-{{ cat.id }}">
+                    <div class="card card-body py-2 px-3 mt-1">
+                    {% for item in cat.support_items %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               name="support_item_ids" value="{{ item.id }}"
+                               id="si_{{ item.id }}"
+                               {% if item.id in selected_support_ids %}checked{% endif %}>
+                        <label class="form-check-label" for="si_{{ item.id }}">
+                            {{ item.name }}
+                            {% if item.description %}<span class="text-muted small"> ({{ item.description }})</span>{% endif %}
+                        </label>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </fieldset>
+
     <div class="content-card mb-4">
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 mb-3">
             <i class="fas fa-file-alt text-primary"></i>
             <span>학력, 경력, 자격증 등은 <a href="/resumes" class="fw-semibold">이력서 관리</a>에서 작성할 수 있습니다.</span>
         </div>
+        <div class="mb-2">
+            <label for="resume" class="form-label fw-semibold">이력서 파일 (PDF, 최대 10MB)</label>
+            <input type="file" class="form-control" id="resume" name="resume" accept="application/pdf">
+        </div>
+        {% if profile and profile.resume_path %}
+        <div class="mt-2">
+            <i class="fas fa-file-pdf text-danger me-1"></i>
+            <a href="{{ profile.resume_path }}" target="_blank">이력서 보기</a>
+        </div>
+        {% endif %}
     </div>
 
     <!-- 장애 정보 -->
     <fieldset class="form-section" id="sec-disability">
-        <legend><i class="fas fa-wheelchair"></i>장애 정보</legend>
-        <div class="form-section-body">
+        <legend>
+            <button class="btn btn-link text-decoration-none p-0 fw-bold section-toggle collapsed" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#disability-body" aria-expanded="false"
+                    aria-controls="disability-body">
+                <i class="fas fa-wheelchair me-1"></i>추가 정보
+                <i class="fas fa-chevron-down toggle-icon ms-2"></i>
+            </button>
+        </legend>
+        <div class="form-section-body collapse" id="disability-body">
 
             {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}
             <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
@@ -103,7 +155,7 @@
 
             <div {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}class="field-disabled"{% endif %}>
             <div class="mb-3">
-                <label for="disability_type_id" class="form-label fw-semibold">장애유형</label>
+                <label for="disability_type_id" class="form-label fw-semibold">장애유형 <span class="text-muted fw-normal small"></span></label>
                 <select class="form-select" id="disability_type_id" name="disability_type_id">
                     <option value="">-- 선택 --</option>
                     {% for dt in disability_types %}
@@ -194,6 +246,11 @@
             <div class="mb-3">
                 <label class="form-label fw-semibold">장애정보 공개 범위</label>
                 <div class="form-check">
+                    <input class="form-check-input" type="radio" name="disability_visibility" id="dv_private" value="private"
+                        {% if profile and profile.disability_visibility == 'private' %}checked{% endif %}>
+                    <label class="form-check-label" for="dv_private">비공개 (아무에게도 보이지 않음)</label>
+                </div>
+                <div class="form-check">
                     <input class="form-check-input" type="radio" name="disability_visibility" id="dv_manager" value="manager_only"
                         {% if not profile or not profile.disability_visibility or profile.disability_visibility == 'manager_only' %}checked{% endif %}>
                     <label class="form-check-label" for="dv_manager">운영자만 열람 (매칭 제안용)</label>
@@ -222,7 +279,7 @@
                         민감정보 제공에 동의합니다.
                     </label>
                 </div>
-                <div class="form-text">장애유형, 장애정도 등 민감정보는 취업 알선 목적으로만 사용됩니다.</div>
+                <div class="form-text"> 회원님께서 제공해주신 민감정보는 취업 알선 목적으로만 사용됩니다. 언제든 동의를 철회하실 수 있습니다.</div>
             </div>
             {% endif %}
 

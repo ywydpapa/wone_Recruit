@@ -63,6 +63,8 @@
                     <div class="text-start item-meta small">
                         {% if t.disability_name %}
                         <div><i class="fas fa-id-card"></i> {{ t.disability_name }} &middot; {{ t.severity }}</div>
+                        {% else %}
+                        <div><i class="fas fa-id-card"></i> <span class="text-muted">장애 정보: 비공개</span></div>
                         {% endif %}
                         <div><i class="fas fa-map-marker-alt"></i> {{ (t.region_sido or '') ~ ' ' ~ (t.region_sigungu or '') | trim or '미지정' }}</div>
                         <div><i class="fas fa-briefcase"></i> {{ t.work_pref }}</div>

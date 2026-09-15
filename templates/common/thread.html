@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="msg-thread-container">
+    <div class="msg-thread-header">
+        <a href="/messages" class="msg-back-btn"><i class="fas fa-arrow-left"></i></a>
+        <div class="msg-avatar">{{ counterpart_name[:1] }}</div>
+        <h2>{{ counterpart_name }}</h2>
+    </div>
+
+    <div class="msg-thread-body" id="thread-body">
+        {% if not messages %}
+        <div class="msg-thread-empty">
+            <p class="text-muted">첫 메시지를 보내보세요</p>
+        </div>
+        {% else %}
+        {% for msg in messages %}
+        <div class="msg-bubble {% if msg.direction == 'out' %}msg-bubble-out{% else %}msg-bubble-in{% endif %}">
+            <div class="msg-bubble-content">{{ msg.body }}</div>
+            <div class="msg-bubble-time">{{ msg.time_label }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="msg-thread-input">
+        <form id="reply-form" class="msg-input-form">
+            <input type="hidden" name="to_name" value="{{ counterpart_name }}">
+            <textarea name="body" id="reply-body" class="msg-textarea" rows="1" placeholder="메시지를 입력하세요"></textarea>
+            <button type="submit" class="msg-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+</div>
+
+<script>
+var tb = document.getElementById('thread-body');
+if (tb) tb.scrollTop = tb.scrollHeight;
+
+document.getElementById('reply-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var body = document.getElementById('reply-body');
+    if (!body.value.trim()) return;
+    var data = new FormData(this);
+    fetch('/api/messages/send', { method: 'POST', body: data })
+        .then(function(r) { return r.json(); })
+        .then(function(json) {
+            if (json.ok) location.reload();
+        });
+});
+
+var ta = document.getElementById('reply-body');
+ta.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+</script>
+{% endblock %}

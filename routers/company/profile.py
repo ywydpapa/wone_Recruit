@@ -27,6 +27,7 @@ async def company_profile_form(request: Request, success: str = ""):
                 accessibility_facilities = json.loads(company["accessibility_facilities"])
     finally:
         conn.close()
+    approval_status = company["approval_status"] if company else "pending"
     return templates.TemplateResponse(
         request=request, name="company/profile_form.html", context={
             "request": request, "page_title": "기업 정보",
@@ -37,6 +38,7 @@ async def company_profile_form(request: Request, success: str = ""):
             "industry_types": INDUSTRY_TYPES,
             "accommodation_options": ACCOMMODATION_OPTIONS,
             "accessibility_facilities": accessibility_facilities,
+            "approval_status": approval_status,
         }
     )
 
@@ -61,7 +63,14 @@ async def company_profile_save(
     est_year: int = Form(None),
     biz_type: str = Form(""),
     address: str = Form(""),
+    contact_phone: str = Form(""),
+    contact_email: str = Form(""),
+    hr_name: str = Form(""),
+    hr_position: str = Form(""),
+    hr_phone: str = Form(""),
+    hr_email: str = Form(""),
     logo: Optional[UploadFile] = File(None),
+    biz_doc: Optional[UploadFile] = File(None),
 ):
     user = require_role(request, "company")
     form = await request.form()
@@ -75,11 +84,20 @@ async def company_profile_save(
             ["image/jpeg", "image/png", "image/webp"], 5 * 1024 * 1024,
         )
 
+    biz_doc_path = ""
+    if biz_doc and biz_doc.filename:
+        biz_doc_path = await save_upload(
+            biz_doc, "biz_docs", user["id"],
+            ["application/pdf", "image/jpeg", "image/png"], 10 * 1024 * 1024,
+        )
+
     conn = get_sqlite()
     try:
-        existing = conn.execute("SELECT id, logo_path FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+        existing = conn.execute("SELECT id, logo_path, biz_doc_path FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not logo_path and existing:
             logo_path = existing["logo_path"] or ""
+        if not biz_doc_path and existing:
+            biz_doc_path = existing["biz_doc_path"] or ""
         est_year_val = est_year if est_year else None
         if existing:
             conn.execute("""UPDATE companies SET
@@ -87,14 +105,18 @@ async def company_profile_save(
                 region_id=?, intro=?, website=?, company_size=?,
                 accessibility_facilities=?, accessibility_note=?,
                 hiring_experience=?, retention_note=?, benefits=?, logo_path=?,
-                ceo=?, est_year=?, biz_type=?, address=?,
+                ceo=?, est_year=?, biz_type=?, address=?, biz_doc_path=?,
+                contact_phone=?, contact_email=?,
+                hr_name=?, hr_position=?, hr_phone=?, hr_email=?,
                 updated_at=datetime('now','localtime')
                 WHERE user_id=?""",
                 (company_name, biz_no, industry, employee_count, disabled_count,
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
                  hiring_exp_val, retention_note, benefits, logo_path,
-                 ceo, est_year_val, biz_type, address,
+                 ceo, est_year_val, biz_type, address, biz_doc_path,
+                 contact_phone, contact_email,
+                 hr_name, hr_position, hr_phone, hr_email,
                  user["id"]))
         else:
             conn.execute("""INSERT INTO companies
@@ -102,13 +124,17 @@ async def company_profile_save(
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
                  hiring_experience, retention_note, benefits, logo_path,
-                 ceo, est_year, biz_type, address)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                 ceo, est_year, biz_type, address, biz_doc_path,
+                 contact_phone, contact_email,
+                 hr_name, hr_position, hr_phone, hr_email)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (user["id"], company_name, biz_no, industry, employee_count, disabled_count,
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
                  hiring_exp_val, retention_note, benefits, logo_path,
-                 ceo, est_year_val, biz_type, address))
+                 ceo, est_year_val, biz_type, address, biz_doc_path,
+                 contact_phone, contact_email,
+                 hr_name, hr_position, hr_phone, hr_email))
         conn.commit()
     finally:
         conn.close()

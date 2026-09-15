@@ -45,6 +45,15 @@
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label for="approval" class="visually-hidden">인증 상태</label>
+                    <select id="approval" name="approval" class="form-select">
+                        <option value="" {% if selected_approval == "" %}selected{% endif %}>인증 (전체)</option>
+                        <option value="pending" {% if selected_approval == "pending" %}selected{% endif %}>대기</option>
+                        <option value="approved" {% if selected_approval == "approved" %}selected{% endif %}>승인</option>
+                        <option value="rejected" {% if selected_approval == "rejected" %}selected{% endif %}>반려</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
                 </div>
             </div>
@@ -71,6 +80,7 @@
                             <th scope="col">장애인 고용</th>
                             <th scope="col">편의시설</th>
                             <th scope="col">채용 경험</th>
+                            <th scope="col">인증</th>
                             <th scope="col">지역</th>
                             <th scope="col"></th>
                         </tr>
@@ -95,6 +105,15 @@
                             <span class="badge bg-success">경험 있음</span>
                             {% else %}
                             <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c['approval_status'] == 'approved' %}
+                            <span class="badge bg-success">승인</span>
+                            {% elif c['approval_status'] == 'rejected' %}
+                            <span class="badge bg-danger">반려</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">대기</span>
                             {% endif %}
                         </td>
                         <td>{{ (c['region_sido']|default('') ~ ' ' ~ c['region_sigungu']|default(''))|trim or '-' }}</td>

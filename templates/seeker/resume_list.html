@@ -56,12 +56,14 @@
                 <a href="/resumes/{{ r.id }}/edit" class="btn btn-sm btn-outline-secondary">수정</a>
 
                 <form method="post" action="/resumes/new">
+                    {{ csrf_input }}
                     <input type="hidden" name="copy_from" value="{{ r.id }}">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">복사</button>
                 </form>
 
                 {% if not r.is_default %}
                 <form method="post" action="/resumes/{{ r.id }}/default">
+                    {{ csrf_input }}
                     <button type="submit" class="btn btn-sm btn-outline-primary">기본설정</button>
                 </form>
                 {% endif %}
@@ -69,6 +71,7 @@
                 {% if not r.is_default %}
                 <form method="post" action="/resumes/{{ r.id }}/delete"
                       onsubmit="return confirm('이력서를 삭제하시겠습니까?')">
+                    {{ csrf_input }}
                     <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
                 </form>
                 {% endif %}
@@ -90,6 +93,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="post" action="/resumes/new">
+                {{ csrf_input }}
                 <div class="modal-header">
                     <h5 class="modal-title">새 이력서 작성</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

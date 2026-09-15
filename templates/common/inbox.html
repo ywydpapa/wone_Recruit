@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="msg-container">
+    <div class="msg-sidebar">
+        <div class="msg-sidebar-header">
+            <h2>메시지</h2>
+        </div>
+
+        {% if conversations %}
+        <div class="msg-list">
+            {% for conv in conversations %}
+            {% if conv.user_id %}
+            <a href="/messages/{{ conv.user_id }}" class="msg-item {% if conv.unread > 0 %}msg-unread{% endif %}">
+                <div class="msg-avatar">{{ conv.counterpart[:1] }}</div>
+                <div class="msg-item-body">
+                    <div class="msg-item-top">
+                        <span class="msg-item-name">{{ conv.counterpart }}</span>
+                        <span class="msg-item-time">{{ conv.time_label }}</span>
+                    </div>
+                    <div class="msg-item-preview">{{ conv.body[:50] }}{% if conv.body|length > 50 %}...{% endif %}</div>
+                </div>
+                {% if conv.unread > 0 %}
+                <span class="msg-unread-dot"></span>
+                {% endif %}
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if contacts %}
+        <div class="msg-contacts-section">
+            <div class="msg-section-label">연락 가능</div>
+            {% for c in contacts %}
+            <a href="/messages/{{ c.id }}" class="msg-item msg-contact">
+                <div class="msg-avatar">{{ c.name[:1] }}</div>
+                <div class="msg-item-body">
+                    <span class="msg-item-name">{{ c.name }}</span>
+                    <span class="text-muted small">{{ c.role_label }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not conversations and not contacts %}
+        <div class="msg-empty">
+            <i class="fas fa-envelope-open"></i>
+            <p>주고받은 메시지가 없습니다</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="msg-main">
+        <div class="msg-placeholder">
+            <i class="fas fa-comments"></i>
+            <p>대화를 선택하세요</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,104 +7,228 @@
     <div class="profile-card mb-3">
         <div class="profile-card-body">
             <div class="d-flex align-items-center gap-3">
-                <div class="profile-avatar" aria-hidden="true">
+                <div class="profile-avatar">
                     <i class="fas fa-building"></i>
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <h3 class="fw-bold mb-1 profile-name">{{ company['company_name'] }}</h3>
                     <div class="text-muted">
-                        <span class="me-3"><i class="fas fa-id-card me-1" aria-hidden="true"></i>{{ company['biz_no'] or '-' }}</span>
-                        <span class="me-3"><i class="fas fa-industry me-1" aria-hidden="true"></i>{{ company['industry'] or '-' }}</span>
-                        <span><i class="fas fa-users me-1" aria-hidden="true"></i>{{ company['company_size'] or '-' }}</span>
+                        {{ company['biz_no'] or '-' }} &middot; {{ company['industry'] or '-' }} &middot; {{ company['company_size'] or '-' }}
+                    </div>
+                    <div class="mt-1 small text-muted">
+                        {% if placed_count %}재직 {{ placed_count }}명{% endif %}
+                        {% if active_jobs %}<a href="/op/jobs?company_id={{ company['id'] }}" class="ms-2">공고 {{ active_jobs }}건</a>{% endif %}
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <div class="profile-card h-100">
-                <div class="profile-card-body text-center">
-                    <div class="fs-2 fw-bold">{{ total_jobs }}</div>
-                    <div class="text-muted small">전체 공고</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="profile-card h-100">
-                <div class="profile-card-body text-center">
-                    <div class="fs-2 fw-bold text-success">{{ active_jobs }}</div>
-                    <div class="text-muted small">진행 중 공고</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="profile-card h-100">
-                <div class="profile-card-body text-center">
-                    <div class="fs-2 fw-bold text-primary">{{ placed_count }}</div>
-                    <div class="text-muted small">재직 중 직원</div>
+                <div class="text-end">
+                    {% if company['approval_status'] == 'approved' %}
+                        <span class="badge bg-success">승인</span>
+                    {% elif company['approval_status'] == 'rejected' %}
+                        <span class="badge bg-danger">반려</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">심사 대기</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="profile-card">
+    {% if company['approval_status'] == 'pending' %}
+    <div class="profile-card mb-3">
+        <div class="profile-card-header">사업자 인증 심사</div>
+        <div class="profile-card-body">
+            {% if company['biz_doc_path'] %}
+            <p><a href="{{ company['biz_doc_path'] }}" target="_blank" class="btn btn-sm btn-outline-secondary">사업자등록증 보기</a></p>
+            <div class="d-flex gap-2 mt-2">
+                <form method="post" action="/op/companies/{{ company['id'] }}/approve">
+                    {{ csrf_input }}
+                    <button class="btn btn-sm btn-success">승인</button>
+                </form>
+                <form method="post" action="/op/companies/{{ company['id'] }}/reject">
+                    {{ csrf_input }}
+                    <div>
+                        <textarea name="rejection_reason" class="form-control form-control-sm mb-1" rows="2" placeholder="반려 사유"></textarea>
+                        <button class="btn btn-sm btn-danger">반려</button>
+                    </div>
+                </form>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">서류 미제출 상태입니다. 기업이 사업자등록증을 업로드하면 심사할 수 있습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% elif company['approval_status'] == 'rejected' %}
+    <div class="profile-card mb-3">
+        <div class="profile-card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="fw-bold">반려 사유</span>
+                    <p class="text-muted mt-1 mb-0">{{ company['rejection_reason'] or '(사유 없음)' }}</p>
+                </div>
+                <form method="post" action="/op/companies/{{ company['id'] }}/approve">
+                    {{ csrf_input }}
+                    <button class="btn btn-sm btn-outline-success">재승인</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="profile-card mb-3">
+        <div class="profile-card-header">기업 정보</div>
+        <div class="profile-card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="profile-field">
+                        <span class="profile-field-label">대표자</span>
+                        <span class="profile-field-value">{{ company['ceo'] or '-' }}</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-field-label">설립연도</span>
+                        <span class="profile-field-value">{% if company['est_year'] %}{{ company['est_year'] }}년{% else %}-{% endif %}</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-field-label">전체 직원</span>
+                        <span class="profile-field-value">{{ company['employee_count'] }}명</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-field-label">장애인 고용</span>
+                        <span class="profile-field-value">{{ company['disabled_count'] }}명</span>
+                    </div>
+                    {% if company['hiring_experience'] %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">채용 경험</span>
+                        <span class="profile-field-value"><span class="badge bg-success">있음</span></span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <div class="profile-field">
+                        <span class="profile-field-label">주소</span>
+                        <span class="profile-field-value">{{ company['address'] or '-' }}</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-field-label">지역</span>
+                        <span class="profile-field-value">{{ (company['region_sido']|default('') ~ ' ' ~ company['region_sigungu']|default(''))|trim or '-' }}</span>
+                    </div>
+                    {% if company['website'] %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">웹사이트</span>
+                        <span class="profile-field-value"><a href="{{ company['website'] }}" target="_blank" rel="noopener">{{ company['website'] }}</a></span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% set has_contact = company['contact_phone'] or company['contact_email'] or company['hr_name'] %}
+    {% if has_contact or company['account_phone'] or company['account_email'] %}
+    <div class="profile-card mb-3">
+        <div class="profile-card-header">연락처</div>
+        <div class="profile-card-body">
+            {% if has_contact %}
+            <div class="row">
+                <div class="col-md-6">
+                    {% if company['contact_phone'] %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">대표 전화</span>
+                        <span class="profile-field-value">{{ company['contact_phone'] }}</span>
+                    </div>
+                    {% endif %}
+                    {% if company['contact_email'] %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">대표 이메일</span>
+                        <span class="profile-field-value">{{ company['contact_email'] }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if company['hr_name'] %}
+                <div class="col-md-6">
+                    <div class="profile-field">
+                        <span class="profile-field-label">채용 담당자</span>
+                        <span class="profile-field-value">{{ company['hr_name'] }}{% if company['hr_position'] %} ({{ company['hr_position'] }}){% endif %}</span>
+                    </div>
+                    {% if company['hr_phone'] %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">담당자 연락처</span>
+                        <span class="profile-field-value">{{ company['hr_phone'] }}</span>
+                    </div>
+                    {% endif %}
+                    {% if company['hr_email'] %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">담당자 이메일</span>
+                        <span class="profile-field-value">{{ company['hr_email'] }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="text-muted small mb-2">기업이 연락처를 입력하지 않았습니다. 가입 계정 정보:</p>
+            <div class="profile-field">
+                <span class="profile-field-label">가입자</span>
+                <span class="profile-field-value">{{ company['account_name'] or '-' }}</span>
+            </div>
+            {% if company['account_phone'] %}
+            <div class="profile-field">
+                <span class="profile-field-label">전화</span>
+                <span class="profile-field-value">{{ company['account_phone'] }}</span>
+            </div>
+            {% endif %}
+            {% if company['account_email'] %}
+            <div class="profile-field">
+                <span class="profile-field-label">이메일</span>
+                <span class="profile-field-value">{{ company['account_email'] }}</span>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="profile-card mb-3">
         <div class="profile-card-header">
-            <i class="fas fa-info-circle" aria-hidden="true"></i>기업 정보
+            기업리뷰
+            {% if reviews %}<span class="badge bg-secondary ms-1">{{ reviews|length }}</span>{% endif %}
+            {% if avg_rating %}<span class="review-avg-label">평균 {{ avg_rating }}</span>{% endif %}
         </div>
         <div class="profile-card-body">
-            <div class="profile-field">
-                <span class="profile-field-label">사업자번호</span>
-                <span class="profile-field-value">{{ company['biz_no'] or '-' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">업종</span>
-                <span class="profile-field-value">{{ company['industry'] or '-' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">기업 규모</span>
-                <span class="profile-field-value">{{ company['company_size'] or '-' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">설립연도</span>
-                <span class="profile-field-value">{% if company['est_year'] %}{{ company['est_year'] }}년{% else %}-{% endif %}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">대표자</span>
-                <span class="profile-field-value">{{ company['ceo'] or '-' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">주소</span>
-                <span class="profile-field-value">{{ company['address'] or '-' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">지역</span>
-                <span class="profile-field-value">{{ (company['region_sido']|default('') ~ ' ' ~ company['region_sigungu']|default(''))|trim or '-' }}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">전체 직원</span>
-                <span class="profile-field-value">{{ company['employee_count'] }}명</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">장애인 고용</span>
-                <span class="profile-field-value">{{ company['disabled_count'] }}명</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-field-label">채용 경험</span>
-                <span class="profile-field-value">
-                    {% if company['hiring_experience'] %}
-                    <span class="badge bg-success">경험 있음</span>
-                    {% else %}
-                    <span class="text-muted">-</span>
+            {% if reviews %}
+            <div class="review-list">
+                {% for rv in reviews %}
+                <div class="review-item">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            {% for i in range(1, 6) %}
+                            {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">{{ rv['created_at'][:10] }}</span>
+                            <form method="post" action="/op/companies/{{ company['id'] }}/reviews/{{ rv['id'] }}/delete">
+                                {{ csrf_input }}
+                                <button class="btn btn-link btn-sm text-danger p-0">삭제</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% if rv['pros'] %}
+                    <div class="review-pros-cons mb-1">
+                        <span class="review-label good">장점</span>
+                        <span>{{ rv['pros'] }}</span>
+                    </div>
                     {% endif %}
-                </span>
+                    {% if rv['cons'] %}
+                    <div class="review-pros-cons">
+                        <span class="review-label bad">단점</span>
+                        <span>{{ rv['cons'] }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
-            {% if company['website'] %}
-            <div class="profile-field">
-                <span class="profile-field-label">웹사이트</span>
-                <span class="profile-field-value"><a href="{{ company['website'] }}" target="_blank" rel="noopener">{{ company['website'] }}</a></span>
-            </div>
+            {% else %}
+            <p class="text-muted mb-0 small">등록된 리뷰가 없습니다.</p>
             {% endif %}
         </div>
     </div>

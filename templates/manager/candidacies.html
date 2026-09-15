@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}지원 현황 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>지원 현황</h2></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">내 담당 지원 현황 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if candidacies %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>구직자</th>
+                        <th>공고</th>
+                        <th>기업</th>
+                        <th>상태</th>
+                        <th>매칭단계</th>
+                        <th>날짜</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in candidacies %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/mgr/seekers/{{ c['seeker_user_id'] }}">{{ c['seeker_name'] }}</a></td>
+                        <td><a href="/mgr/jobs/{{ c['job_id'] }}">{{ c['job_title'] }}</a></td>
+                        <td><a href="/mgr/companies/{{ c['company_id'] }}">{{ c['company_name'] }}</a></td>
+                        <td><span class="status-badge status-{{ c['status'] }}">{{ status_labels.get(c['status'], c['status']) }}</span></td>
+                        <td>{% if c['match_stage'] %}<span class="status-badge stage-{{ c['match_stage'] }}">{{ match_stage_labels.get(c['match_stage'], c['match_stage']) }}</span>{% else %}-{% endif %}</td>
+                        <td class="text-muted small">{{ c['created_at'][:10] }}</td>
+                        <td>
+                            {% if c['match_stage'] == 'seeker_confirmed' %}
+                            <form method="post" action="/mgr/matching/{{ c['id'] }}/submit" class="d-inline">
+                                {{ csrf_input }}
+                                <button type="submit" class="btn btn-success btn-sm">기업전달</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">지원 내역이 없습니다.</p>
+        {% endif %}
+    </div>
+    {% if candidacies %}
+    {% include "common/pagination.html" %}
+    {% endif %}
+</div>
+{% endblock %}

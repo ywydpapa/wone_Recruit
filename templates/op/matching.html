@@ -63,6 +63,7 @@
                             <th>지역 매치</th>
                             <th>근무시간</th>
                             <th>편의 매치</th>
+                            <th>적합도</th>
                             <th>제안</th>
                         </tr>
                     </thead>
@@ -98,7 +99,18 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% set fit_label = compat.get('fit_label', '') %}
+                            {% if fit_label == '적합' %}
+                            <span class="badge bg-success">적합</span>
+                            {% elif fit_label == '조건부' %}
+                            <span class="badge bg-warning text-dark">조건부</span>
+                            {% else %}
+                            <span class="text-muted small">{{ compat.get('fit_score', 3.0) }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <form method="post" action="/op/matching/propose">
+                                {{ csrf_input }}
                                 <input type="hidden" name="job_id" value="{{ job_id }}">
                                 <input type="hidden" name="seeker_user_id" value="{{ c['id'] }}">
                                 <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('제안하시겠습니까?')">제안</button>

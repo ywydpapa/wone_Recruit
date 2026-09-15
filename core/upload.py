@@ -5,6 +5,14 @@ UPLOAD_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "uploads"
 )
 
+_MAGIC = {
+    "image/jpeg": [b"\xff\xd8\xff"],
+    "image/png": [b"\x89PNG"],
+    "image/gif": [b"GIF87a", b"GIF89a"],
+    "image/webp": [b"RIFF"],
+    "application/pdf": [b"%PDF"],
+}
+
 
 async def save_upload(upload, subdir, user_id, allowed_types, max_bytes):
     if not upload or not upload.filename:
@@ -13,6 +21,9 @@ async def save_upload(upload, subdir, user_id, allowed_types, max_bytes):
         return ""
     content = await upload.read()
     if len(content) > max_bytes or len(content) == 0:
+        return ""
+    sigs = _MAGIC.get(upload.content_type)
+    if sigs and not any(content.startswith(s) for s in sigs):
         return ""
     ext = upload.filename.rsplit(".", 1)[-1].lower() if "." in upload.filename else "bin"
     filename = f"{user_id}_{int(time.time())}.{ext}"

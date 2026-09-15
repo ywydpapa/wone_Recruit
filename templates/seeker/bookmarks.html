@@ -30,6 +30,7 @@
                             </div>
                         </div>
                         <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" aria-label="저장 취소">
+                            {{ csrf_input }}
                             <button type="submit" class="btn btn-link p-0 border-0 bookmark-heart active"
                                     aria-label="저장 취소">
                                 <i class="fas fa-heart"></i>

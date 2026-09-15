@@ -4,8 +4,19 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">공고 관리</h2>
+    {% if approval == 'approved' %}
     <a href="/company/jobs/new" class="btn btn-primary"><i class="fas fa-plus me-1"></i>새 공고 작성</a>
+    {% else %}
+    <button class="btn btn-primary" disabled><i class="fas fa-plus me-1"></i>새 공고 작성</button>
+    {% endif %}
 </div>
+
+{% if approval != 'approved' %}
+<div class="alert alert-warning">
+    사업자 인증이 완료되지 않았습니다. 인증 완료 후 공고를 등록할 수 있습니다.
+    <a href="/company/profile">기업 정보에서 사업자등록증을 업로드해 주세요.</a>
+</div>
+{% endif %}
 
 <form method="get" action="/company/jobs" class="d-flex gap-2 mb-3">
     <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="공고 제목 검색">
@@ -15,6 +26,8 @@
         <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>임시저장</option>
         <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>마감</option>
         <option value="filled" {% if selected_status == 'filled' %}selected{% endif %}>채용완료</option>
+        <option value="pending_review" {% if selected_status == 'pending_review' %}selected{% endif %}>검토 중</option>
+        <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>반려</option>
     </select>
     <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
 </form>
@@ -38,7 +51,7 @@
             <tbody>
             {% for job in jobs %}
             <tr>
-                <td><a href="/company/jobs/{{ job['id'] }}/edit" class="text-decoration-none fw-semibold">{{ job['title'] }}</a></td>
+                <td><a href="/company/jobs/{{ job['id'] }}" class="text-decoration-none fw-semibold">{{ job['title'] }}</a></td>
                 <td>{{ job['employment_type'] }}</td>
                 <td>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</td>
                 <td>
@@ -56,8 +69,15 @@
                         <span class="badge bg-warning text-dark"><i class="fas fa-times badge-icon" aria-hidden="true"></i>마감</span>
                     {% elif s == 'filled' %}
                         <span class="badge bg-info text-dark"><i class="fas fa-check badge-icon" aria-hidden="true"></i>채용완료</span>
+                    {% elif s == 'pending_review' %}
+                        <span class="badge bg-info text-dark"><i class="fas fa-hourglass-half badge-icon" aria-hidden="true"></i>검토 중</span>
+                    {% elif s == 'rejected' %}
+                        <span class="badge bg-danger"><i class="fas fa-ban badge-icon" aria-hidden="true"></i>반려</span>
                     {% else %}
                         <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ s }}</span>
+                    {% endif %}
+                    {% if s == 'rejected' and job['rejection_reason'] %}
+                    <div class="small text-danger mt-1">반려 사유: {{ job['rejection_reason'] }}</div>
                     {% endif %}
                 </td>
                 <td>{{ job['deadline'] or '-' }}</td>
@@ -66,12 +86,14 @@
                         <a href="/company/jobs/{{ job['id'] }}/applicants" class="btn btn-sm btn-outline-secondary">지원자</a>
                         <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-outline-primary">수정</a>
                         <form method="post" action="/company/jobs/{{ job['id'] }}/copy" class="d-inline">
+                            {{ csrf_input }}
                             <button type="submit" class="btn btn-sm btn-outline-success">복사</button>
                         </form>
                         <form method="post" action="/company/jobs/{{ job['id'] }}/status" class="d-inline">
+                            {{ csrf_input }}
                             <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()" aria-label="상태 변경">
                                 <option value="draft" {% if job['status'] == 'draft' %}selected{% endif %}>임시저장</option>
-                                <option value="open" {% if job['status'] == 'open' %}selected{% endif %}>공개</option>
+                                <option value="open" {% if job['status'] in ('open', 'pending_review') %}selected{% endif %}>공개 신청</option>
                                 <option value="closed" {% if job['status'] == 'closed' %}selected{% endif %}>마감</option>
                                 <option value="filled" {% if job['status'] == 'filled' %}selected{% endif %}>채용완료</option>
                             </select>

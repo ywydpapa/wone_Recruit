@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}매니저 대시보드 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>대시보드</h2></div>
+
+<div class="container">
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <a href="/mgr/placements" class="text-decoration-none">
+                <div class="content-card text-center h-100">
+                    <div class="fs-2 fw-bold">{{ today_followups }}</div>
+                    <small class="text-muted">오늘 할 일</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="/mgr/placements" class="text-decoration-none">
+                <div class="content-card text-center h-100 {% if overdue_followups > 0 %}border-danger{% endif %}">
+                    <div class="fs-2 fw-bold {% if overdue_followups > 0 %}text-danger{% endif %}">{{ overdue_followups }}</div>
+                    <small class="text-muted">지연 사후관리</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="/mgr/candidacies" class="text-decoration-none">
+                <div class="content-card text-center h-100">
+                    <div class="fs-2 fw-bold">{{ pending_matches }}</div>
+                    <small class="text-muted">대기중 매칭</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="/mgr/seekers/unassigned" class="text-decoration-none">
+                <div class="content-card text-center h-100">
+                    <div class="fs-2 fw-bold">{{ unassigned_count }}</div>
+                    <small class="text-muted">미배정 구직자</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="content-card mb-4">
+        <h5 class="fw-bold mb-3">담당 현황 <span class="text-muted fs-6 fw-normal">(총 {{ total_caseload }}명)</span></h5>
+        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap py-3">
+            {% for label, count, stage_key in pipeline %}
+            <a href="/mgr/seekers?stage={{ stage_key }}" class="text-center px-3 text-decoration-none">
+                <div class="fs-3 fw-bold">{{ count }}</div>
+                <small class="text-muted">{{ label }}</small>
+            </a>
+            {% if not loop.last %}
+            <i class="fas fa-chevron-right text-muted small"></i>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="content-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">최근 상담</h5>
+            <a href="/mgr/seekers" class="btn btn-outline-secondary btn-sm">전체 보기</a>
+        </div>
+        {% if recent_sessions %}
+        {% set type_labels = {'initial_assessment': '초기 평가', 'career_counseling': '진로 상담', 'interview_prep': '면접 준비', 'followup_call': '후속 통화', 'company_visit': '기업 방문', 'other': '기타'} %}
+        <div class="list-group list-group-flush">
+            {% for s in recent_sessions %}
+            <a href="/mgr/seekers/{{ s['seeker_user_id'] }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-semibold">{{ s['seeker_name'] }}</span>
+                    <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
+                </div>
+                <small class="text-muted">{{ s['created_at'][:10] }}</small>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">최근 상담 기록이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

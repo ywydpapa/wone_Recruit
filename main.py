@@ -1,14 +1,16 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 import dotenv
 
 from core.logger import log
 from core.deps import templates
+from core.csrf import ensure_token, verify_csrf
 
 dotenv.load_dotenv()
 
@@ -185,23 +187,6 @@ def _ensure_db():
                 created_at TEXT DEFAULT (datetime('now','localtime'))
             );
             CREATE INDEX IF NOT EXISTS idx_notes_candidacy ON applicant_notes(candidacy_id);
-        """,
-        "attendance": """
-            CREATE TABLE IF NOT EXISTS attendance (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                company_id INTEGER NOT NULL,
-                employee_user_id INTEGER NOT NULL,
-                work_date TEXT NOT NULL,
-                check_in TEXT,
-                check_out TEXT,
-                status TEXT NOT NULL DEFAULT 'normal',
-                memo TEXT NOT NULL DEFAULT '',
-                created_at TEXT DEFAULT (datetime('now','localtime')),
-                updated_at TEXT DEFAULT (datetime('now','localtime')),
-                UNIQUE(company_id, employee_user_id, work_date)
-            );
-            CREATE INDEX IF NOT EXISTS idx_attendance_company ON attendance(company_id, work_date);
-            CREATE INDEX IF NOT EXISTS idx_attendance_employee ON attendance(employee_user_id, work_date);
         """,
         "company_pipeline_stages": """
             CREATE TABLE IF NOT EXISTS company_pipeline_stages (
@@ -452,6 +437,167 @@ def _ensure_db():
             CREATE INDEX IF NOT EXISTS idx_consultations_seeker ON consultations(seeker_user_id);
             CREATE INDEX IF NOT EXISTS idx_consultations_operator ON consultations(operator_user_id);
         """,
+        "manager_assignments": """
+            CREATE TABLE IF NOT EXISTS manager_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                manager_user_id INTEGER NOT NULL,
+                seeker_user_id INTEGER NOT NULL UNIQUE,
+                assigned_by INTEGER NOT NULL,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_mgr_assign_manager ON manager_assignments(manager_user_id);
+        """,
+        "consultation_sessions": """
+            CREATE TABLE IF NOT EXISTS consultation_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seeker_user_id INTEGER NOT NULL,
+                manager_user_id INTEGER NOT NULL,
+                session_type TEXT NOT NULL DEFAULT 'other',
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_consult_session_seeker ON consultation_sessions(seeker_user_id);
+            CREATE INDEX IF NOT EXISTS idx_consult_session_manager ON consultation_sessions(manager_user_id);
+        """,
+        "company_reviews": """
+            CREATE TABLE IF NOT EXISTS company_reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+                content TEXT NOT NULL DEFAULT '',
+                pros TEXT NOT NULL DEFAULT '',
+                cons TEXT NOT NULL DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now','localtime')),
+                UNIQUE(company_id, user_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_reviews_company ON company_reviews(company_id);
+        """,
+        "placement_followups": """
+            CREATE TABLE IF NOT EXISTS placement_followups (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                placement_id INTEGER NOT NULL,
+                followup_type TEXT NOT NULL,
+                due_date TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                notes TEXT NOT NULL DEFAULT '',
+                completed_at TEXT,
+                completed_by INTEGER,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_followup_placement ON placement_followups(placement_id);
+            CREATE INDEX IF NOT EXISTS idx_followup_status ON placement_followups(status, due_date);
+        """,
+        "support_categories": """
+            CREATE TABLE IF NOT EXISTS support_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                sort_order INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS support_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category_id INTEGER NOT NULL REFERENCES support_categories(id),
+                name TEXT NOT NULL,
+                description TEXT,
+                sort_order INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS support_item_capabilities (
+                support_item_id INTEGER NOT NULL REFERENCES support_items(id),
+                capability TEXT NOT NULL,
+                impact TEXT NOT NULL CHECK(impact IN ('ok','at','limit','no')),
+                PRIMARY KEY (support_item_id, capability)
+            );
+            CREATE TABLE IF NOT EXISTS seeker_support_items (
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                support_item_id INTEGER NOT NULL REFERENCES support_items(id),
+                PRIMARY KEY (user_id, support_item_id)
+            );
+            INSERT OR IGNORE INTO support_categories (id, name, sort_order) VALUES
+                (1, '시각 보조', 1),
+                (2, '청각 보조', 2),
+                (3, '이동 보조', 3),
+                (4, '상지 보조', 4),
+                (5, '인지/정서 지원', 5),
+                (6, '건강관리 지원', 6);
+            INSERT OR IGNORE INTO support_items (id, category_id, name, description, sort_order) VALUES
+                (1,  1, '화면낭독기(스크린리더)',       '화면 내용을 음성으로 출력',          1),
+                (2,  1, '화면확대 소프트웨어',           '화면 내용을 확대 표시',               2),
+                (3,  1, '점자정보단말기',                '화면 내용을 점자로 출력',             3),
+                (4,  1, '독서확대기/전자돋보기',         '문서를 확대하여 표시',                4),
+                (5,  2, '보청기',                        '소리를 증폭',                         1),
+                (6,  2, '인공와우',                      '전기 신호로 청각 보조',               2),
+                (7,  2, '음성인식 자막 소프트웨어',      '음성을 실시간 자막으로 변환',         3),
+                (8,  2, '영상전화(수어통역)',             '수어통역사를 통한 전화',              4),
+                (9,  3, '수동휠체어',                    '자력으로 이동',                       1),
+                (10, 3, '전동휠체어',                    '전동 이동',                           2),
+                (11, 3, '보행보조기(목발/워커)',          '보행 지원',                           3),
+                (12, 3, '의족',                          '하지 보조',                           4),
+                (13, 4, '특수 키보드/마우스',            '한 손 또는 제한된 손 기능으로 입력',  1),
+                (14, 4, '음성인식 입력 소프트웨어',      '음성으로 텍스트 입력',                2),
+                (15, 4, '의수/상지보조기',               '상지 기능 보조',                      3),
+                (16, 4, '머리/시선 추적 입력장치',       '머리 움직임이나 시선으로 커서 조작',  4),
+                (17, 5, '구조화된 업무 지시 필요',       '단계별로 분리된 명확한 지시',         1),
+                (18, 5, '업무 관리 보조(체크리스트/타이머)', '일정, 순서 관리 지원',            2),
+                (19, 5, '정서 안정 지원(상담/휴식)',     '정기 상담, 감정 조절 지원',           3),
+                (20, 5, '감각 자극 조절 환경',           '소음/조명 조절 가능한 환경',          4),
+                (21, 6, '정기 투석',                     '주 2-3회 투석 일정 필요',             1),
+                (22, 6, '정기 복약 관리',                '근무 중 투약 시간 보장',              2),
+                (23, 6, '호흡 보조기기',                 '산소공급기 등',                       3),
+                (24, 6, '장루/요루 관리',                '위생 관리 시간 및 시설 필요',         4),
+                (25, 6, '휴식 시간 보장(1-2시간 간격)', '잦은 휴식 필요',                      5);
+            INSERT OR IGNORE INTO support_item_capabilities (support_item_id, capability, impact) VALUES
+                (1,  'visual_acuity',     'no'),
+                (1,  'screen_use',        'at'),
+                (2,  'visual_acuity',     'limit'),
+                (2,  'screen_use',        'at'),
+                (3,  'visual_acuity',     'no'),
+                (3,  'screen_use',        'at'),
+                (4,  'visual_acuity',     'limit'),
+                (4,  'reading',           'at'),
+                (5,  'hearing',           'limit'),
+                (5,  'verbal_comm',       'at'),
+                (6,  'hearing',           'at'),
+                (6,  'verbal_comm',       'at'),
+                (7,  'hearing',           'limit'),
+                (7,  'verbal_comm',       'limit'),
+                (8,  'hearing',           'no'),
+                (8,  'verbal_comm',       'no'),
+                (8,  'written_comm',      'ok'),
+                (9,  'lower_mobility',    'no'),
+                (9,  'upper_mobility',    'ok'),
+                (9,  'sitting_endurance', 'at'),
+                (10, 'lower_mobility',    'no'),
+                (10, 'upper_mobility',    'limit'),
+                (10, 'sitting_endurance', 'at'),
+                (11, 'lower_mobility',    'limit'),
+                (11, 'standing_endurance','limit'),
+                (12, 'lower_mobility',    'at'),
+                (12, 'standing_endurance','limit'),
+                (13, 'fine_motor',        'limit'),
+                (13, 'typing',            'at'),
+                (14, 'fine_motor',        'no'),
+                (14, 'typing',            'at'),
+                (15, 'fine_motor',        'limit'),
+                (15, 'lifting',           'limit'),
+                (16, 'fine_motor',        'no'),
+                (16, 'typing',            'at'),
+                (16, 'upper_mobility',    'no'),
+                (17, 'complex_reasoning', 'limit'),
+                (17, 'task_switching',    'limit'),
+                (18, 'time_management',   'at'),
+                (18, 'task_switching',    'at'),
+                (19, 'stress_tolerance',  'limit'),
+                (19, 'interpersonal',     'limit'),
+                (20, 'concentration',     'at'),
+                (20, 'stress_tolerance',  'at'),
+                (21, 'work_continuity',   'limit'),
+                (21, 'physical_endurance','limit'),
+                (22, 'work_continuity',   'at'),
+                (23, 'physical_endurance','limit'),
+                (24, 'work_continuity',   'at'),
+                (25, 'work_continuity',   'limit'),
+                (25, 'sitting_endurance', 'limit');
+        """,
     }
     existing_tables = {
         row[0] for row in conn.execute(
@@ -481,6 +627,22 @@ def _ensure_db():
         ("job_postings", "hiring_process", "ALTER TABLE job_postings ADD COLUMN hiring_process TEXT NOT NULL DEFAULT ''"),
         ("job_postings", "headcount", "ALTER TABLE job_postings ADD COLUMN headcount TEXT NOT NULL DEFAULT ''"),
         ("job_postings", "preferred", "ALTER TABLE job_postings ADD COLUMN preferred TEXT NOT NULL DEFAULT ''"),
+        ("companies", "approval_status", "ALTER TABLE companies ADD COLUMN approval_status TEXT NOT NULL DEFAULT 'pending'"),
+        ("companies", "biz_doc_path", "ALTER TABLE companies ADD COLUMN biz_doc_path TEXT NOT NULL DEFAULT ''"),
+        ("companies", "rejection_reason", "ALTER TABLE companies ADD COLUMN rejection_reason TEXT NOT NULL DEFAULT ''"),
+        ("companies", "contact_phone", "ALTER TABLE companies ADD COLUMN contact_phone TEXT NOT NULL DEFAULT ''"),
+        ("companies", "contact_email", "ALTER TABLE companies ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''"),
+        ("companies", "hr_name", "ALTER TABLE companies ADD COLUMN hr_name TEXT NOT NULL DEFAULT ''"),
+        ("companies", "hr_position", "ALTER TABLE companies ADD COLUMN hr_position TEXT NOT NULL DEFAULT ''"),
+        ("companies", "hr_phone", "ALTER TABLE companies ADD COLUMN hr_phone TEXT NOT NULL DEFAULT ''"),
+        ("companies", "hr_email", "ALTER TABLE companies ADD COLUMN hr_email TEXT NOT NULL DEFAULT ''"),
+        ("job_postings", "rejection_reason", "ALTER TABLE job_postings ADD COLUMN rejection_reason TEXT NOT NULL DEFAULT ''"),
+        ("candidacies", "assigned_manager_id", "ALTER TABLE candidacies ADD COLUMN assigned_manager_id INTEGER"),
+        ("placements", "assigned_manager_id", "ALTER TABLE placements ADD COLUMN assigned_manager_id INTEGER"),
+        ("placements", "status", "ALTER TABLE placements ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"),
+        ("placements", "end_date", "ALTER TABLE placements ADD COLUMN end_date TEXT"),
+        ("company_reviews", "pros", "ALTER TABLE company_reviews ADD COLUMN pros TEXT NOT NULL DEFAULT ''"),
+        ("company_reviews", "cons", "ALTER TABLE company_reviews ADD COLUMN cons TEXT NOT NULL DEFAULT ''"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:
@@ -489,6 +651,13 @@ def _ensure_db():
         if col not in _col_cache[tbl]:
             conn.execute(ddl)
             conn.commit()
+
+    # 기존 기업 승인 처리
+    try:
+        conn.execute("UPDATE companies SET approval_status='approved' WHERE approval_status='pending' AND biz_no != ''")
+        conn.commit()
+    except:
+        pass
 
     _jp_cols = {row[1] for row in conn.execute("PRAGMA table_info(job_postings)").fetchall()}
     if "requirements" in _jp_cols and "qualifications" not in _jp_cols:
@@ -513,6 +682,15 @@ def _ensure_db():
             )
         conn.commit()
 
+    # 마감일 지난 공고 자동 마감
+    from datetime import date
+    today = date.today().isoformat()
+    conn.execute(
+        "UPDATE job_postings SET status='closed' WHERE status='open' AND deadline != '' AND deadline < ?",
+        (today,),
+    )
+    conn.commit()
+
     conn.close()
 
 
@@ -522,7 +700,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, dependencies=[Depends(verify_csrf)])
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -579,15 +757,25 @@ _secret = os.getenv("SESSION_SECRET_KEY")
 if not _secret:
     raise RuntimeError("SESSION_SECRET_KEY 환경변수 필수")
 
+class CSRFTokenMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        token = ensure_token(request)
+        request.state.csrf_token = token
+        return await call_next(request)
+
+
+app.add_middleware(CSRFTokenMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=_secret,
+    https_only=os.getenv("ENVIRONMENT") == "production",
+    same_site="strict",
 )
 
 os.makedirs("static/css", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-from routers import auth, dashboard, company, seeker, info, operator, resume, community
+from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(company.router)
@@ -597,3 +785,5 @@ app.include_router(resume.router)
 app.include_router(info.router)
 app.include_router(operator.router)
 app.include_router(community.router)
+app.include_router(messages.router)
+app.include_router(manager.router)

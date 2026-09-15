@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}공고 목록 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>공고 목록</h2></div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/mgr/jobs">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control" placeholder="공고명, 기업명" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="visually-hidden">상태</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">상태 (전체)</option>
+                        <option value="open" {% if selected_status == "open" %}selected{% endif %}>게시중</option>
+                        <option value="closed" {% if selected_status == "closed" %}selected{% endif %}>마감</option>
+                        <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>심사중</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select">
+                        <option value="">지역 (전체)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="employment_type" class="visually-hidden">고용형태</label>
+                    <select id="employment_type" name="employment_type" class="form-select">
+                        <option value="">고용형태 (전체)</option>
+                        {% for t in employment_types %}
+                        <option value="{{ t }}" {% if selected_type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if jobs %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>공고명</th><th>기업</th><th>고용형태</th><th>지역</th><th>지원자</th><th>상태</th><th>마감일</th></tr>
+                </thead>
+                <tbody>
+                    {% for j in jobs %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/mgr/jobs/{{ j['id'] }}">{{ j['title'] }}</a></td>
+                        <td>{{ j['company_name'] }}</td>
+                        <td>{{ j['employment_type'] or '-' }}</td>
+                        <td>{{ j['region_sido'] or '-' }} {{ j['region_sigungu'] or '' }}</td>
+                        <td>{{ j['applicant_count'] }}</td>
+                        <td>
+                            {% if j['status'] == 'open' %}게시중
+                            {% elif j['status'] == 'closed' %}마감
+                            {% elif j['status'] == 'rejected' %}반려
+                            {% elif j['status'] == 'pending' %}심사중
+                            {% else %}{{ j['status'] }}
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ j['deadline'] or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">등록된 공고가 없습니다.</p>
+        {% endif %}
+    </div>
+    {% if jobs %}
+    {% include "common/pagination.html" %}
+    {% endif %}
+</div>
+
+<script>loadSidoList('sido', '{{ selected_sido }}');</script>
+{% endblock %}

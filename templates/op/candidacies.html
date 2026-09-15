@@ -48,7 +48,7 @@
                             {% elif s == 'rejected' %}
                                 <span class="badge bg-danger"><i class="fas fa-times badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
                             {% elif s == 'withdrawn' %}
-                                <span class="badge bg-danger"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
+                                <span class="badge bg-light text-dark border"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
                             {% else %}
                                 <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ status_labels.get(s, s) }}</span>
                             {% endif %}
@@ -58,6 +58,7 @@
                                 {{ match_stage_labels.get(c['match_stage'], c['match_stage']) }}
                                 {% if c['match_stage'] == 'seeker_confirmed' %}
                                 <form method="post" action="/op/matching/{{ c['id'] }}/submit" class="d-inline ms-1">
+                                    {{ csrf_input }}
                                     <button type="submit" class="btn btn-sm btn-primary">기업 전달</button>
                                 </form>
                                 {% endif %}

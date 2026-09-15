@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}배치 관리 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>배치 관리</h2></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">내 담당 배치 <span class="text-muted fs-6 fw-normal">({{ placements|length }}건)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if placements %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>구직자</th>
+                        <th>장애유형</th>
+                        <th>기업</th>
+                        <th>공고</th>
+                        <th>입사일</th>
+                        <th>상태</th>
+                        <th>사후관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in placements %}
+                    {% set fs = followup_summary.get(p['id'], {}) %}
+                    <tr onclick="location.href='/mgr/placements/{{ p['id'] }}'" style="cursor:pointer">
+                        <td class="fw-semibold">{{ p['seeker_name'] }}</td>
+                        <td>{{ p['disability_name'] or '-' }}</td>
+                        <td>{{ p['company_name'] }}</td>
+                        <td>{{ p['job_title'] }}</td>
+                        <td>{{ p['start_date'] or '-' }}</td>
+                        <td>
+                            {% set st = p['status'] or 'active' %}
+                            {% if st == 'active' %}
+                            <span class="badge bg-primary">적응중</span>
+                            {% elif st == 'settled' %}
+                            <span class="badge bg-success">정착</span>
+                            {% elif st == 'departed' %}
+                            <span class="badge bg-danger">이탈</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-success">{{ fs.get('done', 0) }}</span>/{{ fs.get('total', 0) }}
+                            {% if fs.get('overdue', 0) > 0 %}
+                            <span class="badge bg-danger ms-1">{{ fs['overdue'] }}건 지연</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">배치된 구직자가 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

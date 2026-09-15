@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>{{ page_title }}</h2>
+</div>
+
+<div class="container narrow-form">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/mgr/seekers">구직자</a></li>
+            <li class="breadcrumb-item"><a href="/mgr/seekers/{{ seeker['id'] }}">{{ seeker['name'] }}</a></li>
+            <li class="breadcrumb-item active">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="content-card">
+        <form method="post" action="{% if consultation %}/mgr/consultations/{{ consultation['id'] }}{% else %}/mgr/consultations{% endif %}">
+            {{ csrf_input }}
+            <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
+
+            <div class="mb-3">
+                <label for="session_type" class="form-label">상담 유형</label>
+                <select id="session_type" name="session_type" class="form-select" required>
+                    {% for key, label in session_types.items() %}
+                    <option value="{{ key }}" {% if consultation and consultation['session_type'] == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="notes" class="form-label">상담 내용</label>
+                <textarea id="notes" name="notes" class="form-control" rows="10" placeholder="상담 내용을 입력하세요">{{ consultation['notes'] if consultation else '' }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>저장</button>
+                <a href="/mgr/seekers/{{ seeker['id'] }}" class="btn btn-outline-secondary">취소</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -94,6 +94,17 @@ def apply_transition(conn, candidacy_id, target, actor_id, comment=""):
                VALUES (?,?,?,?,date('now','localtime'))""",
             (candidacy_id, cand["job_id"], cand["seeker_user_id"], company_id),
         )
+        pid = conn.execute(
+            "SELECT id FROM placements WHERE candidacy_id=?", (candidacy_id,)
+        ).fetchone()
+        if pid:
+            for ftype, days in [("1w", 7), ("1m", 30), ("3m", 90), ("6m", 180)]:
+                conn.execute(
+                    """INSERT OR IGNORE INTO placement_followups
+                       (placement_id, followup_type, due_date, status)
+                       VALUES (?,?,date('now','localtime',?),'pending')""",
+                    (pid["id"], ftype, f"+{days} days"),
+                )
     from core.notifications import create_notification
     labels = get_stage_labels(conn, company_id) if company_id else {}
     label = labels.get(target)

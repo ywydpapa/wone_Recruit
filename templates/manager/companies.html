@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}기업 목록 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>기업 목록</h2></div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/mgr/companies">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control" placeholder="기업명, 사업자번호" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="industry" class="visually-hidden">업종</label>
+                    <select id="industry" name="industry" class="form-select">
+                        <option value="">업종 (전체)</option>
+                        {% for t in industry_types %}
+                        <option value="{{ t }}" {% if selected_industry == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="company_size" class="visually-hidden">규모</label>
+                    <select id="company_size" name="company_size" class="form-select">
+                        <option value="">규모 (전체)</option>
+                        {% for s in company_sizes %}
+                        <option value="{{ s }}" {% if selected_size == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select">
+                        <option value="">지역 (전체)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">기업 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}개)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if companies %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>기업명</th><th>업종</th><th>규모</th><th>지역</th><th>편의시설</th></tr>
+                </thead>
+                <tbody>
+                    {% for c in companies %}
+                    <tr onclick="location.href='/mgr/companies/{{ c['id'] }}'" style="cursor:pointer">
+                        <td class="fw-semibold">{{ c['company_name'] }}</td>
+                        <td>{{ c['industry'] or '-' }}</td>
+                        <td>{{ c['company_size'] or '-' }}</td>
+                        <td>{{ c['region_sido'] or '-' }} {{ c['region_sigungu'] or '' }}</td>
+                        <td>{{ c['facility_count'] }}개</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">등록된 기업이 없습니다.</p>
+        {% endif %}
+    </div>
+    {% if companies %}
+    {% include "common/pagination.html" %}
+    {% endif %}
+</div>
+
+<script>loadSidoList('sido', '{{ selected_sido }}');</script>
+{% endblock %}

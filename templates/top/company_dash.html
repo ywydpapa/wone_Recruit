@@ -14,22 +14,18 @@
 
         <div class="row mb-4">
             <div class="col-md-3 col-6 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-blue-light">
-                        <i class="fas fa-users"></i>
+                <a href="/company/applicants" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>{{ total_applicants }}</h3>
+                            <p>전체 지원자</p>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <h3>{{ total_applicants }}</h3>
-                        <p>전체 지원자</p>
-                    </div>
-                </div>
+                </a>
             </div>
             <div class="col-md-3 col-6 mb-3">
                 <a href="/company/jobs" class="stat-card-link">
                     <div class="stat-card">
-                        <div class="stat-icon bg-blue-light">
-                            <i class="fas fa-bullhorn"></i>
-                        </div>
                         <div class="stat-info">
                             <h3>{{ open_count }}</h3>
                             <p>모집 중 공고</p>
@@ -38,35 +34,110 @@
                 </a>
             </div>
             <div class="col-md-3 col-6 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-blue-light">
-                        <i class="fas fa-calendar-plus"></i>
+                <a href="/company/applicants" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>{{ new_apps_this_week }}</h3>
+                            <p>이번 주 신규</p>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <h3>{{ new_apps_this_week }}</h3>
-                        <p>이번 주 신규</p>
+                </a>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <a href="/company/applicants?status=hired" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>{{ hired_count }}</h3>
+                            <p>채용 완료</p>
+                        </div>
+                        {% if conversion_rate > 0 %}
+                        <div class="stat-sub">전환율 {{ conversion_rate }}%</div>
+                        {% endif %}
                     </div>
-                </div>
+                </a>
             </div>
             <div class="col-md-3 col-6 mb-3">
                 <div class="stat-card">
-                    <div class="stat-icon bg-blue-light">
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ hired_count }}</h3>
-                        <p>채용 완료</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-6 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-blue-light">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
                     <div class="stat-info">
                         <h3>{{ placement_count }}</h3>
                         <p>현재 근무중</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <a href="/company/jobs" class="stat-card-link">
+                    <div class="stat-card{% if jobs_closing_soon > 0 %} stat-card-alert{% endif %}">
+                        <div class="stat-info">
+                            <h3>{{ jobs_closing_soon }}</h3>
+                            <p>7일 내 마감 공고</p>
+                        </div>
+                        {% if jobs_closing_soon > 0 %}
+                        <div class="stat-sub text-danger">마감 임박</div>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-filter me-2 text-primary"></i>채용 퍼널</span>
+                        {% if avg_days_to_hire is not none %}
+                        <span class="text-muted small">평균 채용 소요 {{ avg_days_to_hire }}일</span>
+                        {% endif %}
+                    </div>
+                    {% set total_pipeline = total_applicants %}
+                    {% if total_pipeline > 0 %}
+                    {% set stages = [
+                        ('pending', '검토 대기', 'secondary'),
+                        ('reviewing', '검토 중', 'primary'),
+                        ('shortlisted', '서류 통과', 'info'),
+                        ('interview', '면접', 'warning'),
+                        ('offer', '합격 제안', 'success'),
+                        ('hired', '채용 완료', 'success'),
+                    ] %}
+                    <div class="progress funnel-progress">
+                        {% for key, label, color in stages %}
+                        {% set cnt = pipeline.get(key, 0) %}
+                        {% if cnt > 0 %}
+                        <div class="progress-bar bg-{{ color }}{% if color in ['info', 'warning'] %} text-dark{% endif %}"
+                             style="width: {{ (cnt / total_pipeline * 100)|round(1) }}%"
+                             title="{{ label }}: {{ cnt }}명">
+                            {{ label }} {{ cnt }}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">지원자가 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="content-card">
+                    <div class="card-title">
+                        <span><i class="fas fa-chart-bar me-2 text-primary"></i>주간 지원 추이</span>
+                    </div>
+                    {% set max_count = weekly_trend | map(attribute='count') | max if weekly_trend else 0 %}
+                    <div class="dash-bar-chart">
+                        {% for w in weekly_trend %}
+                        <div class="dash-bar-wrap" title="{{ w.week_label }}: {{ w.count }}건">
+                            <div class="dash-bar-inner">
+                                <div class="dash-bar bg-primary rounded-top"
+                                     style="height: {{ (w.count / max_count * 100)|round if max_count else 0 }}%">
+                                </div>
+                            </div>
+                            <div class="dash-bar-label">{{ w.count }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                        {% for w in weekly_trend %}
+                        <span class="text-muted dash-bar-week">{{ w.week_label }}</span>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

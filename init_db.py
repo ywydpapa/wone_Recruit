@@ -297,6 +297,9 @@ def init():
         est_year INTEGER,
         biz_type TEXT NOT NULL DEFAULT '',
         address TEXT NOT NULL DEFAULT '',
+        approval_status TEXT NOT NULL DEFAULT 'pending',
+        biz_doc_path TEXT NOT NULL DEFAULT '',
+        rejection_reason TEXT NOT NULL DEFAULT '',
         updated_at TEXT DEFAULT (datetime('now','localtime'))
     );
     CREATE TABLE IF NOT EXISTS job_categories (

@@ -5,6 +5,18 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">지원자 목록</h2><div class="d-flex gap-2"><button class="btn btn-outline-secondary btn-sm" id="btn-toggle-view" onclick="toggleView()" aria-label="보기 전환"><i class="fas fa-columns me-1"></i><span id="toggle-label">파이프라인</span></button><a href="/company/jobs" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>공고 목록</a></div></div>
 
+{% if total_applicants > 0 %}
+<div class="content-card mb-3 p-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="fw-semibold">지원 현황</span>
+        <span class="text-muted small">총 {{ total_applicants }}명</span>
+    </div>
+    <div class="applicant-chart-wrap">
+        <canvas id="applicantChart"></canvas>
+    </div>
+</div>
+{% endif %}
+
 <form method="get" class="d-flex gap-2 mb-3">
     <input type="text" name="q" value="{{ q|default('') }}" class="form-control form-control-sm search-input-sm" placeholder="이름 검색">
     <select name="sort" class="form-select form-select-sm w-auto">
@@ -14,7 +26,7 @@
     <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="fas fa-search"></i></button>
 </form>
 
-<div id="pipeline-view" class="content-card" style="display:none;">
+<div id="pipeline-view" class="content-card d-none">
             <div class="pipeline-wrap">
                 {% for key, label, color in pipeline_stages %}
                 <div class="pipeline-col">
@@ -60,6 +72,9 @@
                     <caption class="visually-hidden">지원자 목록</caption>
                     <thead class="table-light">
                         <tr>
+                            <th scope="col" class="bulk-check-col">
+                                <input type="checkbox" id="check-all" class="form-check-input" aria-label="전체 선택">
+                            </th>
                             <th scope="col">지원자명</th>
                             <th scope="col">상태</th>
                             <th scope="col">지원 경로</th>
@@ -70,6 +85,9 @@
                     <tbody>
                     {% for ap in applicants %}
                     <tr>
+                        <td class="bulk-check-col">
+                            <input type="checkbox" class="form-check-input bulk-check" value="{{ ap['id'] }}" aria-label="{{ ap['seeker_name'] }} 선택">
+                        </td>
                         <td class="fw-semibold">{{ ap['seeker_name'] }}</td>
                         <td>
                             {% set s = ap['status'] %}
@@ -100,23 +118,99 @@
             </div>
             {% endif %}
         </div>
+
+<!-- 일괄 처리 바 -->
+<form method="post" action="/company/jobs/{{ job['id'] }}/applicants/bulk-status" id="bulk-form">
+    {{ csrf_input }}
+    <input type="hidden" name="candidacy_ids" id="bulk-ids">
+    <div id="bulk-bar" class="fixed-bottom bg-white border-top shadow-sm p-3 d-none">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span class="text-muted small"><span id="bulk-count">0</span>명 선택됨</span>
+            <select name="status" class="form-select form-select-sm w-auto" required>
+                <option value="">상태 선택</option>
+                {% for key, label, color in pipeline_stages %}
+                <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+                <option value="rejected">불합격</option>
+            </select>
+            <input type="text" name="comment" class="form-control form-control-sm bulk-comment-input" placeholder="메모 (선택)">
+            <button type="submit" class="btn btn-sm btn-primary">일괄 변경</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-bulk-cancel">취소</button>
+        </div>
+    </div>
+</form>
 {% endblock %}
 
 {% block scripts %}
+{% if total_applicants > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('applicantChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for key, label, color in pipeline_stages %}'{{ label }}'{% if not loop.last %},{% endif %}{% endfor %}{% if status_counts.get('rejected') %}, '불합격'{% endif %}],
+        datasets: [{
+            data: [{% for key, label, color in pipeline_stages %}{{ status_counts.get(key, 0) }}{% if not loop.last %},{% endif %}{% endfor %}{% if status_counts.get('rejected') %}, {{ status_counts.get('rejected', 0) }}{% endif %}],
+            backgroundColor: '#0d6efd',
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { stepSize: 1, precision: 0 }, beginAtZero: true } },
+        maintainAspectRatio: false,
+    }
+});
+</script>
+{% endif %}
 <script>
 function toggleView() {
     var pipe = document.getElementById('pipeline-view');
     var tbl = document.getElementById('table-view');
     var label = document.getElementById('toggle-label');
-    if (pipe.style.display === 'none') {
-        pipe.style.display = '';
-        tbl.style.display = 'none';
+    if (pipe.classList.contains('d-none')) {
+        pipe.classList.remove('d-none');
+        tbl.classList.add('d-none');
         label.textContent = '테이블';
     } else {
-        pipe.style.display = 'none';
-        tbl.style.display = '';
+        pipe.classList.add('d-none');
+        tbl.classList.remove('d-none');
         label.textContent = '파이프라인';
     }
 }
+
+// 일괄 처리
+var checkAll = document.getElementById('check-all');
+var checks = document.querySelectorAll('.bulk-check');
+var bar = document.getElementById('bulk-bar');
+var countEl = document.getElementById('bulk-count');
+var idsInput = document.getElementById('bulk-ids');
+
+function updateBar() {
+    var selected = document.querySelectorAll('.bulk-check:checked');
+    if (selected.length > 0) {
+        bar.classList.remove('d-none');
+        countEl.textContent = selected.length;
+        idsInput.value = Array.from(selected).map(function(cb) { return cb.value; }).join(',');
+    } else {
+        bar.classList.add('d-none');
+        idsInput.value = '';
+    }
+}
+
+if (checkAll) {
+    checkAll.addEventListener('change', function() {
+        checks.forEach(function(cb) { cb.checked = checkAll.checked; });
+        updateBar();
+    });
+}
+checks.forEach(function(cb) { cb.addEventListener('change', updateBar); });
+
+document.getElementById('btn-bulk-cancel').addEventListener('click', function() {
+    checks.forEach(function(cb) { cb.checked = false; });
+    if (checkAll) checkAll.checked = false;
+    updateBar();
+});
 </script>
 {% endblock %}

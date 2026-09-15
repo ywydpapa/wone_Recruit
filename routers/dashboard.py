@@ -23,7 +23,10 @@ async def dashboard(request: Request):
         elif role == "company":
             ctx.update(get_company_dashboard(conn, user["id"]))
             tpl = "top/company_dash.html"
-        elif role in ("operator", "manager"):
+        elif role == "manager":
+            conn.close()
+            return RedirectResponse(url="/mgr/", status_code=303)
+        elif role == "operator":
             ctx.update(get_operator_dashboard(conn))
             tpl = "top/operator_dash.html"
         else:

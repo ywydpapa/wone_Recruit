@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>{{ page_title }}</h2></div>
+
+<div class="container">
+    {% if open_jobs is not none %}
+    <!-- 공고 선택 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">게시중 공고 <span class="text-muted fs-6 fw-normal">({{ open_jobs|length }}건)</span></h4>
+    </div>
+    {% if open_jobs %}
+    <div class="row g-3">
+        {% for j in open_jobs %}
+        <div class="col-md-6 col-lg-4">
+            <a href="/mgr/matching?job_id={{ j['id'] }}" class="text-decoration-none">
+                <div class="content-card h-100">
+                    <h6 class="fw-bold text-dark">{{ j['title'] }}</h6>
+                    <p class="text-muted small mb-1"><i class="fas fa-building me-1"></i>{{ j['company_name'] }}</p>
+                    <p class="text-muted small mb-0"><i class="fas fa-map-marker-alt me-1"></i>{{ j['region_sido'] or '-' }} {{ j['region_sigungu'] or '' }}</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="content-card">
+        <p class="text-center py-3 text-muted mb-0">게시중인 공고가 없습니다.</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- 후보자 선택 -->
+    <div class="content-card mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-1">{{ job['title'] }}</h5>
+                <span class="text-muted small"><i class="fas fa-building me-1"></i>{{ job['company_name'] }} &middot; {{ job['region_sido'] or '' }} {{ job['region_sigungu'] or '' }}</span>
+            </div>
+            <a href="/mgr/matching" class="btn btn-outline-secondary btn-sm">다른 공고</a>
+        </div>
+    </div>
+
+    <h4 class="fw-bold mb-3">내 담당 후보자 <span class="text-muted fs-6 fw-normal">({{ candidates|length }}명)</span></h4>
+    <div class="content-card">
+        {% if candidates %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>장애유형</th>
+                        <th>희망직종</th>
+                        <th>지역</th>
+                        <th>적합도</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in candidates %}
+                    {% set comp = compatibility[c['id']] %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/mgr/seekers/{{ c['id'] }}">{{ c['name'] }}</a></td>
+                        <td>{{ c['disability_name'] or '-' }} <span class="badge bg-secondary">{{ c['severity'] or '' }}</span></td>
+                        <td>{{ c['desired_job'] or '-' }}</td>
+                        <td>{{ c['region_sido'] or '-' }}</td>
+                        <td>
+                            {% set fit_label = comp.get('fit_label', '') %}
+                            {% if fit_label == '적합' %}
+                            <span class="badge bg-success">적합</span>
+                            {% elif fit_label == '조건부' %}
+                            <span class="badge bg-warning text-dark">조건부</span>
+                            {% else %}
+                            <span class="text-muted small">{{ comp.get('fit_score', 3.0) }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="/mgr/matching/propose" class="d-inline">
+                                {{ csrf_input }}
+                                <input type="hidden" name="job_id" value="{{ job_id }}">
+                                <input type="hidden" name="seeker_user_id" value="{{ c['id'] }}">
+                                <button type="submit" class="btn btn-primary btn-sm">제안</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">매칭 가능한 담당 구직자가 없습니다.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

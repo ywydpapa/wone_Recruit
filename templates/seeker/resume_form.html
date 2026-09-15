@@ -38,7 +38,7 @@
 </div>
 
 <form method="post" action="/resumes/{{ resume.id }}" enctype="multipart/form-data" novalidate>
-
+{{ csrf_input }}
     <!-- 이력서 기본 정보 -->
     <fieldset class="form-section" id="sec-name">
         <legend><i class="fas fa-tag"></i>이력서 정보</legend>
@@ -81,12 +81,10 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">이름</label>
                             <input type="text" class="form-control" value="{{ user.name or user.user_name }}" disabled>
-                            <div class="form-text">본인인증 완료</div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">생년월일</label>
                             <input type="text" class="form-control" value="{{ birth_display }}" disabled>
-                            <div class="form-text">본인인증 완료</div>
                         </div>
                         <div class="col-md-3">
                             <label for="phone" class="form-label fw-semibold">연락처</label>
@@ -95,7 +93,6 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">성별</label>
                             <input type="text" class="form-control" value="{{ profile.gender if profile and profile.gender else '' }}" disabled>
-                            <div class="form-text">본인인증 완료</div>
                         </div>
                     </div>
                     <div class="row g-3">

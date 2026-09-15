@@ -10,6 +10,7 @@ from core.deps import require_role, templates
 from core.constants import STATUS_LABELS, MATCH_STAGE_LABELS, EMPLOYMENT_TYPES, COMPANY_SIZES, INDUSTRY_TYPES
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
+from core.matching import build_capability_profile, calc_category_fit
 
 
 def _parse_json_list(val):
@@ -35,7 +36,7 @@ async def op_seekers(
     consent: Optional[str] = Query(None),
     page: int = Query(1),
 ):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
@@ -100,7 +101,7 @@ async def op_seekers(
 
 @router.get("/seekers/{user_id}", response_class=HTMLResponse)
 async def op_seeker_detail(request: Request, user_id: int):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         seeker = conn.execute(
@@ -140,6 +141,21 @@ async def op_seeker_detail(request: Request, user_id: int):
         consult_count = conn.execute(
             "SELECT COUNT(*) FROM consultations WHERE seeker_user_id=?", (user_id,)
         ).fetchone()[0]
+        managers = conn.execute("SELECT id, name FROM users WHERE role='manager' ORDER BY name").fetchall()
+        current_assignment = conn.execute(
+            "SELECT manager_user_id FROM manager_assignments WHERE seeker_user_id=?", (user_id,)
+        ).fetchone()
+        support_items = conn.execute(
+            """SELECT si.name, si.description, sc.name AS cat_name
+               FROM seeker_support_items ssi
+               JOIN support_items si ON ssi.support_item_id = si.id
+               JOIN support_categories sc ON si.category_id = sc.id
+               WHERE ssi.user_id = ?
+               ORDER BY sc.sort_order, si.sort_order""",
+            (user_id,),
+        ).fetchall()
+        cap_profile = build_capability_profile(conn, user_id)
+        cap_non_default = {k: v for k, v in cap_profile.items() if v != "ok"}
     finally:
         conn.close()
     return templates.TemplateResponse(
@@ -154,8 +170,34 @@ async def op_seeker_detail(request: Request, user_id: int):
             "accommodation_needs_display": _parse_json_list(profile["accommodation_needs"]) if profile else '-',
             "recent_consultations": recent_consultations,
             "consult_count": consult_count,
+            "managers": managers,
+            "current_assignment": current_assignment,
+            "support_items": support_items,
+            "cap_non_default": cap_non_default,
         }
     )
+
+
+@router.post("/seekers/{seeker_id}/assign-manager")
+async def op_assign_manager(
+    request: Request,
+    seeker_id: int,
+    manager_id: int = Form(...),
+):
+    require_role(request, "operator")
+    conn = get_sqlite()
+    try:
+        mgr = conn.execute("SELECT id FROM users WHERE id=? AND role='manager'", (manager_id,)).fetchone()
+        if not mgr:
+            raise HTTPException(status_code=400, detail="유효하지 않은 매니저입니다.")
+        conn.execute(
+            "INSERT OR REPLACE INTO manager_assignments (manager_user_id, seeker_user_id, assigned_by) VALUES (?,?,?)",
+            (manager_id, seeker_id, request.session.get("id")),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/op/seekers/{seeker_id}", status_code=303)
 
 
 @router.get("/companies", response_class=HTMLResponse)
@@ -166,9 +208,10 @@ async def op_companies(
     company_size: Optional[str] = Query(None),
     sido: Optional[str] = Query(None),
     hiring_experience: Optional[str] = Query(None),
+    approval: Optional[str] = Query(None),
     page: int = Query(1),
 ):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         sql = (
@@ -196,6 +239,9 @@ async def op_companies(
             sql += " AND c.hiring_experience=1"
         elif hiring_experience == "0":
             sql += " AND (c.hiring_experience=0 OR c.hiring_experience IS NULL)"
+        if approval in ("pending", "approved", "rejected"):
+            sql += " AND c.approval_status=?"
+            params.append(approval)
         sql += " ORDER BY c.id"
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
@@ -219,6 +265,7 @@ async def op_companies(
     if company_size: qs_parts.append(f"company_size={company_size}")
     if sido: qs_parts.append(f"sido={sido}")
     if hiring_experience: qs_parts.append(f"hiring_experience={hiring_experience}")
+    if approval: qs_parts.append(f"approval={approval}")
     return templates.TemplateResponse(
         request=request, name="op/companies.html", context={
             "request": request, "page_title": "기업 목록",
@@ -231,6 +278,7 @@ async def op_companies(
             "selected_size": company_size or "",
             "selected_sido": sido or "",
             "selected_hiring": hiring_experience or "",
+            "selected_approval": approval or "",
             "pagination": pagination, "base_qs": "&".join(qs_parts),
         }
     )
@@ -238,27 +286,31 @@ async def op_companies(
 
 @router.get("/companies/{company_id}", response_class=HTMLResponse)
 async def op_company_detail(request: Request, company_id: int):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         company = conn.execute(
-            """SELECT c.*, r.sido AS region_sido, r.sigungu AS region_sigungu
+            """SELECT c.*, r.sido AS region_sido, r.sigungu AS region_sigungu,
+                      u.name AS account_name, u.phone AS account_phone, u.username AS account_email
                FROM companies c
                LEFT JOIN regions r ON c.region_id = r.id
+               LEFT JOIN users u ON c.user_id = u.id
                WHERE c.id = ?""",
             (company_id,),
         ).fetchone()
         if company is None:
             raise HTTPException(status_code=404, detail="기업을 찾을 수 없습니다.")
-        total_jobs = conn.execute(
-            "SELECT COUNT(*) FROM job_postings WHERE company_id=?", (company_id,)
-        ).fetchone()[0]
         active_jobs = conn.execute(
             "SELECT COUNT(*) FROM job_postings WHERE company_id=? AND status='open'", (company_id,)
         ).fetchone()[0]
         placed_count = conn.execute(
             "SELECT COUNT(*) FROM placements WHERE company_id=? AND end_date IS NULL", (company_id,)
         ).fetchone()[0]
+        reviews = conn.execute(
+            "SELECT id, rating, pros, cons, created_at FROM company_reviews WHERE company_id=? ORDER BY created_at DESC",
+            (company_id,),
+        ).fetchall()
+        avg_rating = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
     finally:
         conn.close()
     return templates.TemplateResponse(
@@ -266,11 +318,59 @@ async def op_company_detail(request: Request, company_id: int):
             "request": request, "page_title": f"기업 상세 - {company['company_name']}",
             "user_name": user["name"], "user_role": "operator",
             "company": company,
-            "total_jobs": total_jobs,
             "active_jobs": active_jobs,
             "placed_count": placed_count,
+            "reviews": reviews,
+            "avg_rating": avg_rating,
         }
     )
+
+
+@router.post("/companies/{company_id}/approve")
+async def op_company_approve(request: Request, company_id: int):
+    require_role(request, "operator")
+    conn = get_sqlite()
+    try:
+        conn.execute("UPDATE companies SET approval_status='approved', rejection_reason='' WHERE id=?", (company_id,))
+        company = conn.execute("SELECT user_id FROM companies WHERE id=?", (company_id,)).fetchone()
+        if company:
+            create_notification(conn, company["user_id"], "사업자 인증이 승인되었습니다.", "/company/profile")
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/op/companies/{company_id}", status_code=303)
+
+
+@router.post("/companies/{company_id}/reject")
+async def op_company_reject(request: Request, company_id: int):
+    require_role(request, "operator")
+    form = await request.form()
+    reason = form.get("rejection_reason", "")
+    conn = get_sqlite()
+    try:
+        conn.execute("UPDATE companies SET approval_status='rejected', rejection_reason=? WHERE id=?", (reason, company_id))
+        company = conn.execute("SELECT user_id FROM companies WHERE id=?", (company_id,)).fetchone()
+        if company:
+            create_notification(conn, company["user_id"], "사업자 인증이 반려되었습니다. 사유를 확인해 주세요.", "/company/profile")
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/op/companies/{company_id}", status_code=303)
+
+
+@router.post("/companies/{company_id}/reviews/{review_id}/delete")
+async def op_delete_review(request: Request, company_id: int, review_id: int):
+    require_role(request, "operator")
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "DELETE FROM company_reviews WHERE id=? AND company_id=?",
+            (review_id, company_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/op/companies/{company_id}", status_code=303)
 
 
 @router.get("/jobs", response_class=HTMLResponse)
@@ -282,12 +382,13 @@ async def op_jobs(
     employment_type: Optional[str] = Query(None),
     page: int = Query(1),
 ):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         sql = (
             "SELECT jp.*, c.company_name, "
-            "r.sido AS region_sido, r.sigungu AS region_sigungu "
+            "r.sido AS region_sido, r.sigungu AS region_sigungu, "
+            "(SELECT COUNT(*) FROM candidacies ca WHERE ca.job_id=jp.id) AS applicant_count "
             "FROM job_postings jp "
             "JOIN companies c ON jp.company_id = c.id "
             "LEFT JOIN regions r ON jp.region_id = r.id "
@@ -336,7 +437,7 @@ async def op_jobs(
 
 @router.get("/jobs/{job_id}", response_class=HTMLResponse)
 async def op_job_detail(request: Request, job_id: int):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         job = conn.execute(
@@ -354,10 +455,21 @@ async def op_job_detail(request: Request, job_id: int):
                WHERE jp.id = ?""",
             (job_id,),
         ).fetchone()
+        status_rows = conn.execute(
+            "SELECT status, COUNT(*) as cnt FROM candidacies WHERE job_id=? GROUP BY status",
+            (job_id,),
+        ).fetchall()
     finally:
         conn.close()
     if not job:
         return RedirectResponse(url="/op/jobs", status_code=303)
+    _labels = {
+        "pending": "접수", "reviewing": "검토중", "shortlisted": "서류합격",
+        "interview": "면접", "offer": "제의", "hired": "채용",
+        "rejected": "불합격", "withdrawn": "지원취소",
+    }
+    status_breakdown = [(_labels.get(r["status"], r["status"]), r["cnt"]) for r in status_rows]
+    total_applicants = sum(r["cnt"] for r in status_rows)
     accommodations = json.loads(job["accommodations_provided"]) if job["accommodations_provided"] else []
     return templates.TemplateResponse(
         request=request, name="op/job_detail.html", context={
@@ -365,14 +477,68 @@ async def op_job_detail(request: Request, job_id: int):
             "user_name": user["name"], "user_role": "operator",
             "job": job,
             "accommodations": accommodations,
+            "status_breakdown": status_breakdown,
+            "total_applicants": total_applicants,
         }
     )
 
 
 
+@router.post("/jobs/{job_id}/approve")
+async def op_job_approve(request: Request, job_id: int):
+    require_role(request, "operator")
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "UPDATE job_postings SET status='open', rejection_reason='' WHERE id=?",
+            (job_id,),
+        )
+        job = conn.execute(
+            "SELECT jp.title, c.user_id FROM job_postings jp JOIN companies c ON jp.company_id=c.id WHERE jp.id=?",
+            (job_id,),
+        ).fetchone()
+        if job:
+            create_notification(
+                conn, job["user_id"],
+                f"[{job['title']}] 공고가 승인되어 게시되었습니다.",
+                "/company/jobs",
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/op/jobs/{job_id}", status_code=303)
+
+
+@router.post("/jobs/{job_id}/reject")
+async def op_job_reject(request: Request, job_id: int):
+    require_role(request, "operator")
+    form = await request.form()
+    reason = form.get("rejection_reason", "")
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "UPDATE job_postings SET status='rejected', rejection_reason=? WHERE id=?",
+            (reason, job_id),
+        )
+        job = conn.execute(
+            "SELECT jp.title, c.user_id FROM job_postings jp JOIN companies c ON jp.company_id=c.id WHERE jp.id=?",
+            (job_id,),
+        ).fetchone()
+        if job:
+            create_notification(
+                conn, job["user_id"],
+                f"[{job['title']}] 공고가 반려되었습니다. 사유를 확인해 주세요.",
+                "/company/jobs",
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/op/jobs/{job_id}", status_code=303)
+
+
 @router.get("/matching", response_class=HTMLResponse)
 async def op_matching(request: Request, job_id: int = None):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         if job_id is None:
@@ -428,15 +594,33 @@ async def op_matching(request: Request, job_id: int = None):
             (job_id,),
         ).fetchall()
 
+        job_category = None
+        if job and job["category_id"]:
+            job_category = conn.execute(
+                "SELECT * FROM job_categories WHERE id=?", (job["category_id"],)
+            ).fetchone()
+
         compatibility = {}
         for c in candidates:
             seeker_needs = json.loads(c["accommodation_needs"]) if c["accommodation_needs"] else []
+            cap_profile = build_capability_profile(conn, c["id"])
+            fit = calc_category_fit(cap_profile, job_category) if job_category else 3.0
+            if fit >= 2:
+                fit_label = "적합"
+            elif fit >= 1:
+                fit_label = "조건부"
+            else:
+                fit_label = ""
             compatibility[c["id"]] = {
                 "region": c["region_sido"] == job_region_sido if job_region_sido and c["region_sido"] else False,
                 "hours": (c["daily_work_hours"] or 8) >= job_min_hours,
                 "accommodation": len(set(seeker_needs) & set(job_accommodations)) if seeker_needs and job_accommodations else 0,
                 "accommodation_total": len(seeker_needs) if seeker_needs else 0,
+                "fit_score": fit,
+                "fit_label": fit_label,
             }
+        # fit_score 내림차순 정렬
+        candidates = sorted(candidates, key=lambda c: compatibility[c["id"]]["fit_score"], reverse=True)
     finally:
         conn.close()
 
@@ -459,7 +643,7 @@ async def op_propose(
     job_id: int = Form(...),
     seeker_user_id: int = Form(...),
 ):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         cur = conn.execute(
@@ -488,7 +672,7 @@ async def op_propose(
 
 @router.get("/candidacies", response_class=HTMLResponse)
 async def op_candidacies(request: Request, page: int = Query(1)):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         sql = """SELECT c.id, c.seeker_user_id, c.status, c.source, c.match_stage, c.created_at,
@@ -521,7 +705,7 @@ async def op_candidacies(request: Request, page: int = Query(1)):
 
 @router.post("/matching/{candidacy_id}/submit")
 async def op_submit(request: Request, candidacy_id: int):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         cand = conn.execute(
@@ -580,7 +764,7 @@ async def op_reset_password(
 
 @router.get("/consultations", response_class=HTMLResponse)
 async def op_consultations(request: Request, seeker_id: int = Query(...)):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         seeker = conn.execute(
@@ -609,7 +793,7 @@ async def op_consultations(request: Request, seeker_id: int = Query(...)):
 
 @router.get("/consultations/new", response_class=HTMLResponse)
 async def op_consultation_new(request: Request, seeker_id: int = Query(...)):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         seeker = conn.execute(
@@ -641,7 +825,7 @@ async def op_consultation_create(
     environment_note: str = Form(""),
     summary: str = Form(""),
 ):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         conn.execute(
@@ -661,7 +845,7 @@ async def op_consultation_create(
 
 @router.get("/consultations/{consultation_id}/edit", response_class=HTMLResponse)
 async def op_consultation_edit(request: Request, consultation_id: int):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         row = conn.execute("SELECT * FROM consultations WHERE id=?", (consultation_id,)).fetchone()
@@ -695,7 +879,7 @@ async def op_consultation_update(
     environment_note: str = Form(""),
     summary: str = Form(""),
 ):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         conn.execute(
@@ -715,7 +899,7 @@ async def op_consultation_update(
 
 @router.get("/placements", response_class=HTMLResponse)
 async def op_placements(request: Request, company_id: Optional[int] = Query(None)):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         sql = """
@@ -740,10 +924,10 @@ async def op_placements(request: Request, company_id: Optional[int] = Query(None
         avg_tenure = 0
         if total:
             if company_id:
-                tenure_sql = "SELECT AVG(julianday('now','localtime') - julianday(start_date)) FROM placements WHERE start_date != '' AND company_id=?"
+                tenure_sql = "SELECT AVG(julianday('now','localtime') - julianday(start_date)) FROM placements WHERE start_date != '' AND (end_date IS NULL OR end_date='') AND company_id=?"
                 row = conn.execute(tenure_sql, (company_id,)).fetchone()
             else:
-                tenure_sql = "SELECT AVG(julianday('now','localtime') - julianday(start_date)) FROM placements WHERE start_date != ''"
+                tenure_sql = "SELECT AVG(julianday('now','localtime') - julianday(start_date)) FROM placements WHERE start_date != '' AND (end_date IS NULL OR end_date='')"
                 row = conn.execute(tenure_sql).fetchone()
             avg_tenure = round(row[0]) if row[0] else 0
 
@@ -767,7 +951,7 @@ async def op_placements(request: Request, company_id: Optional[int] = Query(None
 
 @router.delete("/consultations/{consultation_id}")
 async def op_consultation_delete(request: Request, consultation_id: int):
-    user = require_role(request, "operator", "manager")
+    user = require_role(request, "operator")
     conn = get_sqlite()
     try:
         row = conn.execute("SELECT seeker_user_id FROM consultations WHERE id=?", (consultation_id,)).fetchone()

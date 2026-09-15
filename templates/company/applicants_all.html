@@ -42,7 +42,7 @@
 </div>
 
 <!-- 파이프라인 뷰 -->
-<div id="pipeline-view" class="content-card" style="display:none;">
+<div id="pipeline-view" class="content-card d-none">
     <div class="pipeline-wrap">
         {% for key, label, color in pipeline_stages %}
         <div class="pipeline-col">
@@ -84,6 +84,9 @@
             <caption class="visually-hidden">전체 지원자 목록</caption>
             <thead class="table-light">
                 <tr>
+                    <th scope="col" class="bulk-check-col">
+                        <input type="checkbox" id="check-all" class="form-check-input" aria-label="전체 선택">
+                    </th>
                     <th scope="col">공고</th>
                     <th scope="col">지원자명</th>
                     <th scope="col">상태</th>
@@ -95,6 +98,9 @@
             <tbody>
             {% for ap in applicants %}
             <tr>
+                <td class="bulk-check-col">
+                    <input type="checkbox" class="form-check-input bulk-check" value="{{ ap['id'] }}" aria-label="{{ ap['seeker_name'] }} 선택">
+                </td>
                 <td>{{ ap['job_title'][:30] }}</td>
                 <td class="fw-semibold">{{ ap['seeker_name'] }}</td>
                 <td>
@@ -126,6 +132,27 @@
     </div>
     {% endif %}
 </div>
+
+<!-- 일괄 처리 바 -->
+<form method="post" action="/company/applicants/bulk-status" id="bulk-form">
+    {{ csrf_input }}
+    <input type="hidden" name="candidacy_ids" id="bulk-ids">
+    <div id="bulk-bar" class="fixed-bottom bg-white border-top shadow-sm p-3 d-none">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span class="text-muted small"><span id="bulk-count">0</span>명 선택됨</span>
+            <select name="status" class="form-select form-select-sm w-auto" required>
+                <option value="">상태 선택</option>
+                {% for key, label, color in pipeline_stages %}
+                <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+                <option value="rejected">불합격</option>
+            </select>
+            <input type="text" name="comment" class="form-control form-control-sm bulk-comment-input" placeholder="메모 (선택)">
+            <button type="submit" class="btn btn-sm btn-primary">일괄 변경</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-bulk-cancel">취소</button>
+        </div>
+    </div>
+</form>
 {% endblock %}
 
 {% block scripts %}
@@ -134,15 +161,48 @@ function toggleView() {
     var pipe = document.getElementById('pipeline-view');
     var tbl = document.getElementById('table-view');
     var label = document.getElementById('toggle-label');
-    if (pipe.style.display === 'none') {
-        pipe.style.display = '';
-        tbl.style.display = 'none';
+    if (pipe.classList.contains('d-none')) {
+        pipe.classList.remove('d-none');
+        tbl.classList.add('d-none');
         label.textContent = '테이블';
     } else {
-        pipe.style.display = 'none';
-        tbl.style.display = '';
+        pipe.classList.add('d-none');
+        tbl.classList.remove('d-none');
         label.textContent = '파이프라인';
     }
 }
+
+// 일괄 처리
+var checkAll = document.getElementById('check-all');
+var checks = document.querySelectorAll('.bulk-check');
+var bar = document.getElementById('bulk-bar');
+var countEl = document.getElementById('bulk-count');
+var idsInput = document.getElementById('bulk-ids');
+
+function updateBar() {
+    var selected = document.querySelectorAll('.bulk-check:checked');
+    if (selected.length > 0) {
+        bar.classList.remove('d-none');
+        countEl.textContent = selected.length;
+        idsInput.value = Array.from(selected).map(function(cb) { return cb.value; }).join(',');
+    } else {
+        bar.classList.add('d-none');
+        idsInput.value = '';
+    }
+}
+
+if (checkAll) {
+    checkAll.addEventListener('change', function() {
+        checks.forEach(function(cb) { cb.checked = checkAll.checked; });
+        updateBar();
+    });
+}
+checks.forEach(function(cb) { cb.addEventListener('change', updateBar); });
+
+document.getElementById('btn-bulk-cancel').addEventListener('click', function() {
+    checks.forEach(function(cb) { cb.checked = false; });
+    if (checkAll) checkAll.checked = false;
+    updateBar();
+});
 </script>
 {% endblock %}

@@ -40,6 +40,10 @@
                 <i class="fas fa-share-alt me-1"></i>공유
             </button>
         </div>
+        <div class="job-hero-applicant">
+            <i class="fas fa-users"></i>
+            {% if applicant_count %}{{ applicant_count }}명 지원{% else %}아직 지원자가 없습니다{% endif %}
+        </div>
     </div>
 
     <!-- 요약 바 -->
@@ -379,12 +383,14 @@
 </div>
 
 <!-- 스티키 하단 바 -->
+{% if user_role == 'seeker' %}
 <div class="job-sticky-bar">
     <a href="/jobs" class="btn btn-light">
         <i class="fas fa-arrow-left me-2"></i>목록으로
     </a>
     <div class="d-flex gap-2 align-items-center">
         <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline-block">
+            {{ csrf_input }}
             <button type="submit" class="btn {% if is_bookmarked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4">
                 <i class="{% if is_bookmarked %}fas{% else %}far{% endif %} fa-heart me-1"></i>
                 {% if is_bookmarked %}저장됨{% else %}저장{% endif %}
@@ -401,6 +407,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 <script>
 document.getElementById('shareBtn').addEventListener('click', function() {

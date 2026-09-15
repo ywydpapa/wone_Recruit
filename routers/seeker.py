@@ -16,6 +16,7 @@ from core.constants import (
 )
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
+from core.matching import build_capability_profile, calc_category_fit
 from routers.resume import build_resume_snapshot
 
 router = APIRouter()
@@ -28,6 +29,24 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
     try:
         profile = conn.execute("SELECT * FROM seeker_profiles WHERE user_id=?", (user["id"],)).fetchone()
         disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
+        cats_raw = conn.execute(
+            "SELECT * FROM support_categories ORDER BY sort_order, id"
+        ).fetchall()
+        items_raw = conn.execute(
+            "SELECT * FROM support_items ORDER BY category_id, sort_order, id"
+        ).fetchall()
+        items_by_cat = {}
+        for it in items_raw:
+            items_by_cat.setdefault(it["category_id"], []).append(it)
+        support_categories = [
+            {"id": cat["id"], "name": cat["name"], "support_items": items_by_cat.get(cat["id"], [])}
+            for cat in cats_raw
+        ]
+        sel_rows = conn.execute(
+            "SELECT support_item_id FROM seeker_support_items WHERE user_id=?",
+            (user["id"],),
+        ).fetchall()
+        selected_support_ids = {r["support_item_id"] for r in sel_rows}
         selected_sido = ""
         if profile and profile["region_id"]:
             region_row = conn.execute("SELECT sido FROM regions WHERE id=?", (profile["region_id"],)).fetchone()
@@ -44,6 +63,8 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
             "user_name": user["name"], "user_role": "seeker",
             "user": user,
             "profile": profile, "disability_types": disability_types,
+            "support_categories": support_categories,
+            "selected_support_ids": selected_support_ids,
             "selected_sido": selected_sido,
             "communication_pref": communication_pref,
             "assistive_tech": assistive_tech,
@@ -146,6 +167,16 @@ async def profile_save(request: Request):
                  disability_visibility, consent_sensitive))
         conn.commit()
 
+        # 지원 항목 저장
+        support_item_ids = [int(x) for x in form.getlist("support_item_ids") if x.isdigit()]
+        conn.execute("DELETE FROM seeker_support_items WHERE user_id=?", (uid,))
+        for sid in support_item_ids:
+            conn.execute(
+                "INSERT OR IGNORE INTO seeker_support_items (user_id, support_item_id) VALUES (?,?)",
+                (uid, sid),
+            )
+        conn.commit()
+
         # 자격증 저장 (기존 삭제 후 재삽입)
         cert_names = form.getlist("cert_name")
         cert_dates = form.getlist("cert_date")
@@ -178,6 +209,7 @@ async def job_search(
     accommodation: str = Query(None),
     disability_type: str = Query(None),
     severity: str = Query(None),
+    sort: str = Query(""),
     page: int = Query(1),
 ):
     user = require_role(request, "seeker")
@@ -187,7 +219,8 @@ async def job_search(
         disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
         sql = (
             "SELECT jp.*, c.company_name, c.id AS company_db_id, jc.minor_name_ko AS category_name, "
-            "r.sido AS region_sido, r.sigungu AS region_sigungu "
+            "r.sido AS region_sido, r.sigungu AS region_sigungu, "
+            "(SELECT COUNT(*) FROM candidacies ca WHERE ca.job_id=jp.id) AS applicant_count "
             "FROM job_postings jp "
             "JOIN companies c ON jp.company_id=c.id "
             "LEFT JOIN job_categories jc ON jp.category_id=jc.id "
@@ -224,18 +257,13 @@ async def job_search(
         if severity:
             sql += " AND (jp.preferred_severity=? OR jp.preferred_severity='무관')"
             params.append(severity)
-        sql += " ORDER BY jp.created_at DESC"
-        page = max(1, page)
-        total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
-        sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
-        jobs_raw = conn.execute(sql, params).fetchall()
-        pagination = page_info(total, page)
-        bookmarked_ids = set()
-        bookmark_rows = conn.execute(
-            "SELECT job_id FROM bookmarks WHERE user_id=?", (user["id"],)
-        ).fetchall()
-        for row in bookmark_rows:
-            bookmarked_ids.add(row["job_id"])
+
+        cap_profile = build_capability_profile(conn, user["id"])
+        job_categories_map = {
+            r["id"]: r
+            for r in conn.execute("SELECT * FROM job_categories").fetchall()
+        }
+
         seeker_profile = conn.execute(
             "SELECT accommodation_needs FROM seeker_profiles WHERE user_id=?",
             (user["id"],),
@@ -247,15 +275,64 @@ async def job_search(
             except (json.JSONDecodeError, TypeError):
                 pass
         seeker_needs_set = set(seeker_needs)
-        jobs = []
-        for row in jobs_raw:
-            job = dict(row)
-            try:
-                provided = json.loads(job.get("accommodations_provided") or "[]")
-            except (json.JSONDecodeError, TypeError):
-                provided = []
-            job["accommodation_match_count"] = len(seeker_needs_set & set(provided))
-            jobs.append(job)
+
+        page = max(1, page)
+        if sort == "fit":
+            jobs_raw = conn.execute(sql, params).fetchall()
+            total = len(jobs_raw)
+            jobs_with_fit = []
+            for row in jobs_raw:
+                job = dict(row)
+                cat = job_categories_map.get(job.get("category_id"))
+                fit = calc_category_fit(cap_profile, cat) if cat else 3.0
+                if fit >= 2:
+                    fit_label = "추천"
+                elif fit >= 1:
+                    fit_label = "조건부"
+                else:
+                    fit_label = ""
+                job["fit_score"] = fit
+                job["fit_label"] = fit_label
+                try:
+                    provided = json.loads(job.get("accommodations_provided") or "[]")
+                except (json.JSONDecodeError, TypeError):
+                    provided = []
+                job["accommodation_match_count"] = len(seeker_needs_set & set(provided))
+                jobs_with_fit.append(job)
+            jobs_with_fit.sort(key=lambda j: j["fit_score"], reverse=True)
+            start = (page - 1) * PER_PAGE
+            jobs = jobs_with_fit[start:start + PER_PAGE]
+        else:
+            sql += " ORDER BY jp.created_at DESC"
+            total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
+            sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
+            jobs_raw = conn.execute(sql, params).fetchall()
+            jobs = []
+            for row in jobs_raw:
+                job = dict(row)
+                cat = job_categories_map.get(job.get("category_id"))
+                fit = calc_category_fit(cap_profile, cat) if cat else 3.0
+                if fit >= 2:
+                    fit_label = "추천"
+                elif fit >= 1:
+                    fit_label = "조건부"
+                else:
+                    fit_label = ""
+                job["fit_score"] = fit
+                job["fit_label"] = fit_label
+                try:
+                    provided = json.loads(job.get("accommodations_provided") or "[]")
+                except (json.JSONDecodeError, TypeError):
+                    provided = []
+                job["accommodation_match_count"] = len(seeker_needs_set & set(provided))
+                jobs.append(job)
+        pagination = page_info(total, page)
+        bookmarked_ids = set()
+        bookmark_rows = conn.execute(
+            "SELECT job_id FROM bookmarks WHERE user_id=?", (user["id"],)
+        ).fetchall()
+        for row in bookmark_rows:
+            bookmarked_ids.add(row["job_id"])
     finally:
         conn.close()
     qs_parts = []
@@ -269,6 +346,7 @@ async def job_search(
     if accommodation: qs_parts.append(f"accommodation={accommodation}")
     if disability_type: qs_parts.append(f"disability_type={disability_type}")
     if severity: qs_parts.append(f"severity={severity}")
+    if sort: qs_parts.append(f"sort={sort}")
     base_qs = "&".join(qs_parts)
     return templates.TemplateResponse(
         request=request, name="seeker/jobs.html", context={
@@ -292,6 +370,7 @@ async def job_search(
             "selected_disability_type": disability_type or "",
             "selected_severity": severity or "",
             "pagination": pagination, "base_qs": base_qs,
+            "sort": sort or "",
         }
     )
 
@@ -341,6 +420,10 @@ async def apply_form(request: Request, job_id: int):
             "SELECT name FROM disability_types WHERE id=?", (profile["disability_type_id"],)
         ).fetchone()
         disability_name = disability_type["name"] if disability_type else ""
+        # private이면 기업에 장애정보 전달하지 않음
+        disability_hidden = profile["disability_visibility"] == "private"
+        if disability_hidden:
+            disability_name = ""
         resumes = conn.execute(
             "SELECT id, name, is_default FROM resumes WHERE user_id=? ORDER BY is_default DESC, updated_at DESC",
             (user["id"],),
@@ -356,6 +439,7 @@ async def apply_form(request: Request, job_id: int):
             "profile": profile,
             "company_name": company_name,
             "disability_name": disability_name,
+            "disability_hidden": disability_hidden,
             "resumes": resumes,
         }
     )
@@ -688,17 +772,85 @@ async def company_detail(request: Request, company_id: int):
                 accessibility_facilities = json.loads(company["accessibility_facilities"])
             except (json.JSONDecodeError, TypeError):
                 pass
+
+        reviews = conn.execute(
+            "SELECT id, rating, pros, cons, created_at FROM company_reviews WHERE company_id=? ORDER BY created_at DESC",
+            (company_id,),
+        ).fetchall()
+        avg_rating = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
+
+        can_review = False
+        my_review = None
+        if user["role"] == "seeker":
+            placed = conn.execute(
+                "SELECT id FROM placements WHERE company_id=? AND seeker_user_id=?",
+                (company_id, user["id"]),
+            ).fetchone()
+            if placed:
+                can_review = True
+                my_review = conn.execute(
+                    "SELECT id FROM company_reviews WHERE company_id=? AND user_id=?",
+                    (company_id, user["id"]),
+                ).fetchone()
     finally:
         conn.close()
     return templates.TemplateResponse(
         request=request, name="seeker/company_detail.html", context={
             "request": request, "page_title": company["company_name"],
-            "user_name": user["name"], "user_role": "seeker",
+            "user_name": user["name"], "user_role": user["role"],
             "company": company,
             "open_jobs": open_jobs,
             "accessibility_facilities": accessibility_facilities,
+            "reviews": reviews,
+            "avg_rating": avg_rating,
+            "can_review": can_review,
+            "my_review": my_review,
         }
     )
+
+
+@router.post("/companies/{company_id}/reviews")
+async def submit_review(request: Request, company_id: int):
+    user = require_role(request, "seeker")
+    form = await request.form()
+    rating = int(form.get("rating", 0))
+    pros = form.get("pros", "").strip()
+    cons = form.get("cons", "").strip()
+    if not (1 <= rating <= 5):
+        return RedirectResponse(url=f"/companies/{company_id}", status_code=303)
+    conn = get_sqlite()
+    try:
+        placed = conn.execute(
+            "SELECT id FROM placements WHERE company_id=? AND seeker_user_id=?",
+            (company_id, user["id"]),
+        ).fetchone()
+        if not placed:
+            raise HTTPException(status_code=403)
+        conn.execute(
+            """INSERT INTO company_reviews (company_id, user_id, rating, pros, cons)
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT(company_id, user_id) DO UPDATE SET rating=excluded.rating, pros=excluded.pros, cons=excluded.cons""",
+            (company_id, user["id"], rating, pros, cons),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/companies/{company_id}", status_code=303)
+
+
+@router.post("/companies/{company_id}/reviews/{review_id}/delete")
+async def delete_review(request: Request, company_id: int, review_id: int):
+    user = require_role(request, "seeker")
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "DELETE FROM company_reviews WHERE id=? AND company_id=? AND user_id=?",
+            (review_id, company_id, user["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/companies/{company_id}", status_code=303)
 
 
 @router.get("/profile/views", response_class=HTMLResponse)
@@ -772,6 +924,9 @@ async def job_detail(request: Request, job_id: int):
             "SELECT 1 FROM candidacies WHERE job_id=? AND seeker_user_id=?",
             (job_id, user["id"]),
         ).fetchone() is not None
+        applicant_count = conn.execute(
+            "SELECT COUNT(*) FROM candidacies WHERE job_id=?", (job_id,)
+        ).fetchone()[0]
         similar_jobs = []
         company_jobs = []
         if job is not None:
@@ -828,6 +983,7 @@ async def job_detail(request: Request, job_id: int):
             "d_day": d_day,
             "already_applied": already_applied,
             "company_jobs": company_jobs,
+            "applicant_count": applicant_count,
         }
     )
 
@@ -1019,3 +1175,23 @@ async def delete_saved_search(request: Request, search_id: int):
     finally:
         conn.close()
     return JSONResponse({"redirect": "/saved-searches"})
+
+
+@router.post("/request-consultation")
+async def request_consultation(request: Request):
+    user = require_role(request, "seeker")
+    conn = get_sqlite()
+    try:
+        operators = conn.execute(
+            "SELECT id FROM users WHERE role='operator'"
+        ).fetchall()
+        for op in operators:
+            create_notification(
+                conn, op["id"],
+                f"{user['name']}님이 상담을 신청했습니다",
+                f"/op/seekers/{user['id']}?from=consult_request",
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url="/", status_code=303)

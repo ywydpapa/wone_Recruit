@@ -16,7 +16,9 @@
                     <label for="status" class="visually-hidden">상태</label>
                     <select id="status" name="status" class="form-select">
                         <option value="">상태 (전체)</option>
+                        <option value="pending_review" {% if selected_status == 'pending_review' %}selected{% endif %}>검토 대기</option>
                         <option value="open" {% if selected_status == 'open' %}selected{% endif %}>공개</option>
+                        <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>반려</option>
                         <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>임시저장</option>
                         <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>마감</option>
                         <option value="filled" {% if selected_status == 'filled' %}selected{% endif %}>채용완료</option>
@@ -64,6 +66,7 @@
                             <th scope="col">고용형태</th>
                             <th scope="col">급여</th>
                             <th scope="col">마감</th>
+                            <th scope="col">지원자</th>
                             <th scope="col">상태</th>
                             <th scope="col"></th>
                         </tr>
@@ -78,9 +81,18 @@
                         <td>{{ job['salary'] or '협의' }}</td>
                         <td>{{ job['deadline'] or '상시' }}</td>
                         <td>
+                            <a href="/op/jobs/{{ job['id'] }}" class="text-decoration-none">
+                                <span class="badge bg-light text-dark border">{{ job['applicant_count'] }}명</span>
+                            </a>
+                        </td>
+                        <td>
                             {% set s = job['status'] %}
                             {% if s == 'open' %}
                                 <span class="badge bg-success">공개</span>
+                            {% elif s == 'pending_review' %}
+                                <span class="badge bg-info text-dark">검토 대기</span>
+                            {% elif s == 'rejected' %}
+                                <span class="badge bg-danger">반려</span>
                             {% elif s == 'draft' %}
                                 <span class="badge bg-secondary">임시저장</span>
                             {% elif s == 'closed' %}
@@ -91,7 +103,15 @@
                                 <span class="badge bg-secondary">{{ s }}</span>
                             {% endif %}
                         </td>
-                        <td><a href="/op/jobs/{{ job['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
+                        <td>
+                            <a href="/op/jobs/{{ job['id'] }}" class="btn btn-sm btn-outline-primary">상세</a>
+                            {% if job['status'] == 'pending_review' %}
+                            <form method="post" action="/op/jobs/{{ job['id'] }}/approve" class="d-inline ms-1">
+                                {{ csrf_input }}
+                                <button type="submit" class="btn btn-sm btn-success">승인</button>
+                            </form>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                     </tbody>

@@ -34,6 +34,7 @@
                     {% if app['status'] not in ('hired', 'rejected', 'withdrawn') %}
                     <form method="post" action="/applications/{{ app['id'] }}/withdraw"
                           onsubmit="return confirm('지원을 취소하시겠습니까?')">
+                        {{ csrf_input }}
                         <button type="submit" class="btn btn-sm btn-outline-danger">취소</button>
                     </form>
                     {% endif %}

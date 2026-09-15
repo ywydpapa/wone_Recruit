@@ -10,7 +10,9 @@
                     <div class="d-flex align-items-center gap-4 mb-4">
                         <div class="profile-avatar"><i class="fas fa-user"></i></div>
                         <div>
-                            {% if profile.disability_name %}
+                            {% if disability_hidden %}
+                            <span class="item-badge mb-2 d-inline-block text-muted">장애 정보: 비공개</span>
+                            {% elif profile.disability_name %}
                             <span class="item-badge mb-2 d-inline-block">{{ profile.disability_name }} &middot; {{ profile.severity }}</span>
                             {% endif %}
                             <h3 class="fw-bold mb-1">{{ profile.seeker_name }}</h3>
@@ -57,7 +59,7 @@
                     <h6 class="fw-bold text-muted mb-3"><i class="fas fa-universal-access me-2 text-primary"></i>필요 편의사항</h6>
                     <div class="d-flex flex-wrap gap-2">
                         {% for a in accommodation %}
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2">{{ a }}</span>
+                        <span class="skill-badge">{{ a }}</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -96,6 +98,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="post" action="/api/talent_offer/{{ profile.user_id }}">
+                {{ csrf_input }}
                 <div class="modal-header">
                     <h5 class="modal-title" id="offerModalLabel">
                         <i class="fas fa-envelope me-2 text-primary"></i>채용 제안하기

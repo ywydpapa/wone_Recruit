@@ -189,11 +189,42 @@ def get_seeker_dashboard(conn, uid):
     if default_resume:
         from core.resume_completeness import calc_completeness
         resume_completeness = calc_completeness(conn, default_resume["id"])
+    status_rows = conn.execute(
+        "SELECT status, COUNT(*) as cnt FROM candidacies WHERE seeker_user_id=? GROUP BY status", (uid,)
+    ).fetchall()
+    app_status_dist = {r["status"]: r["cnt"] for r in status_rows}
+
+    profile_view_count = conn.execute(
+        "SELECT COUNT(*) FROM access_log WHERE seeker_user_id=?", (uid,)
+    ).fetchone()[0]
+    recent_views_count = conn.execute(
+        "SELECT COUNT(*) FROM access_log WHERE seeker_user_id=?"
+        "  AND created_at >= datetime('now','localtime','-7 days')",
+        (uid,),
+    ).fetchone()[0]
+
+    # 담당 매니저
+    manager = conn.execute(
+        "SELECT u.id, u.name FROM manager_assignments ma "
+        "JOIN users u ON ma.manager_user_id = u.id "
+        "WHERE ma.seeker_user_id=? LIMIT 1",
+        (uid,),
+    ).fetchone()
+
+    consult_requested = bool(conn.execute(
+        "SELECT 1 FROM notifications WHERE link=? LIMIT 1",
+        (f"/op/seekers/{uid}?from=consult_request",),
+    ).fetchone())
+
     return dict(apps=apps, app_count=app_count, proposals=proposals,
                 open_jobs=open_jobs, has_profile=profile is not None,
                 bookmark_count=bookmark_count, profile_completeness=completeness,
                 recommended=recommended, alert_new_count=alert_new_count,
-                resume_completeness=resume_completeness)
+                resume_completeness=resume_completeness,
+                app_status_dist=app_status_dist,
+                profile_view_count=profile_view_count,
+                recent_views_count=recent_views_count,
+                manager=manager, consult_requested=consult_requested)
 
 
 def get_company_dashboard(conn, uid):
@@ -233,7 +264,7 @@ def get_company_dashboard(conn, uid):
             WHERE jp.company_id=? AND c.status='hired' {_filter}
         """, (cid,)).fetchone()[0]
         placement_count = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE company_id=?", (cid,)
+            "SELECT COUNT(*) FROM placements WHERE company_id=? AND (end_date IS NULL OR end_date='')", (cid,)
         ).fetchone()[0]
         interview_count = conn.execute(f"""
             SELECT COUNT(*) FROM candidacies c
@@ -260,6 +291,37 @@ def get_company_dashboard(conn, uid):
         pipeline_stages = get_pipeline_display(conn, cid)
         stage_labels = get_stage_labels(conn, cid)
         stage_colors = get_stage_color_map(conn, cid)
+
+        # 최근 4주 지원 추이
+        weekly_trend = []
+        for i in range(3, -1, -1):
+            row = conn.execute(f"""
+                SELECT COUNT(*) FROM candidacies c
+                JOIN job_postings jp ON c.job_id=jp.id
+                WHERE jp.company_id=? {_filter}
+                  AND c.created_at >= datetime('now','localtime','-{(i+1)*7} days')
+                  AND c.created_at < datetime('now','localtime','-{i*7} days')
+            """, (cid,)).fetchone()
+            weekly_trend.append({"week_label": f"{(i)*7+1}-{(i+1)*7}일전" if i > 0 else "이번 주", "count": row[0]})
+
+        conversion_rate = round(hired_count / total_applicants * 100) if total_applicants else 0
+
+        avg_days_row = conn.execute(f"""
+            SELECT AVG(CAST((julianday(c.updated_at) - julianday(c.created_at)) AS REAL))
+            FROM candidacies c
+            JOIN job_postings jp ON c.job_id=jp.id
+            WHERE jp.company_id=? AND c.status='hired' {_filter}
+        """, (cid,)).fetchone()
+        avg_days_to_hire = round(avg_days_row[0]) if avg_days_row[0] else None
+
+        jobs_closing_soon = conn.execute("""
+            SELECT COUNT(*) FROM job_postings
+            WHERE company_id=? AND status='open'
+              AND deadline IS NOT NULL AND deadline != ''
+              AND deadline <= date('now','localtime','+7 days')
+              AND deadline >= date('now','localtime')
+        """, (cid,)).fetchone()[0]
+
         return dict(company=company, job_count=job_count, open_count=open_count,
                     total_applicants=total_applicants, pending_apps=pending_apps,
                     new_apps_this_week=new_apps_this_week, hired_count=hired_count,
@@ -267,14 +329,17 @@ def get_company_dashboard(conn, uid):
                     interview_count=interview_count, pipeline=pipeline,
                     recent_apps=recent_apps,
                     pipeline_stages=pipeline_stages, status_labels=stage_labels,
-                    stage_colors=stage_colors)
+                    stage_colors=stage_colors,
+                    weekly_trend=weekly_trend, conversion_rate=conversion_rate,
+                    avg_days_to_hire=avg_days_to_hire, jobs_closing_soon=jobs_closing_soon)
     else:
         return dict(company=None, job_count=0, open_count=0,
                     total_applicants=0, pending_apps=0, new_apps_this_week=0,
                     hired_count=0, placement_count=0,
                     interview_count=0, pipeline={},
                     recent_apps=[], pipeline_stages=[], status_labels={},
-                    stage_colors={})
+                    stage_colors={}, weekly_trend=[], conversion_rate=0,
+                    avg_days_to_hire=None, jobs_closing_soon=0)
 
 
 def get_operator_dashboard(conn):
@@ -286,6 +351,9 @@ def get_operator_dashboard(conn):
     ).fetchone()[0]
     open_jobs = conn.execute(
         "SELECT COUNT(*) FROM job_postings WHERE status='open'"
+    ).fetchone()[0]
+    pending_reviews = conn.execute(
+        "SELECT COUNT(*) FROM job_postings WHERE status='pending_review'"
     ).fetchone()[0]
     total_candidacies = conn.execute(
         "SELECT COUNT(*) FROM candidacies"
@@ -311,7 +379,33 @@ def get_operator_dashboard(conn):
     """).fetchall()
     pipeline = {r['status']: r['cnt'] for r in pipeline_rows}
 
+    pending_companies = conn.execute(
+        "SELECT COUNT(*) FROM companies WHERE approval_status='pending'"
+    ).fetchone()[0]
+
+    week_seekers = conn.execute(
+        "SELECT COUNT(*) FROM users WHERE role='seeker' AND created_at >= datetime('now','localtime','-7 days')"
+    ).fetchone()[0]
+    week_companies = conn.execute(
+        "SELECT COUNT(*) FROM users WHERE role='company' AND created_at >= datetime('now','localtime','-7 days')"
+    ).fetchone()[0]
+    weekly_registrations = {"seekers": week_seekers, "companies": week_companies}
+
+    placement_count = conn.execute(
+        "SELECT COUNT(*) FROM placements WHERE end_date IS NULL OR end_date=''"
+    ).fetchone()[0]
+
+    this_month_hired = conn.execute(
+        "SELECT COUNT(*) FROM candidacies WHERE status='hired'"
+        "  AND updated_at >= datetime('now','localtime','start of month')"
+    ).fetchone()[0]
+
     return dict(seeker_count=seeker_count, company_count=company_count,
-                open_jobs=open_jobs, total_candidacies=total_candidacies,
+                open_jobs=open_jobs, pending_reviews=pending_reviews,
+                total_candidacies=total_candidacies,
                 pending_matches=pending_matches, hired=hired,
-                recent_candidacies=recent_candidacies, pipeline=pipeline)
+                recent_candidacies=recent_candidacies, pipeline=pipeline,
+                pending_companies=pending_companies,
+                weekly_registrations=weekly_registrations,
+                placement_count=placement_count,
+                this_month_hired=this_month_hired)

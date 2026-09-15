@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>{{ placement['seeker_name'] }}</h2>
+    <a href="/mgr/placements" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록</a>
+</div>
+
+<div class="container">
+    <!-- 배치 정보 -->
+    <div class="content-card mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <small class="text-muted d-block">구직자</small>
+                <strong>{{ placement['seeker_name'] }}</strong>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">기업</small>
+                <strong>{{ placement['company_name'] }}</strong>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">공고</small>
+                <strong>{{ placement['job_title'] }}</strong>
+            </div>
+            <div class="col-md-1">
+                <small class="text-muted d-block">입사일</small>
+                <strong>{{ placement['start_date'] or '-' }}</strong>
+            </div>
+            <div class="col-md-2 text-end">
+                {% set st = placement['status'] or 'active' %}
+                {% if st == 'active' %}
+                <span class="badge bg-primary fs-6">적응중</span>
+                {% elif st == 'settled' %}
+                <span class="badge bg-success fs-6">정착</span>
+                {% elif st == 'departed' %}
+                <span class="badge bg-danger fs-6">이탈</span>
+                {% endif %}
+                {% if st != 'departed' %}
+                <form method="post" action="/mgr/placements/{{ placement['id'] }}/status" class="mt-2">
+                    {{ csrf_input }}
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">상태 변경</option>
+                        {% if st == 'active' %}
+                        <option value="settled">정착 전환</option>
+                        <option value="departed">이탈 처리</option>
+                        {% elif st == 'settled' %}
+                        <option value="departed">이탈 처리</option>
+                        {% endif %}
+                    </select>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <h4 class="fw-bold mb-3">사후관리</h4>
+    {% if followups %}
+    <div class="row g-3">
+        {% for f in followups %}
+        <div class="col-md-6">
+            <div class="content-card {% if f['status'] == 'overdue' %}border-danger{% elif f['status'] == 'completed' %}border-success{% endif %}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0">
+                        <i class="fas fa-calendar-check me-1"></i>
+                        {{ followup_labels.get(f['followup_type'], f['followup_type']) }}
+                    </h6>
+                    {% if f['status'] == 'pending' %}
+                    <span class="badge bg-warning text-dark">예정</span>
+                    {% elif f['status'] == 'completed' %}
+                    <span class="badge bg-success">완료</span>
+                    {% elif f['status'] == 'overdue' %}
+                    <span class="badge bg-danger">지연</span>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-2">기한: {{ f['due_date'] }}</p>
+
+                {% if f['status'] == 'completed' %}
+                <div class="bg-light rounded p-2 small">
+                    <p class="mb-1 text-prewrap">{{ f['notes'] or '(메모 없음)' }}</p>
+                    <small class="text-muted">완료: {{ f['completed_at'][:10] if f['completed_at'] else '' }}</small>
+                </div>
+                {% else %}
+                <form method="post" action="/mgr/placements/{{ placement['id'] }}/followup/{{ f['id'] }}">
+                    {{ csrf_input }}
+                    <div class="mb-2">
+                        <textarea name="notes" class="form-control form-control-sm" rows="3" placeholder="면담 내용, 적응 상태 등"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i>완료 처리</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="content-card">
+        <p class="text-center py-3 text-muted mb-0">사후관리 일정이 없습니다.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

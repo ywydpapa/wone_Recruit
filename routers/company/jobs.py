@@ -23,12 +23,13 @@ async def job_list(
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
+        approval = company["approval_status"]
         where = ["jp.company_id=?"]
         params = [company["id"]]
         if q and q.strip():
             where.append("jp.title LIKE ?")
             params.append(f"%{q.strip()}%")
-        if status and status in ("open", "draft", "closed", "filled"):
+        if status and status in ("open", "draft", "closed", "filled", "pending_review", "rejected"):
             where.append("jp.status=?")
             params.append(status)
         sql = f"""SELECT jp.*, r.sido AS region_sido, r.sigungu AS region_sigungu,
@@ -57,6 +58,7 @@ async def job_list(
             "user_name": user["name"], "user_role": "company",
             "jobs": jobs, "q": q or "", "selected_status": status or "",
             "pagination": pagination, "base_qs": base_qs,
+            "approval": approval,
         }
     )
 
@@ -125,8 +127,9 @@ async def job_create(
     conn = get_sqlite()
     try:
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
-        if not company:
-            return RedirectResponse(url="/company/profile", status_code=303)
+        if not company or company["approval_status"] != "approved":
+            return RedirectResponse(url="/company/jobs?error=not_approved", status_code=303)
+        insert_status = "pending_review" if status == "open" else status
         conn.execute(
             """INSERT INTO job_postings
                (company_id, title, category_id, region_id, employment_type, remote_available,
@@ -145,7 +148,7 @@ async def job_create(
              benefits, qualifications, preferred,
              tasks, tools, experience_level, education,
              hiring_process, headcount,
-             salary, deadline, description, status),
+             salary, deadline, description, insert_status),
         )
         conn.commit()
     finally:
@@ -204,9 +207,10 @@ async def job_status_change(
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
+        set_status = "pending_review" if status == "open" else status
         conn.execute(
             "UPDATE job_postings SET status=? WHERE id=? AND company_id=?",
-            (status, job_id, company["id"]),
+            (set_status, job_id, company["id"]),
         )
         conn.commit()
     finally:

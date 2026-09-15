@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import check_login, templates
 from core.constants import POST_CATEGORIES
+from core.notifications import create_notification
 
 router = APIRouter()
 
@@ -402,6 +403,12 @@ async def send_message(
                 "INSERT INTO messages (user_id, sender, recipient, body, time_label, direction) "
                 "VALUES (?,?,?,?,?,?)",
                 (recipient["id"], user["name"], to_name, body, now, "in"),
+            )
+            preview = body[:30] + "..." if len(body) > 30 else body
+            create_notification(
+                conn, recipient["id"],
+                f"{user['name']}님이 메시지를 보냈습니다: {preview}",
+                f"/messages/{user['id']}",
             )
         conn.commit()
     finally:

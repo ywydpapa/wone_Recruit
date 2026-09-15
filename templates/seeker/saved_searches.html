@@ -32,6 +32,7 @@
                 </a>
                 {% if s.new_count > 0 %}
                 <form method="post" action="/saved-searches/{{ s.id }}/check">
+                    {{ csrf_input }}
                     <button type="submit" class="btn btn-outline-secondary btn-sm">확인 완료</button>
                 </form>
                 {% endif %}

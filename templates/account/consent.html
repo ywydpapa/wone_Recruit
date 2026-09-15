@@ -3,113 +3,234 @@
 {% block content %}
 <div class="page-header"><h2>개인정보 관리</h2></div>
 <div class="container">
-        <div class="content-card narrow-form-md">
+    <div class="content-card narrow-form-md">
 
-            {% if error == 'wrong' %}
-            <div class="alert alert-danger" role="alert">비밀번호가 일치하지 않습니다.</div>
-            {% endif %}
-            {% if success == 'withdrawn' %}
-            <div class="alert alert-success" role="alert">장애정보 동의가 철회되었습니다. 저장된 장애정보는 삭제되었습니다.</div>
-            {% elif success == 'marketing' %}
-            <div class="alert alert-success" role="alert">마케팅 정보 수신 설정이 변경되었습니다.</div>
-            {% endif %}
+        {% if error == 'wrong' %}
+        <div class="alert alert-danger" role="alert">비밀번호가 일치하지 않습니다.</div>
+        {% elif error == 'wrong_withdraw' %}
+        <div class="alert alert-danger" role="alert">비밀번호가 일치하지 않습니다. 탈퇴가 취소되었습니다.</div>
+        {% elif error == 'invalid' %}
+        <div class="alert alert-danger" role="alert">올바르지 않은 설정값입니다.</div>
+        {% endif %}
+        {% if success == 'withdrawn' %}
+        <div class="alert alert-success" role="alert">장애정보 동의가 철회되었습니다. 저장된 장애정보는 삭제되었습니다.</div>
+        {% elif success == 'marketing' %}
+        <div class="alert alert-success" role="alert">마케팅 정보 수신 설정이 변경되었습니다.</div>
+        {% elif success == 'visibility' %}
+        <div class="alert alert-success" role="alert">장애정보 공개 범위가 변경되었습니다.</div>
+        {% endif %}
 
-            <h6 class="text-muted fw-semibold mb-3 mt-2">동의 현황</h6>
+        <!-- 동의 현황 -->
+        <h6 class="text-muted fw-semibold mb-3 mt-2">동의 현황</h6>
 
-            <div class="list-group mb-4">
+        <div class="list-group mb-4">
 
-                <div class="list-group-item d-flex justify-content-between align-items-start gap-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="badge bg-danger">필수</span>
-                            <span class="fw-semibold">개인정보 수집 및 이용</span>
-                        </div>
-                        <small class="text-muted">이름, 연락처 등 기본 정보. 회원탈퇴 시 삭제됩니다.</small>
+            <div class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-danger">필수</span>
+                        <span class="fw-semibold">개인정보 수집 및 이용</span>
                     </div>
-                    <span class="badge bg-success align-self-center">동의</span>
+                    <small class="text-muted">이름, 연락처 등 기본 정보. 회원탈퇴 시 삭제됩니다.</small>
                 </div>
-
-                {% if user_role == 'seeker' %}
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-start gap-3">
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-warning text-dark">민감정보</span>
-                                <span class="fw-semibold">장애정보 수집 및 이용</span>
-                            </div>
-                            <small class="text-muted">장애유형, 장애정도 등 민감정보. 취업 알선 목적으로만 사용됩니다.</small>
-                            {% if profile and profile.consented_at %}
-                            <div class="mt-1"><small class="text-secondary">동의일: {{ profile.consented_at[:10] }}</small></div>
-                            {% elif profile and profile.consent_withdrawn_at %}
-                            <div class="mt-1"><small class="text-secondary">철회일: {{ profile.consent_withdrawn_at[:10] }}</small></div>
-                            {% endif %}
-                        </div>
-                        {% if profile and profile.consent_sensitive %}
-                        <span class="badge bg-success align-self-center">동의</span>
-                        {% else %}
-                        <span class="badge bg-secondary align-self-center">미동의</span>
-                        {% endif %}
-                    </div>
-
-                    {% if profile and profile.consent_sensitive %}
-                    <div class="mt-3">
-                        <p class="text-muted small mb-2">장애정보 동의를 철회하면 맞춤 공고 추천, 장애유형별 필터 등 관련 서비스를 이용할 수 없습니다. 저장된 장애정보(장애유형, 장애등급 등)는 즉시 삭제됩니다.</p>
-                        <button class="btn btn-outline-danger btn-sm" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#withdraw-form" aria-expanded="false">
-                            동의 철회
-                        </button>
-                        <div class="collapse mt-3" id="withdraw-form">
-                            <form method="post" action="/account/consent/sensitive">
-                                <div class="mb-3">
-                                    <label for="current_password" class="form-label">현재 비밀번호 확인</label>
-                                    <input type="password" id="current_password" name="current_password" class="form-control" required placeholder="비밀번호를 입력해 주세요">
-                                </div>
-                                <button type="submit" class="btn btn-danger btn-sm">동의 철회 확인</button>
-                            </form>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="mt-3">
-                        <form method="post" action="/account/consent/sensitive/restore">
-                            <button type="submit" class="btn btn-outline-primary btn-sm">다시 동의하기</button>
-                        </form>
-                        <small class="text-muted d-block mt-1">다시 동의하면 프로필 페이지에서 장애정보를 입력할 수 있습니다.</small>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <div class="list-group-item d-flex justify-content-between align-items-start gap-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="badge bg-secondary">선택</span>
-                            <span class="fw-semibold">마케팅 정보 수신</span>
-                        </div>
-                        <small class="text-muted">채용 공고, 서비스 안내 등 유용한 정보를 받아볼 수 있습니다.</small>
-                        {% if user_row and user_row.agreed_marketing_at %}
-                        <div class="mt-1"><small class="text-secondary">동의일: {{ user_row.agreed_marketing_at[:10] }}</small></div>
-                        {% endif %}
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        {% if user_row and user_row.agreed_marketing_at %}
-                        <span class="badge bg-success">동의</span>
-                        {% else %}
-                        <span class="badge bg-secondary">미동의</span>
-                        {% endif %}
-                        <form method="post" action="/account/consent/marketing" class="m-0">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                {% if user_row and user_row.agreed_marketing_at %}철회{% else %}동의{% endif %}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
+                <span class="badge bg-success align-self-center">동의</span>
             </div>
 
-            <div class="text-muted small">
-                개인정보 처리에 관한 전체 내용은 <a href="/info/privacy" class="text-decoration-none">개인정보처리방침</a>을 참고해 주세요.
+            {% if user_role == 'seeker' %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-warning text-dark">민감정보</span>
+                            <span class="fw-semibold">장애정보 수집 및 이용</span>
+                        </div>
+                        <small class="text-muted">장애유형, 장애정도 등 민감정보. 취업 알선 목적으로만 사용됩니다.</small>
+                        {% if profile and profile.consented_at %}
+                        <div class="mt-1"><small class="text-secondary">동의일: {{ profile.consented_at[:10] }}</small></div>
+                        {% elif profile and profile.consent_withdrawn_at %}
+                        <div class="mt-1"><small class="text-secondary">철회일: {{ profile.consent_withdrawn_at[:10] }}</small></div>
+                        {% endif %}
+                    </div>
+                    {% if profile and profile.consent_sensitive %}
+                    <span class="badge bg-success align-self-center">동의</span>
+                    {% else %}
+                    <span class="badge bg-secondary align-self-center">미동의</span>
+                    {% endif %}
+                </div>
+
+                {% if profile and profile.consent_sensitive %}
+                <div class="mt-3">
+                    <p class="text-muted small mb-2">장애정보 동의를 철회하면 맞춤 공고 추천, 장애유형별 필터 등 관련 서비스를 이용할 수 없습니다. 저장된 장애정보(장애유형, 장애등급 등)는 즉시 삭제됩니다.</p>
+                    <button class="btn btn-outline-danger btn-sm" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#withdraw-form" aria-expanded="false">
+                        동의 철회
+                    </button>
+                    <div class="collapse mt-3" id="withdraw-form">
+                        <form method="post" action="/account/consent/sensitive">
+                            {{ csrf_input }}
+                            <div class="mb-3">
+                                <label for="sensitive_pw" class="form-label">현재 비밀번호 확인</label>
+                                <input type="password" id="sensitive_pw" name="current_password" class="form-control" required placeholder="비밀번호를 입력해 주세요">
+                            </div>
+                            <button type="submit" class="btn btn-danger btn-sm">동의 철회 확인</button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mt-3">
+                    <form method="post" action="/account/consent/sensitive/restore">
+                        {{ csrf_input }}
+                        <button type="submit" class="btn btn-outline-primary btn-sm">다시 동의하기</button>
+                    </form>
+                    <small class="text-muted d-block mt-1">다시 동의하면 프로필 페이지에서 장애정보를 입력할 수 있습니다.</small>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-secondary">선택</span>
+                        <span class="fw-semibold">마케팅 정보 수신</span>
+                    </div>
+                    <small class="text-muted">채용 공고, 서비스 안내 등 유용한 정보를 받아볼 수 있습니다.</small>
+                    {% if user_row and user_row.agreed_marketing_at %}
+                    <div class="mt-1"><small class="text-secondary">동의일: {{ user_row.agreed_marketing_at[:10] }}</small></div>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if user_row and user_row.agreed_marketing_at %}
+                    <span class="badge bg-success">동의</span>
+                    {% else %}
+                    <span class="badge bg-secondary">미동의</span>
+                    {% endif %}
+                    <form method="post" action="/account/consent/marketing" class="m-0">
+                        {{ csrf_input }}
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            {% if user_row and user_row.agreed_marketing_at %}철회{% else %}동의{% endif %}
+                        </button>
+                    </form>
+                </div>
             </div>
 
         </div>
+
+        {% if user_role == 'seeker' %}
+
+        <!-- 장애정보 공개 범위 -->
+        <h6 class="text-muted fw-semibold mb-3 mt-4">정보 공개 설정</h6>
+        <div class="content-card mb-4 p-3 border rounded">
+            <p class="text-muted small mb-3">기업에 표시되는 장애정보 공개 범위를 설정할 수 있습니다.</p>
+            <form method="post" action="/account/consent/visibility">
+                {{ csrf_input }}
+                {% set vis = profile.disability_visibility if profile and profile.disability_visibility else 'manager_only' %}
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="disability_visibility" id="dv_private" value="private"
+                        {% if vis == 'private' %}checked{% endif %}>
+                    <label class="form-check-label" for="dv_private">
+                        <span class="fw-semibold">비공개</span>
+                        <small class="text-muted d-block">아무에게도 장애정보가 표시되지 않습니다.</small>
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="disability_visibility" id="dv_manager" value="manager_only"
+                        {% if vis == 'manager_only' %}checked{% endif %}>
+                    <label class="form-check-label" for="dv_manager">
+                        <span class="fw-semibold">운영자에게만</span>
+                        <small class="text-muted d-block">매칭 제안 목적으로 운영자만 열람할 수 있습니다.</small>
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="disability_visibility" id="dv_public" value="public"
+                        {% if vis == 'public' %}checked{% endif %}>
+                    <label class="form-check-label" for="dv_public">
+                        <span class="fw-semibold">기업에 공개</span>
+                        <small class="text-muted d-block">지원 시 기업 담당자도 장애정보를 열람할 수 있습니다.</small>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">저장</button>
+            </form>
+        </div>
+
+        <!-- 최근 열람 기록 -->
+        <h6 class="text-muted fw-semibold mb-3 mt-4">최근 열람 기록</h6>
+        {% set purpose_labels = {"applicant_review": "지원자 검토", "talent_search": "인재 검색", "operator_view": "운영자 조회"} %}
+        {% if access_logs %}
+        <div class="list-group mb-2">
+            {% for log in access_logs %}
+            <div class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                <div>
+                    <span class="fw-semibold">{{ log.company_name or log.viewer_name }}</span>
+                    <small class="text-muted ms-2">{{ purpose_labels.get(log.purpose, log.purpose) }}</small>
+                </div>
+                <small class="text-muted text-nowrap">{{ log.created_at[:16] }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mb-4">
+            <a href="/profile/views" class="text-decoration-none small">전체 열람 기록 보기 &rarr;</a>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-4">아직 열람 기록이 없습니다.</p>
+        {% endif %}
+
+        <!-- 내 데이터 내려받기 -->
+        <h6 class="text-muted fw-semibold mb-3 mt-4">내 데이터 내려받기</h6>
+        <div class="mb-4">
+            <p class="text-muted small mb-2">프로필, 자격증, 지원 내역, 이력서 등 저장된 데이터를 JSON 파일로 내려받을 수 있습니다.</p>
+            <a href="/account/data-download" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-download me-1"></i>데이터 내려받기
+            </a>
+        </div>
+
+        {% endif %}
+
+        <!-- 회원탈퇴 -->
+        <h6 class="text-muted fw-semibold mb-3 mt-4">회원탈퇴</h6>
+        <div class="mb-4">
+            <p class="text-muted small mb-2">탈퇴 시 모든 개인정보가 즉시 삭제되며 복구할 수 없습니다.</p>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                회원탈퇴
+            </button>
+        </div>
+
+        <div class="text-muted small">
+            개인정보 처리에 관한 전체 내용은 <a href="/privacy" class="text-decoration-none">개인정보처리방침</a>을 참고해 주세요.
+        </div>
+
     </div>
+</div>
+
+<!-- 회원탈퇴 모달 -->
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="withdrawModalLabel">회원탈퇴</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <form method="post" action="/account/withdraw">
+                {{ csrf_input }}
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        탈퇴 시 프로필, 지원 내역 등 모든 데이터가 즉시 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+                    </div>
+                    <div class="mb-3">
+                        <label for="withdraw_pw" class="form-label fw-semibold">비밀번호 확인</label>
+                        <input type="password" id="withdraw_pw" name="current_password" class="form-control" required placeholder="현재 비밀번호를 입력해 주세요">
+                    </div>
+                    <div class="mb-3">
+                        <label for="withdraw_reason" class="form-label">탈퇴 사유 <span class="text-muted fw-normal">(선택)</span></label>
+                        <textarea id="withdraw_reason" name="reason" class="form-control" rows="3" placeholder="탈퇴 사유를 입력해 주세요 (선택)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger">탈퇴 확인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

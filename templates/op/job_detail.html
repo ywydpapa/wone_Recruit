@@ -31,6 +31,13 @@
                     {% set s = job['status'] %}
                     {% if s == 'open' %}
                         <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>공개</span>
+                    {% elif s == 'pending_review' %}
+                        <span class="badge bg-info text-dark"><i class="fas fa-hourglass-half badge-icon" aria-hidden="true"></i>검토 대기</span>
+                    {% elif s == 'rejected' %}
+                        <span class="badge bg-danger"><i class="fas fa-ban badge-icon" aria-hidden="true"></i>반려</span>
+                        {% if job['rejection_reason'] %}
+                        <div class="small text-danger mt-1">반려 사유: {{ job['rejection_reason'] }}</div>
+                        {% endif %}
                     {% elif s == 'draft' %}
                         <span class="badge bg-secondary"><i class="fas fa-clock badge-icon" aria-hidden="true"></i>임시저장</span>
                     {% elif s == 'closed' %}
@@ -89,10 +96,68 @@
                 {% endif %}
             </dl>
 
+            {% if total_applicants > 0 %}
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="fw-semibold mb-3">지원 현황 <span class="text-muted fw-normal fs-6">(총 {{ total_applicants }}명)</span></h6>
+                <div class="applicant-chart-wrap">
+                    <canvas id="applicantChart"></canvas>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="mt-4 pt-3 border-top">
                 <a href="/op/jobs" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>목록으로</a>
                 <a href="/op/matching?job_id={{ job['id'] }}" class="btn btn-primary ms-2"><i class="fas fa-users me-1"></i>매칭 보기</a>
             </div>
+
+            {% if job['status'] == 'pending_review' %}
+            <div class="mt-3 p-3 border rounded bg-light">
+                <h6 class="fw-semibold mb-3">공고 검토</h6>
+                <form method="post" action="/op/jobs/{{ job['id'] }}/approve" class="d-inline">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-success me-2">
+                        <i class="fas fa-check me-1"></i>승인
+                    </button>
+                </form>
+                <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectForm">
+                    <i class="fas fa-ban me-1"></i>반려
+                </button>
+                <div class="collapse mt-3" id="rejectForm">
+                    <form method="post" action="/op/jobs/{{ job['id'] }}/reject">
+                        {{ csrf_input }}
+                        <div class="mb-2">
+                            <label for="rejection_reason" class="form-label">반려 사유 <span class="text-danger">*</span></label>
+                            <textarea id="rejection_reason" name="rejection_reason" class="form-control" rows="3" required placeholder="반려 사유를 입력하세요. 기업에게 전달됩니다."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger">반려 처리</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
+{% endblock %}
+{% block scripts %}
+{% if total_applicants > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('applicantChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for label, cnt in status_breakdown %}'{{ label }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for label, cnt in status_breakdown %}{{ cnt }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#0d6efd',
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { stepSize: 1, precision: 0 }, beginAtZero: true } },
+        maintainAspectRatio: false,
+    }
+});
+</script>
+{% endif %}
 {% endblock %}

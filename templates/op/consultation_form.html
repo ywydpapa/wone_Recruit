@@ -9,6 +9,7 @@
     <p class="text-muted mb-3">구직자: <strong>{{ seeker['name'] }}</strong></p>
 
     <form method="post" action="{% if consultation %}/op/consultations/{{ consultation['id'] }}{% else %}/op/consultations{% endif %}">
+        {{ csrf_input }}
         <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
 
         <div class="content-card mb-3">

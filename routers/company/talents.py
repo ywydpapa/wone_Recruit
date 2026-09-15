@@ -72,6 +72,16 @@ async def talent_search(
     finally:
         conn.close()
 
+    # 장애정보 마스킹
+    filtered = []
+    for t in talents:
+        t = dict(t)
+        if t.get("disability_visibility") != "public":
+            t["disability_name"] = None
+            t["severity"] = None
+        filtered.append(t)
+    talents = filtered
+
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
     if sido: qs_parts.append(f"sido={sido}")
@@ -140,6 +150,14 @@ async def talent_detail(request: Request, seeker_user_id: int):
     finally:
         conn.close()
 
+    # 장애정보 마스킹
+    disability_hidden = profile["disability_visibility"] != "public"
+    if disability_hidden:
+        profile = dict(profile)
+        profile["disability_name"] = None
+        profile["severity"] = None
+        profile["disability_type_id"] = None
+
     comm_pref = []
     assistive = []
     accommodation = []
@@ -163,7 +181,7 @@ async def talent_detail(request: Request, seeker_user_id: int):
             "request": request, "page_title": "인재 프로필",
             "user_name": user["name"], "user_role": "company",
             "profile": profile, "certs": certs,
-            "offered": offered,
+            "offered": offered, "disability_hidden": disability_hidden,
             "company_name": company["company_name"] if company else "",
             "comm_pref": comm_pref, "assistive": assistive,
             "accommodation": accommodation,

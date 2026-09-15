@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>{{ company['company_name'] }}</h2>
+    <a href="/mgr/companies" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록</a>
+</div>
+
+<div class="container">
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="content-card">
+                <h5 class="fw-bold mb-3">기업 정보</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3 text-muted">기업명</dt>
+                    <dd class="col-sm-9">{{ company['company_name'] }}</dd>
+                    <dt class="col-sm-3 text-muted">업종</dt>
+                    <dd class="col-sm-9">{{ company['industry'] or '-' }}</dd>
+                    <dt class="col-sm-3 text-muted">규모</dt>
+                    <dd class="col-sm-9">{{ company['company_size'] or '-' }}</dd>
+                    <dt class="col-sm-3 text-muted">지역</dt>
+                    <dd class="col-sm-9">{{ company['region_sido'] or '-' }} {{ company['region_sigungu'] or '' }}</dd>
+                    <dt class="col-sm-3 text-muted">사업자번호</dt>
+                    <dd class="col-sm-9">{{ company['biz_no'] or '-' }}</dd>
+                    <dt class="col-sm-3 text-muted">대표</dt>
+                    <dd class="col-sm-9">{{ company['ceo'] or '-' }}</dd>
+                    <dt class="col-sm-3 text-muted">주소</dt>
+                    <dd class="col-sm-9">{{ company['address'] or '-' }}</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <a href="/mgr/jobs?q={{ company['company_name'] }}" class="content-card text-center mb-3 d-block text-decoration-none">
+                <div class="fs-2 fw-bold">{{ active_jobs }}</div>
+                <small class="text-muted">게시중 공고</small>
+            </a>
+            <a href="/mgr/placements?company={{ company['id'] }}" class="content-card text-center d-block text-decoration-none">
+                <div class="fs-2 fw-bold">{{ placed_count }}</div>
+                <small class="text-muted">현재 배치</small>
+            </a>
+        </div>
+    </div>
+
+    {% if company['hr_name'] or company['contact_phone'] %}
+    <div class="content-card mt-4">
+        <h5 class="fw-bold mb-3">담당자 연락처</h5>
+        <dl class="row mb-0">
+            {% if company['hr_name'] %}
+            <dt class="col-sm-3 text-muted">담당자</dt>
+            <dd class="col-sm-9">{{ company['hr_name'] }} {% if company['hr_position'] %}({{ company['hr_position'] }}){% endif %}</dd>
+            {% endif %}
+            {% if company['hr_phone'] %}
+            <dt class="col-sm-3 text-muted">전화</dt>
+            <dd class="col-sm-9">{{ company['hr_phone'] }}</dd>
+            {% endif %}
+            {% if company['hr_email'] %}
+            <dt class="col-sm-3 text-muted">이메일</dt>
+            <dd class="col-sm-9">{{ company['hr_email'] }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    {% endif %}
+
+    <div class="content-card mt-4">
+        <h5 class="fw-bold mb-3">
+            기업리뷰
+            {% if reviews %}<span class="badge bg-secondary ms-1">{{ reviews|length }}</span>{% endif %}
+            {% if avg_rating %}<span class="review-avg-label">평균 {{ avg_rating }}</span>{% endif %}
+        </h5>
+        {% if reviews %}
+        <div class="review-list">
+            {% for rv in reviews %}
+            <div class="review-item">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div>
+                        {% for i in range(1, 6) %}
+                        {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="text-muted small">{{ rv['created_at'][:10] }}</span>
+                </div>
+                {% if rv['pros'] %}
+                <div class="review-pros-cons mb-1">
+                    <span class="review-label good">장점</span>
+                    <span>{{ rv['pros'] }}</span>
+                </div>
+                {% endif %}
+                {% if rv['cons'] %}
+                <div class="review-pros-cons">
+                    <span class="review-label bad">단점</span>
+                    <span>{{ rv['cons'] }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0 small">등록된 리뷰가 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

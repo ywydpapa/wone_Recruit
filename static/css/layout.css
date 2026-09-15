@@ -1,25 +1,24 @@
 /* 네비게이션 */
 .navbar {
-    padding: 15px 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    padding: 12px 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     background: #fff;
 }
 .navbar-brand {
-    font-weight: 900;
-    font-size: 1.8rem;
-    color: var(--dark-blue);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--text);
 }
 .navbar-brand span {
-    color: var(--primary-blue);
+    color: var(--primary);
 }
 .nav-link {
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--text);
     margin: 0 10px;
-    transition: color 0.3s;
 }
 .nav-link:hover, .nav-link.active {
-    color: var(--primary-blue);
+    color: var(--primary);
 }
 
 .user-profile {
@@ -29,66 +28,62 @@
     cursor: pointer;
 }
 .user-profile .name {
-    font-weight: 700;
-    color: var(--dark-blue);
+    font-weight: 600;
+    color: var(--text);
 }
 
 .btn-login {
-    background-color: var(--light-blue);
-    color: var(--primary-blue);
-    font-weight: 700;
-    border-radius: 30px;
-    padding: 8px 25px;
-    transition: all 0.3s;
+    background-color: var(--bg);
+    color: var(--primary);
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 8px 20px;
 }
 .btn-login:hover {
-    background-color: var(--primary-blue);
+    background-color: var(--primary);
     color: #fff;
 }
 
 /* 대시보드 헤더 */
 .dash-header {
-    background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary-blue) 100%);
-    padding: 40px 0;
-    color: white;
-    margin-bottom: 40px;
+    padding: 24px 0;
+    margin-bottom: 24px;
 }
 .dash-header h2 {
     font-weight: 700;
-    font-size: 1.8rem;
-    margin-bottom: 5px;
+    font-size: 1.25rem;
+    margin-bottom: 4px;
 }
 .dash-header p {
-    opacity: 0.9;
+    color: var(--text-secondary);
     margin: 0;
 }
 
 .list-section {
-    padding: 30px 0 60px;
-    background-color: var(--gray-bg);
+    padding: 24px 0 48px;
+    background-color: var(--bg);
     min-height: calc(100vh - 200px);
 }
 
 /* 푸터 */
 .footer {
-    background-color: var(--dark-blue);
+    background-color: #2a2a2a;
     color: #fff;
-    padding: 50px 0 20px;
+    padding: 40px 0 16px;
     text-align: center;
 }
 .footer .social-icons a {
     color: #fff;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     margin: 0 10px;
     opacity: 0.7;
-    transition: opacity 0.3s;
 }
 .footer .social-icons a:hover { opacity: 1; }
-.footer-menu { margin-bottom: 20px; }
+.footer-menu { margin-bottom: 16px; }
 .footer-menu a {
     color: #fff;
     text-decoration: none;
-    margin: 0 15px;
+    margin: 0 12px;
     opacity: 0.8;
 }
 .footer-menu a:hover { opacity: 1; }
@@ -96,10 +91,10 @@
 /* 사이드바 */
 :root {
     --sidebar-w: 240px;
-    --topbar-h: 52px;
-    --border-color: #eee;
+    --topbar-h: 48px;
+    --border-color: #e5e5e5;
     --muted-text: #767676;
-    --focus-color: var(--primary-blue);
+    --focus-color: var(--primary);
 }
 
 .sidebar {
@@ -108,12 +103,12 @@
     left: 0;
     width: var(--sidebar-w);
     height: 100vh;
-    background: var(--dark-blue);
+    background: #1e2a3a;
     color: #fff;
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    transition: width 0.2s, transform 0.25s;
+    transition: width 0.2s, transform 0.2s;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -122,57 +117,57 @@
     display: flex;
     align-items: center;
     padding: 0 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
     flex-shrink: 0;
 }
 .sidebar-brand a {
-    font-weight: 900;
-    font-size: 1.3rem;
+    font-weight: 700;
+    font-size: 1.2rem;
     color: #fff;
     text-decoration: none;
 }
-.sidebar-brand a span { color: #6cb4ff; }
+.sidebar-brand a span { color: #fff; }
 
 .sidebar-nav {
     flex: 1;
     padding: 8px 0;
 }
 .sidebar-section {
-    font-size: 0.73rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.4);
     padding: 16px 20px 4px;
-    font-weight: 700;
+    font-weight: 600;
 }
 .sidebar-link {
     display: flex;
     align-items: center;
-    padding: 9px 20px;
-    color: rgba(255,255,255,0.7);
+    padding: 8px 20px;
+    color: rgba(255,255,255,0.65);
     text-decoration: none;
-    font-size: 0.93rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 400;
     transition: background 0.15s, color 0.15s;
     gap: 10px;
     white-space: nowrap;
 }
-.sidebar-link i { width: 18px; text-align: center; font-size: 0.85rem; flex-shrink: 0; }
-.sidebar-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.sidebar-link.active { background: rgba(255,255,255,0.12); color: #fff; font-weight: 600; }
+.sidebar-link i { width: 18px; text-align: center; font-size: 0.82rem; flex-shrink: 0; }
+.sidebar-link:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+.sidebar-link.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
 .sidebar-badge {
     margin-left: auto;
-    background: var(--danger-color);
+    background: rgba(255,255,255,0.15);
     color: #fff;
     font-size: 0.68rem;
-    font-weight: 700;
+    font-weight: 600;
     padding: 2px 7px;
     border-radius: 10px;
     line-height: 1;
 }
 .sidebar-footer {
     padding: 8px 12px;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid rgba(255,255,255,0.06);
     flex-shrink: 0;
 }
 .sidebar-hide-btn {
@@ -180,18 +175,17 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 12px 10px;
+    padding: 10px 10px;
     min-height: 44px;
     border: none;
     background: transparent;
-    color: rgba(255,255,255,0.7);
-    font-size: 0.82rem;
-    font-weight: 500;
-    border-radius: 6px;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+    font-weight: 400;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
 }
-.sidebar-hide-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+.sidebar-hide-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
 .sidebar-hide-btn i { font-size: 0.7rem; }
 
 .sidebar-resize {
@@ -205,7 +199,7 @@
     transition: left 0.2s, background 0.15s;
 }
 .sidebar-resize:hover,
-.sidebar-resizing .sidebar-resize { background: rgba(0,86,179,0.3); }
+.sidebar-resizing .sidebar-resize { background: rgba(0,86,179,0.2); }
 .sidebar-resizing { cursor: col-resize; user-select: none; }
 .sidebar-resizing * { pointer-events: none; }
 .sidebar-resizing .sidebar-resize { pointer-events: auto; }
@@ -227,7 +221,7 @@
 
 .sidebar-peek .sidebar {
     transform: translateX(0);
-    box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
 }
 .sidebar-peek .main-wrap { margin-left: 0; }
 
@@ -251,9 +245,9 @@
     overflow: visible;
     clip: auto;
     white-space: normal;
-    border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.9);
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.8);
     border-radius: 4px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -280,29 +274,28 @@
     gap: 12px;
 }
 .topbar-brand a {
-    font-weight: 900;
+    font-weight: 700;
     font-size: 1.1rem;
-    color: var(--dark-blue);
+    color: var(--text);
     text-decoration: none;
 }
-.topbar-brand a span { color: var(--primary-blue); }
+.topbar-brand a span { color: var(--primary); }
 
 .sidebar-toggle {
     background: none;
     border: none;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--muted-text);
     cursor: pointer;
     padding: 10px 12px;
-    border-radius: 6px;
+    border-radius: 4px;
     min-width: 44px;
     min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.sidebar-toggle:hover { background: var(--gray-bg); color: var(--text-color); }
-.sidebar-toggle:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+.sidebar-toggle:hover { background: var(--bg); color: var(--text); }
 
 .topbar-actions {
     display: flex;
@@ -317,24 +310,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 4px;
     color: var(--muted-text);
     cursor: pointer;
     text-decoration: none;
-    transition: background 0.15s;
 }
 .topbar-actions > .dropdown { display: flex; }
 button.topbar-icon { background: none; border: none; padding: 0; }
-.topbar-icon:hover { background: var(--gray-bg); color: var(--text-color); }
-.topbar-icon:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+.topbar-icon:hover { background: var(--bg); color: var(--text); }
 .topbar-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    background: var(--danger-color);
+    top: 4px;
+    right: 4px;
+    background: var(--danger);
     color: #fff;
     font-size: 0.6rem;
-    font-weight: 700;
+    font-weight: 600;
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
@@ -349,32 +340,31 @@ button.topbar-icon { background: none; border: none; padding: 0; }
     align-items: center;
     cursor: pointer;
     padding: 4px 8px;
-    border-radius: 8px;
-    transition: background 0.15s;
+    border-radius: 4px;
     font-size: 0.88rem;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--text);
     background: none;
     border: none;
     min-height: 44px;
 }
-.topbar-profile:hover { background: var(--gray-bg); }
-.topbar-profile img { width: 30px; height: 30px; border-radius: 50%; }
+.topbar-profile:hover { background: var(--bg); }
+.topbar-profile img { width: 28px; height: 28px; border-radius: 50%; }
 
 .content-area {
-    padding: 28px 36px;
+    padding: 24px 28px;
     min-height: calc(100vh - var(--topbar-h));
 }
 
 .main-wrap .dash-header { margin-bottom: 0; }
-.main-wrap .list-section { padding-top: 24px; min-height: unset; }
+.main-wrap .list-section { padding-top: 20px; min-height: unset; }
 
 /* 반응형 */
 @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); }
     .sidebar-open .sidebar { transform: translateX(0); }
     .main-wrap { margin-left: 0; }
-    .content-area { padding: 16px 20px; }
+    .content-area { padding: 16px 16px; }
 }
 
 @media (max-width: 767.98px) {
@@ -383,32 +373,11 @@ button.topbar-icon { background: none; border: none; padding: 0; }
         max-width: 100%;
     }
     .dash-header {
-        padding: 24px 0;
-        margin-bottom: 20px;
-    }
-    .dash-header h2 {
-        font-size: 1.4rem;
-    }
-    .content-card {
-        padding: 16px;
-        border-radius: 10px;
+        padding: 16px 0;
         margin-bottom: 16px;
     }
-    .stat-card {
-        padding: 14px;
-        margin-bottom: 12px;
-    }
-    .stat-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 1.3rem;
-        margin-right: 12px;
-    }
-    .stat-info h3 {
-        font-size: 1.3rem;
-    }
-    .stat-info p {
-        font-size: 0.85rem;
+    .dash-header h2 {
+        font-size: 1.15rem;
     }
     dl.row dt[class*="col-sm-"],
     dl.row dd[class*="col-sm-"] {
@@ -423,41 +392,15 @@ button.topbar-icon { background: none; border: none; padding: 0; }
     dl.row dd[class*="col-sm-"] {
         margin-bottom: 12px;
     }
-    .profile-field {
-        flex-direction: column;
-    }
-    .profile-field-label {
-        flex: none;
-        margin-bottom: 4px;
-    }
-    .job-card-meta {
-        flex-direction: column;
-        gap: 6px;
-    }
-    .job-card-header h3 {
-        padding-right: 32px;
-    }
-    .list-section {
-        padding: 0 0 30px;
-    }
-    .card-title {
-        font-size: 1rem;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
     .navbar-brand {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
     }
     .nav-link {
         margin: 0;
         padding: 8px 0;
     }
     .footer {
-        padding: 30px 0 15px;
-    }
-    .content-card .d-flex.align-items-start.gap-3 {
-        flex-direction: column;
-        align-items: flex-start !important;
+        padding: 24px 0 12px;
     }
     .table th, .table td {
         font-size: 0.85rem;
@@ -468,33 +411,11 @@ button.topbar-icon { background: none; border: none; padding: 0; }
     }
 }
 
-/* 소형 모바일 */
 @media (max-width: 479.98px) {
     body {
-        font-size: 16px;
+        font-size: 14px;
     }
     .dash-header h2 {
-        font-size: 1.2rem;
-    }
-    .content-card {
-        padding: 12px;
-    }
-    .stat-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 1rem;
-        margin-right: 10px;
-    }
-    .stat-info h3 {
         font-size: 1.1rem;
-    }
-    .job-card-header {
-        padding: 14px 14px 10px;
-    }
-    .job-card-body {
-        padding: 10px 14px 12px;
-    }
-    .job-card-footer {
-        padding: 10px 14px;
     }
 }

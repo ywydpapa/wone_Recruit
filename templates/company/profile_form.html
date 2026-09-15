@@ -12,7 +12,23 @@
 </div>
 {% endif %}
 
+{% if company %}
+<div class="mb-4">
+    {% if company['approval_status'] == 'approved' %}
+        <span class="badge bg-success">사업자 인증 완료</span>
+    {% elif company['approval_status'] == 'rejected' %}
+        <span class="badge bg-danger">반려</span>
+        {% if company['rejection_reason'] %}
+        <p class="text-danger mt-1 small">{{ company['rejection_reason'] }}</p>
+        {% endif %}
+    {% else %}
+        <span class="badge bg-warning text-dark">인증 대기</span>
+    {% endif %}
+</div>
+{% endif %}
+
 <form method="post" action="/company/profile" enctype="multipart/form-data" novalidate>
+{{ csrf_input }}
 
     <fieldset class="form-section">
         <legend><i class="fas fa-building"></i>기본 정보</legend>
@@ -40,6 +56,16 @@
                         <input type="text" class="form-control" id="biz_no" name="biz_no"
                             value="{{ company.biz_no if company else '' }}"
                             placeholder="예: 123-45-67890">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">사업자등록증</label>
+                        <input type="file" class="form-control" name="biz_doc" accept=".pdf,.jpg,.jpeg,.png">
+                        {% if company and company['biz_doc_path'] %}
+                        <small class="form-text">
+                            <a href="{{ company['biz_doc_path'] }}" target="_blank">현재 파일 보기</a>
+                        </small>
+                        {% endif %}
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -128,6 +154,56 @@
                             <select id="region_id" name="region_id" class="form-select">
                                 <option value="">-- 시/도를 먼저 선택 --</option>
                             </select>
+                        </div>
+                    </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend><i class="fas fa-phone"></i>연락처</legend>
+        <div class="form-section-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="contact_phone" class="form-label fw-semibold">대표 전화번호</label>
+                            <input type="tel" class="form-control" id="contact_phone" name="contact_phone"
+                                value="{{ company.contact_phone if company else '' }}"
+                                placeholder="예: 02-1234-5678">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contact_email" class="form-label fw-semibold">대표 이메일</label>
+                            <input type="email" class="form-control" id="contact_email" name="contact_email"
+                                value="{{ company.contact_email if company else '' }}"
+                                placeholder="예: info@company.com">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="hr_name" class="form-label fw-semibold">채용 담당자</label>
+                            <input type="text" class="form-control" id="hr_name" name="hr_name"
+                                value="{{ company.hr_name if company else '' }}"
+                                placeholder="예: 박지원">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="hr_position" class="form-label fw-semibold">담당자 직책</label>
+                            <input type="text" class="form-control" id="hr_position" name="hr_position"
+                                value="{{ company.hr_position if company else '' }}"
+                                placeholder="예: 인사팀 과장">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="hr_phone" class="form-label fw-semibold">담당자 연락처</label>
+                            <input type="tel" class="form-control" id="hr_phone" name="hr_phone"
+                                value="{{ company.hr_phone if company else '' }}"
+                                placeholder="예: 010-1234-5678">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="hr_email" class="form-label fw-semibold">담당자 이메일</label>
+                            <input type="email" class="form-control" id="hr_email" name="hr_email"
+                                value="{{ company.hr_email if company else '' }}"
+                                placeholder="예: hr@company.com">
                         </div>
                     </div>
         </div>

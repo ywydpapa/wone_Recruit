@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}내 담당 구직자 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>{{ stage_label ~ ' 구직자' if stage_label else '내 담당 구직자' }}</h2></div>
+
+{% if selected_stage %}
+<div class="mb-3">
+    <a href="/mgr/seekers" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-times me-1"></i>{{ stage_label }} 필터 해제
+    </a>
+</div>
+{% endif %}
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/mgr/seekers">
+            {% if selected_stage %}<input type="hidden" name="stage" value="{{ selected_stage }}">{% endif %}
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="visually-hidden">검색어</label>
+                    <input type="text" id="q" name="q" class="form-control" placeholder="이름, 아이디 검색" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="disability_type_id" class="visually-hidden">장애 유형</label>
+                    <select id="disability_type_id" name="disability_type_id" class="form-select">
+                        <option value="">장애유형 (전체)</option>
+                        {% for dt in disability_types %}
+                        <option value="{{ dt['id'] }}" {% if selected_disability == dt['id'] %}selected{% endif %}>{{ dt['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="severity" class="visually-hidden">중증도</label>
+                    <select id="severity" name="severity" class="form-select">
+                        <option value="">중증도 (전체)</option>
+                        <option value="경증" {% if selected_severity == "경증" %}selected{% endif %}>경증</option>
+                        <option value="중증" {% if selected_severity == "중증" %}selected{% endif %}>중증</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sido" class="visually-hidden">지역</label>
+                    <select id="sido" name="sido" class="form-select">
+                        <option value="">지역 (전체)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">담당 구직자 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if seekers %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>장애유형</th>
+                        <th>중증도</th>
+                        <th>지역</th>
+                        <th>근무형태</th>
+                        <th>근무시간</th>
+                        <th>동의</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in seekers %}
+                    <tr onclick="location.href='/mgr/seekers/{{ s['id'] }}'" style="cursor:pointer">
+                        <td class="fw-semibold">{{ s['name'] }}</td>
+                        <td>{{ s['disability_name'] or '-' }}</td>
+                        <td>
+                            {% if s['severity'] == '중증' %}
+                            <span class="badge bg-danger">중증</span>
+                            {% elif s['severity'] %}
+                            <span class="badge bg-success">{{ s['severity'] }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ s['region_sido'] or '-' }} {{ s['region_sigungu'] or '' }}</td>
+                        <td>{{ s['work_pref'] or '-' }}</td>
+                        <td>{{ s['daily_work_hours'] or '-' }}시간</td>
+                        <td>
+                            {% if s['consent_sensitive'] %}
+                            <span class="badge bg-success">동의</span>
+                            {% else %}
+                            <span class="badge bg-secondary">미동의</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">담당 구직자가 없습니다. <a href="/mgr/seekers/unassigned">미배정 구직자</a>에서 담당할 수 있습니다.</p>
+        {% endif %}
+    </div>
+    {% if seekers %}
+    {% include "common/pagination.html" %}
+    {% endif %}
+</div>
+
+<script>loadSidoList('sido', '{{ selected_sido }}');</script>
+{% endblock %}

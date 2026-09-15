@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>{{ job['title'] }}</h2>
+    <a href="/mgr/jobs" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록</a>
+</div>
+
+<div class="container">
+    <div class="content-card mb-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">기업</dt>
+                    <dd class="col-sm-8">{{ job['company_name'] }}</dd>
+                    <dt class="col-sm-4 text-muted">고용형태</dt>
+                    <dd class="col-sm-8">{{ job['employment_type'] or '-' }}</dd>
+                    <dt class="col-sm-4 text-muted">급여</dt>
+                    <dd class="col-sm-8">{{ job['salary'] or '-' }}</dd>
+                    <dt class="col-sm-4 text-muted">지역</dt>
+                    <dd class="col-sm-8">{{ job['region_sido'] or '-' }} {{ job['region_sigungu'] or '' }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">직무분류</dt>
+                    <dd class="col-sm-8">{{ job['category_name'] or '-' }}</dd>
+                    <dt class="col-sm-4 text-muted">경력</dt>
+                    <dd class="col-sm-8">{{ job['experience_level'] or '-' }}</dd>
+                    <dt class="col-sm-4 text-muted">학력</dt>
+                    <dd class="col-sm-8">{{ job['education'] or '-' }}</dd>
+                    <dt class="col-sm-4 text-muted">마감일</dt>
+                    <dd class="col-sm-8">{{ job['deadline'] or '-' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    {% if job['description'] %}
+    <div class="content-card mb-4">
+        <h5 class="fw-bold mb-3">상세 내용</h5>
+        <div style="white-space:pre-wrap">{{ job['description'] }}</div>
+    </div>
+    {% endif %}
+
+    {% if job['qualifications'] %}
+    <div class="content-card mb-4">
+        <h5 class="fw-bold mb-3">자격 요건</h5>
+        <div style="white-space:pre-wrap">{{ job['qualifications'] }}</div>
+    </div>
+    {% endif %}
+
+    {% if job['tasks'] %}
+    <div class="content-card mb-4">
+        <h5 class="fw-bold mb-3">담당 업무</h5>
+        <div style="white-space:pre-wrap">{{ job['tasks'] }}</div>
+    </div>
+    {% endif %}
+
+    {% if accommodations %}
+    <div class="content-card mb-4">
+        <h5 class="fw-bold mb-3">제공 편의시설</h5>
+        <div class="d-flex flex-wrap gap-2">
+            {% for a in accommodations %}
+            <span class="badge bg-info text-dark">{{ a }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if total_applicants > 0 %}
+    <div class="content-card mb-4">
+        <h5 class="fw-bold mb-3">지원 현황 <span class="text-muted fw-normal fs-6">(총 {{ total_applicants }}명)</span></h5>
+        <div class="applicant-chart-wrap">
+            <canvas id="applicantChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if total_applicants > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('applicantChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for label, cnt in status_breakdown %}'{{ label }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for label, cnt in status_breakdown %}{{ cnt }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#0d6efd',
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { stepSize: 1, precision: 0 }, beginAtZero: true } },
+        maintainAspectRatio: false,
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

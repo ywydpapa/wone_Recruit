@@ -1,9 +1,11 @@
+import json
 import sqlite3
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import check_login, require_role, templates
+from core.rate_limit import check_login_rate, record_login_attempt, clear_login_attempts, get_client_ip
 from core.security import hash_password, verify_password, MIN_PASSWORD_LENGTH
 
 router = APIRouter()
@@ -22,6 +24,10 @@ async def login_page(request: Request, error: str = ""):
 
 @router.post("/login_check")
 async def login_check(request: Request, username: str = Form(...), password: str = Form(...)):
+    ip = get_client_ip(request)
+    if check_login_rate(ip):
+        return RedirectResponse(url="/login?error=rate_limit", status_code=303)
+    record_login_attempt(ip)
     conn = get_sqlite()
     try:
         row = conn.execute(
@@ -32,6 +38,8 @@ async def login_check(request: Request, username: str = Form(...), password: str
     if row and verify_password(password, row["password"]):
         if row["is_deleted"]:
             return RedirectResponse(url="/login?error=deleted", status_code=303)
+        clear_login_attempts(ip)
+        request.session.pop("csrf_token", None)
         request.session["logined"] = True
         request.session["id"] = row["id"]
         request.session["username"] = row["username"]
@@ -168,11 +176,24 @@ async def consent_page(request: Request, error: str = "", success: str = ""):
             "SELECT agreed_marketing_at FROM users WHERE id=?", (user["id"],)
         ).fetchone()
         profile = None
+        access_logs = []
         if user.get("role") == "seeker":
             profile = conn.execute(
-                "SELECT consent_sensitive, consented_at, consent_withdrawn_at FROM seeker_profiles WHERE user_id=?",
+                "SELECT consent_sensitive, consented_at, consent_withdrawn_at, disability_visibility FROM seeker_profiles WHERE user_id=?",
                 (user["id"],),
             ).fetchone()
+            access_logs = conn.execute(
+                """SELECT al.created_at, al.purpose,
+                          u.name AS viewer_name, u.role AS viewer_role,
+                          c.company_name
+                   FROM access_log al
+                   JOIN users u ON al.viewer_id = u.id
+                   LEFT JOIN companies c ON u.id = c.user_id
+                   WHERE al.seeker_user_id = ?
+                   ORDER BY al.created_at DESC
+                   LIMIT 5""",
+                (user["id"],),
+            ).fetchall()
     finally:
         conn.close()
     return templates.TemplateResponse(
@@ -182,6 +203,7 @@ async def consent_page(request: Request, error: str = "", success: str = ""):
             "user_role": user.get("role", "seeker"),
             "user_row": user_row,
             "profile": profile,
+            "access_logs": access_logs,
             "error": error, "success": success,
         }
     )
@@ -244,6 +266,68 @@ async def restore_sensitive_consent(request: Request):
     return RedirectResponse(url="/profile?success=1", status_code=303)
 
 
+@router.post("/account/consent/visibility")
+async def update_visibility(
+    request: Request,
+    disability_visibility: str = Form(...),
+):
+    user = require_role(request, "seeker")
+    if disability_visibility not in ("public", "manager_only", "private"):
+        return RedirectResponse(url="/account/consent?error=invalid", status_code=303)
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "UPDATE seeker_profiles SET disability_visibility=? WHERE user_id=?",
+            (disability_visibility, user["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url="/account/consent?success=visibility", status_code=303)
+
+
+@router.get("/account/data-download")
+async def data_download(request: Request):
+    user = require_role(request, "seeker")
+    uid = user["id"]
+    conn = get_sqlite()
+    try:
+        u = conn.execute(
+            "SELECT name, phone, email, created_at FROM users WHERE id=?", (uid,)
+        ).fetchone()
+        profile = conn.execute(
+            "SELECT * FROM seeker_profiles WHERE user_id=?", (uid,)
+        ).fetchone()
+        certs = conn.execute(
+            "SELECT cert_name, cert_date, issuing_org FROM seeker_certifications WHERE user_id=?", (uid,)
+        ).fetchall()
+        apps = conn.execute(
+            """SELECT c.status, c.created_at, jp.title AS job_title
+               FROM candidacies c
+               JOIN job_postings jp ON c.job_id = jp.id
+               WHERE c.seeker_user_id=?
+               ORDER BY c.created_at DESC""",
+            (uid,),
+        ).fetchall()
+        resumes = conn.execute(
+            "SELECT name, desired_job, work_pref, created_at FROM resumes WHERE user_id=?", (uid,)
+        ).fetchall()
+    finally:
+        conn.close()
+
+    payload = {
+        "user": dict(u) if u else {},
+        "profile": dict(profile) if profile else {},
+        "certifications": [dict(r) for r in certs],
+        "applications": [dict(r) for r in apps],
+        "resumes": [dict(r) for r in resumes],
+    }
+    name = (user.get("name") or "data").replace(" ", "_")
+    resp = JSONResponse(content=payload)
+    resp.headers["Content-Disposition"] = f'attachment; filename="{name}_data.json"'
+    return resp
+
+
 @router.post("/account/consent/marketing")
 async def toggle_marketing_consent(request: Request):
     from datetime import datetime
@@ -278,7 +362,7 @@ async def withdraw_submit(
             "SELECT id, password FROM users WHERE id=?", (user["id"],)
         ).fetchone()
         if not row or not verify_password(current_password, row["password"]):
-            return RedirectResponse(url="/account/withdraw?error=wrong", status_code=303)
+            return RedirectResponse(url="/account/consent?error=wrong_withdraw", status_code=303)
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         conn.execute(
             "UPDATE users SET is_deleted=1, deleted_at=?, name='탈퇴회원', phone='' WHERE id=?",

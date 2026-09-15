@@ -40,6 +40,13 @@ async def applicants_list(request: Request, job_id: int, q: str = "", sort: str 
         pipeline_stages = get_pipeline_display(conn, company["id"])
         stage_labels = get_stage_labels(conn, company["id"])
         stage_colors = get_stage_color_map(conn, company["id"])
+        counts_rows = conn.execute(
+            "SELECT status, COUNT(*) as cnt FROM candidacies "
+            "WHERE job_id=? AND (source='direct' OR match_stage='submitted') GROUP BY status",
+            (job_id,),
+        ).fetchall()
+        status_counts = {r["status"]: r["cnt"] for r in counts_rows}
+        total_applicants = sum(r["cnt"] for r in counts_rows)
     finally:
         conn.close()
     return templates.TemplateResponse(
@@ -51,6 +58,8 @@ async def applicants_list(request: Request, job_id: int, q: str = "", sort: str 
             "status_labels": stage_labels,
             "pipeline_stages": pipeline_stages,
             "stage_colors": stage_colors,
+            "status_counts": status_counts,
+            "total_applicants": total_applicants,
             "q": q, "sort": sort,
         }
     )
@@ -89,6 +98,16 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
                WHERE sp.user_id=?""",
             (cand["seeker_user_id"],),
         ).fetchone()
+        # 장애정보 공개 설정에 따라 마스킹
+        disability_hidden = False
+        if profile:
+            if profile["disability_visibility"] != "public":
+                disability_hidden = True
+                profile = dict(profile)
+                profile["disability_name"] = None
+                profile["severity"] = None
+                profile["disability_type_id"] = None
+
         history = conn.execute(
             """SELECT sh.*, u.name AS actor_name
                FROM status_history sh
@@ -150,7 +169,7 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
             "user_name": user["name"], "user_role": "company",
             "job": job,
             "cand": cand,
-            "profile": profile,
+            "profile": profile, "disability_hidden": disability_hidden,
             "history": history,
             "next_statuses": next_statuses,
             "status_labels": stage_labels,
@@ -163,6 +182,33 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
             "languages": languages,
         }
     )
+
+
+@router.post("/jobs/{job_id}/applicants/bulk-status")
+async def applicants_bulk_status(
+    request: Request,
+    job_id: int,
+    candidacy_ids: str = Form(...),
+    status: str = Form(...),
+    comment: str = Form(""),
+):
+    user = require_role(request, "company")
+    conn = get_sqlite()
+    try:
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+        if not company:
+            return RedirectResponse(url="/company/profile", status_code=303)
+        job = conn.execute(
+            "SELECT id FROM job_postings WHERE id=? AND company_id=?",
+            (job_id, company["id"]),
+        ).fetchone()
+        if job:
+            ids = [int(x) for x in candidacy_ids.split(",") if x.strip().isdigit()]
+            for cid in ids:
+                apply_transition(conn, cid, status, user["id"], comment)
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/company/jobs/{job_id}/applicants", status_code=303)
 
 
 @router.post("/jobs/{job_id}/applicants/{candidacy_id}/status")

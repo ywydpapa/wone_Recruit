@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h2>{{ seeker['name'] }}</h2>
+    <div class="d-flex gap-2">
+        <a href="/mgr/seekers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록</a>
+        <a href="/messages/{{ seeker['id'] }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-envelope me-1"></i>메시지</a>
+    </div>
+</div>
+
+{% if profile %}
+<div class="privacy-section active mb-4" id="privacySection">
+    <div class="privacy-overlay" id="privacyOverlay">
+        <i class="fas fa-lock fa-2x mb-2"></i>
+        <p class="small mb-2">개인정보 보호</p>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="privacyUnlock">
+            <i class="fas fa-lock-open me-1"></i>열람
+        </button>
+    </div>
+    <div class="content-card">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">장애유형</dt>
+                    <dd class="col-7">{{ profile['disability_name'] or '-' }}</dd>
+                    <dt class="col-5 text-muted">중증도</dt>
+                    <dd class="col-7">
+                        {% if profile['severity'] == '중증' %}
+                        <span class="status-badge status-rejected">중증</span>
+                        {% elif profile['severity'] %}
+                        {{ profile['severity'] }}
+                        {% else %}-{% endif %}
+                    </dd>
+                    <dt class="col-5 text-muted">지역</dt>
+                    <dd class="col-7">{{ profile['region_sido'] or '-' }} {{ profile['region_sigungu'] or '' }}</dd>
+                    <dt class="col-5 text-muted">근무형태</dt>
+                    <dd class="col-7">{{ profile['work_pref'] or '-' }}</dd>
+                    <dt class="col-5 text-muted">근무시간</dt>
+                    <dd class="col-7">{{ profile['daily_work_hours'] or '-' }}시간</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">이동수단</dt>
+                    <dd class="col-7">{{ profile['mobility_type'] or '-' }}</dd>
+                    <dt class="col-5 text-muted">희망직종</dt>
+                    <dd class="col-7">{{ profile['desired_job'] or '-' }}</dd>
+                    <dt class="col-5 text-muted">의사소통</dt>
+                    <dd class="col-7">{{ communication_pref_display }}</dd>
+                    <dt class="col-5 text-muted">보조기기</dt>
+                    <dd class="col-7">{{ assistive_tech_display }}</dd>
+                    <dt class="col-5 text-muted">편의시설</dt>
+                    <dd class="col-7">{{ accommodation_needs_display }}</dd>
+                </dl>
+            </div>
+        </div>
+        {% if certifications %}
+        <hr>
+        <div class="small">
+            <span class="fw-bold">자격증</span>
+            {% for cert in certifications %}
+            <span class="ms-2"><i class="fas fa-certificate me-1"></i>{{ cert['cert_name'] }} <span class="text-muted">({{ cert['issuing_org'] }})</span></span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="content-card mb-4">
+    <p class="text-muted text-center small mb-0">프로필 미작성</p>
+</div>
+{% endif %}
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-timeline" type="button" role="tab">상담 타임라인</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-assessment" type="button" role="tab">초기 평가</button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-timeline" role="tabpanel">
+        <div class="d-flex justify-content-end mb-3">
+            <a href="/mgr/consultations/new?seeker_id={{ seeker['id'] }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>상담 기록 추가
+            </a>
+        </div>
+        {% if sessions %}
+        {% for s in sessions %}
+        <div class="content-card mb-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    {% set type_labels = {'initial_assessment': '초기 평가', 'career_counseling': '진로 상담', 'interview_prep': '면접 준비', 'followup_call': '후속 통화', 'company_visit': '기업 방문', 'other': '기타'} %}
+                    <span class="fw-semibold me-2">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
+                    <small class="text-muted">{{ s['created_at'][:10] }} &middot; {{ s['manager_name'] }}</small>
+                </div>
+                <div>
+                    <a href="/mgr/consultations/{{ s['id'] }}/edit" class="btn btn-outline-secondary btn-sm me-1" title="수정"><i class="fas fa-edit"></i></a>
+                    <form method="post" action="/mgr/consultations/{{ s['id'] }}/delete" class="d-inline" onsubmit="return confirm('삭제하시겠습니까?')">
+                        {{ csrf_input }}
+                        <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" title="삭제"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+            <p class="mt-2 mb-0 text-prewrap">{{ s['notes'] }}</p>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">상담 기록이 없습니다.</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="tab-assessment" role="tabpanel">
+        {% if assessment %}
+        <div class="content-card">
+            <small class="text-muted d-block mb-3">{{ assessment['created_at'][:10] }} &middot; {{ assessment['operator_name'] }}</small>
+            {% set fields = [('신체', assessment['physical_note']), ('감각', assessment['sensory_note']), ('인지', assessment['cognitive_note']), ('의사소통', assessment['communication_note']), ('업무능력', assessment['work_capacity_note']), ('환경', assessment['environment_note']), ('종합의견', assessment['summary'])] %}
+            {% for label, val in fields %}
+            {% if val %}
+            <div class="mb-3">
+                <strong class="small">{{ label }}</strong>
+                <p class="mb-0 small text-prewrap">{{ val }}</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">초기 평가가 없습니다.</p>
+        {% endif %}
+    </div>
+
+    </div>
+</div>
+
+{% if consent_given %}
+<div class="privacy-section active" id="candidacySection">
+    <div class="privacy-overlay" id="candidacyOverlay">
+        <i class="fas fa-lock fa-2x mb-2"></i>
+        <p class="small mb-2">지원 현황 보호</p>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="candidacyUnlock">
+            <i class="fas fa-lock-open me-1"></i>열람
+        </button>
+    </div>
+    <div class="content-card mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 candidacy-header" role="button" data-bs-toggle="collapse" data-bs-target="#candidacyBody">
+            <h6 class="mb-0">지원 현황 <span class="badge bg-secondary ms-1">{{ candidacies|length }}</span></h6>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="collapse" id="candidacyBody">
+            {% if candidacies %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr><th>공고</th><th>기업</th><th>상태</th><th>매칭단계</th><th>날짜</th></tr>
+                    </thead>
+                    <tbody>
+                        {% set status_labels = {'pending': '접수', 'reviewing': '검토중', 'shortlisted': '서류합격', 'interview': '면접', 'offer': '제의', 'hired': '채용', 'rejected': '불합격', 'withdrawn': '지원취소'} %}
+                        {% set stage_labels = {'proposed': '제안됨', 'seeker_confirmed': '구직자수락', 'submitted': '기업전달'} %}
+                        {% for c in candidacies %}
+                        <tr>
+                            <td><a href="/mgr/jobs/{{ c['job_id'] }}">{{ c['job_title'] }}</a></td>
+                            <td><a href="/mgr/companies/{{ c['company_id'] }}">{{ c['company_name'] }}</a></td>
+                            <td><span class="status-badge status-{{ c['status'] }}">{{ status_labels.get(c['status'], c['status']) }}</span></td>
+                            <td>{% if c['match_stage'] %}<span class="status-badge stage-{{ c['match_stage'] }}">{{ stage_labels.get(c['match_stage'], c['match_stage']) }}</span>{% else %}-{% endif %}</td>
+                            <td class="text-muted small">{{ c['created_at'][:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center py-3 text-muted mb-0">지원 내역이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="content-card mt-4">
+    <p class="text-muted small mb-0">민감정보 동의 미완료로 지원 현황을 열람할 수 없습니다.</p>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    function setupLock(sectionId, btnId) {
+        var section = document.getElementById(sectionId);
+        var btn = document.getElementById(btnId);
+        if (!section || !btn) return;
+        var timer = null;
+
+        function lock() { section.classList.add('active'); }
+        function unlock() { section.classList.remove('active'); resetTimer(); }
+        function resetTimer() { clearTimeout(timer); timer = setTimeout(lock, 30000); }
+
+        btn.addEventListener('click', function() {
+            if (confirm('개인정보를 열람하시겠습니까?')) unlock();
+        });
+        ['mousemove', 'keydown', 'scroll', 'click'].forEach(function(evt) {
+            document.addEventListener(evt, function() {
+                if (!section.classList.contains('active')) resetTimer();
+            });
+        });
+    }
+
+    setupLock('privacySection', 'privacyUnlock');
+    setupLock('candidacySection', 'candidacyUnlock');
+})();
+</script>
+{% endblock %}

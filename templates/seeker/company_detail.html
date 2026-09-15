@@ -10,7 +10,7 @@
             {% if company['logo_path'] %}
             <img src="{{ company['logo_path'] }}" alt="{{ company['company_name'] }} 로고" class="img-logo-md">
             {% else %}
-            <div class="img-logo-md bg-blue-light d-flex align-items-center justify-content-center">
+            <div class="img-logo-md d-flex align-items-center justify-content-center bg-light">
                 <i class="fas fa-building fa-2x"></i>
             </div>
             {% endif %}
@@ -145,6 +145,85 @@
         {% endif %}
     </div>
     {% endif %}
+
+    <!-- 기업리뷰 -->
+    <div class="content-card mb-3">
+        <h6 class="fw-bold mb-3">기업리뷰</h6>
+        {% if reviews %}
+        <div class="review-summary mb-3">
+            <div class="review-summary-score">
+                <span class="review-score-num">{{ avg_rating }}</span>
+                <div>
+                    {% for i in range(1, 6) %}
+                    {% if avg_rating >= i %}<i class="fas fa-star review-star filled"></i>{% elif avg_rating >= i - 0.5 %}<i class="fas fa-star-half-alt review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
+                    {% endfor %}
+                    <span class="text-muted small ms-1">{{ reviews|length }}건</span>
+                </div>
+            </div>
+        </div>
+        <div class="review-list">
+            {% for rv in reviews %}
+            <div class="review-item">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        {% for i in range(1, 6) %}
+                        {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="text-muted small">{{ rv['created_at'][:10] }}</span>
+                </div>
+                {% if rv['pros'] %}
+                <div class="review-pros-cons mb-1">
+                    <span class="review-label good">장점</span>
+                    <span>{{ rv['pros'] }}</span>
+                </div>
+                {% endif %}
+                {% if rv['cons'] %}
+                <div class="review-pros-cons">
+                    <span class="review-label bad">단점</span>
+                    <span>{{ rv['cons'] }}</span>
+                </div>
+                {% endif %}
+                {% if my_review and my_review['id'] == rv['id'] %}
+                <form method="post" action="/companies/{{ company['id'] }}/reviews/{{ rv['id'] }}/delete" class="mt-1">
+                    {{ csrf_input }}
+                    <button class="btn btn-link btn-sm text-danger p-0">삭제</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">등록된 리뷰가 없습니다.</p>
+        {% endif %}
+        {% if can_review and not my_review %}
+        <form method="post" action="/companies/{{ company['id'] }}/reviews" class="review-form mt-3">
+            {{ csrf_input }}
+            <div class="mb-2">
+                <label class="form-label small fw-bold mb-1">총 평점</label>
+                <select name="rating" class="form-select form-select-sm w-auto" required>
+                    <option value="">선택</option>
+                    <option value="5">★★★★★</option>
+                    <option value="4">★★★★☆</option>
+                    <option value="3">★★★☆☆</option>
+                    <option value="2">★★☆☆☆</option>
+                    <option value="1">★☆☆☆☆</option>
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small fw-bold mb-1">장점</label>
+                <textarea name="pros" class="form-control form-control-sm" rows="2" maxlength="300" placeholder="이 회사의 좋은 점을 알려주세요"></textarea>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small fw-bold mb-1">단점</label>
+                <textarea name="cons" class="form-control form-control-sm" rows="2" maxlength="300" placeholder="아쉬운 점이 있다면 알려주세요"></textarea>
+            </div>
+            <button class="btn btn-sm btn-primary">리뷰 등록</button>
+        </form>
+        {% elif can_review and my_review %}
+        <p class="text-muted small mt-2 mb-0">이미 리뷰를 작성하셨습니다.</p>
+        {% endif %}
+    </div>
 
     <!-- 채용 중인 공고 -->
     <div class="content-card mb-3">

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
-from core.candidacy import get_pipeline_display, get_stage_labels, get_stage_color_map
+from core.candidacy import apply_transition, get_pipeline_display, get_stage_labels, get_stage_color_map
 from core.notifications import create_notification
 from core.pagination import page_info, PER_PAGE
 
@@ -91,6 +91,35 @@ async def add_note(
     return RedirectResponse(
         url=f"/company/jobs/{job_id}/applicants/{candidacy_id}", status_code=303
     )
+
+
+@router.post("/applicants/bulk-status")
+async def applicants_all_bulk_status(
+    request: Request,
+    candidacy_ids: str = Form(...),
+    status: str = Form(...),
+    comment: str = Form(""),
+):
+    user = require_role(request, "company")
+    conn = get_sqlite()
+    try:
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+        if company:
+            ids = [int(x) for x in candidacy_ids.split(",") if x.strip().isdigit()]
+            for cid in ids:
+                # apply_transition 내부에서 company 소유 여부를 검증하지 않으므로
+                # job을 통해 소유 확인 후 처리
+                cand = conn.execute(
+                    """SELECT c.id FROM candidacies c
+                       JOIN job_postings jp ON c.job_id=jp.id
+                       WHERE c.id=? AND jp.company_id=?""",
+                    (cid, company["id"]),
+                ).fetchone()
+                if cand:
+                    apply_transition(conn, cid, status, user["id"], comment)
+    finally:
+        conn.close()
+    return RedirectResponse(url="/company/applicants", status_code=303)
 
 
 @router.get("/applicants", response_class=HTMLResponse)

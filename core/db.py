@@ -15,5 +15,6 @@ _DEFAULT_DB = os.path.join(
 def get_sqlite():
     path = os.getenv("RECRUIT_DB_PATH", _DEFAULT_DB)
     conn = sqlite3.connect(path)
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.row_factory = sqlite3.Row
     return conn

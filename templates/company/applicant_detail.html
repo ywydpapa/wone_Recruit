@@ -22,11 +22,16 @@
                         {% endif %}
 
                         {% if profile %}
+                        {% if disability_hidden %}
+                        <dt class="col-sm-4">장애 정보</dt>
+                        <dd class="col-sm-8 text-muted">비공개</dd>
+                        {% else %}
                         <dt class="col-sm-4">장애 유형</dt>
                         <dd class="col-sm-8">{{ profile['disability_name'] or '-' }}</dd>
 
                         <dt class="col-sm-4">장애 정도</dt>
                         <dd class="col-sm-8">{{ profile['severity'] or '-' }}</dd>
+                        {% endif %}
 
                         <dt class="col-sm-4">지역</dt>
                         <dd class="col-sm-8">{{ (profile['region_sido']|default('') ~ ' ' ~ profile['region_sigungu']|default(''))|trim or '-' }}</dd>
@@ -195,6 +200,7 @@
                     <form method="post"
                           action="/company/jobs/{{ job['id'] }}/applicants/{{ cand['id'] }}/interview"
                           class="row g-3">
+                        {{ csrf_input }}
                         <div class="col-md-3">
                             <label for="interview_date" class="form-label fw-semibold">날짜</label>
                             <input type="date" id="interview_date" name="interview_date"
@@ -244,6 +250,7 @@
                     <form method="post"
                           action="/company/jobs/{{ job['id'] }}/applicants/{{ cand['id'] }}/status"
                           class="row g-3">
+                        {{ csrf_input }}
                         <div class="col-md-4">
                             <label for="status" class="form-label fw-semibold">다음 단계</label>
                             <select id="status" name="status" class="form-select" required>
@@ -280,6 +287,7 @@
                     <form method="post"
                           action="/company/jobs/{{ job['id'] }}/applicants/{{ cand['id'] }}/note"
                           class="mb-3">
+                        {{ csrf_input }}
                         <div class="mb-2">
                             <label for="note_content" class="visually-hidden">메모 입력</label>
                             <textarea id="note_content" name="content" class="form-control" rows="2"
