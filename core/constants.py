@@ -26,10 +26,31 @@ COMMUTE_OPTIONS = [15, 30, 45, 60, 90, 120]
 
 COMMUNICATION_OPTIONS = ['음성', '문자', '수어', '필담']
 
-ASSISTIVE_TECH_OPTIONS = [
-    '스크린리더', '화면확대', '특수키보드', '음성인식',
-    '보청기', '점자디스플레이', '기타',
-]
+# 보조기기 (카테고리 -> [(이름, FA 아이콘)])
+ASSISTIVE_DEVICES = {
+    "시각": [
+        ("화면낭독기", "fa-display"),
+        ("화면확대기", "fa-magnifying-glass-plus"),
+        ("점자디스플레이", "fa-braille"),
+        ("독서확대기", "fa-book-open"),
+    ],
+    "청각": [
+        ("보청기", "fa-ear-listen"),
+        ("인공와우", "fa-circle-dot"),
+        ("영상전화기", "fa-video"),
+        ("진동알리미", "fa-bell"),
+    ],
+    "지체/뇌병변": [
+        ("특수키보드", "fa-keyboard"),
+        ("특수마우스", "fa-computer-mouse"),
+        ("음성인식입력", "fa-microphone"),
+        ("높이조절책상", "fa-table"),
+    ],
+    "언어": [
+        ("AAC기기", "fa-tablet-screen-button"),
+        ("의사소통보드", "fa-comment-dots"),
+    ],
+}
 
 DAILY_HOURS_OPTIONS = [4, 6, 8]
 
@@ -42,6 +63,26 @@ ACCOMMODATION_OPTIONS = [
     '수어통역', '점자자료', '유연근무', '재택근무',
     '활동보조인출입', '휴게공간', '주차지원',
 ]
+
+# 장애유형 -> 보조기기/지원도구 아이콘 (FA6 Free solid)
+DISABILITY_ICONS = {
+    "지체": "fa-keyboard",
+    "뇌병변": "fa-computer-mouse",
+    "시각": "fa-display",
+    "청각": "fa-ear-listen",
+    "언어": "fa-tablet-screen-button",
+    "안면": "fa-mask",
+    "신장": "fa-syringe",
+    "심장": "fa-stethoscope",
+    "간": "fa-pills",
+    "호흡기": "fa-mask-ventilator",
+    "장루·요루": "fa-briefcase-medical",
+    "뇌전증": "fa-id-card",
+    "지적": "fa-book-open-reader",
+    "자폐성": "fa-headphones",
+    "정신": "fa-comments",
+}
+
 EDUCATION_LEVELS_DETAIL = [
     '고등학교', '전문대(2/3년)', '대학교(4년)', '대학원(석사)', '대학원(박사)',
 ]

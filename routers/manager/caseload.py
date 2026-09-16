@@ -1,12 +1,14 @@
 import json
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
+from core.constants import DISABILITY_ICONS, ASSISTIVE_DEVICES
+from routers.manager.consultations import SESSION_TYPE_LABELS, METHOD_LABELS, CONSULT_STATUS_LABELS
 
 
 def _parse_json_list(val):
@@ -17,6 +19,28 @@ def _parse_json_list(val):
         return ', '.join(items) if items else '-'
     except (json.JSONDecodeError, TypeError):
         return val
+
+
+# 보조기기 이름 -> 아이콘 역매핑
+_DEVICE_ICON_MAP = {
+    name: icon
+    for devices in ASSISTIVE_DEVICES.values()
+    for name, icon in devices
+}
+
+MAX_DEVICE_ICONS = 4
+
+
+def _device_icons(assistive_tech_json):
+    if not assistive_tech_json:
+        return [], 0
+    try:
+        names = json.loads(assistive_tech_json)
+    except (json.JSONDecodeError, TypeError):
+        return [], 0
+    icons = [{"name": n, "icon": _DEVICE_ICON_MAP.get(n, "fa-circle-dot")} for n in names if n]
+    overflow = max(0, len(icons) - MAX_DEVICE_ICONS)
+    return icons[:MAX_DEVICE_ICONS], overflow
 
 
 router = APIRouter()
@@ -48,7 +72,7 @@ async def mgr_seekers(
         sql = (
             "SELECT u.id, u.name, u.username, "
             "sp.disability_type_id, dt.name AS disability_name, "
-            "sp.severity, sp.consent_sensitive, "
+            "sp.severity, sp.consent_sensitive, sp.assistive_tech, "
             "sp.mobility_type, sp.daily_work_hours, sp.work_pref, "
             "r.sido AS region_sido, r.sigungu AS region_sigungu "
             "FROM users u "
@@ -96,10 +120,15 @@ async def mgr_seekers(
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
-        seekers = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
     finally:
         conn.close()
+    seekers = []
+    for s in rows:
+        d = dict(s)
+        d["device_icons"], d["device_overflow"] = _device_icons(s["assistive_tech"])
+        seekers.append(d)
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
     if disability_type_id: qs_parts.append(f"disability_type_id={disability_type_id}")
@@ -110,7 +139,7 @@ async def mgr_seekers(
     return templates.TemplateResponse(
         request=request, name="manager/seekers.html", context={
             "request": request,
-            "page_title": f"담당 구직자 - {stage_label}" if stage_label else "내 담당 구직자",
+            "page_title": f"담당 구직자 - {stage_label}" if stage_label else "담당 구직자",
             "user_name": user["name"], "user_role": "manager",
             "seekers": seekers,
             "disability_types": disability_types,
@@ -120,6 +149,7 @@ async def mgr_seekers(
             "selected_sido": sido or "",
             "selected_stage": stage or "",
             "stage_label": stage_label,
+            "disability_icons": DISABILITY_ICONS,
             "pagination": pagination, "base_qs": "&".join(qs_parts),
         }
     )
@@ -141,7 +171,7 @@ async def mgr_seekers_unassigned(
         sql = (
             "SELECT u.id, u.name, u.username, "
             "sp.disability_type_id, dt.name AS disability_name, "
-            "sp.severity, sp.consent_sensitive, "
+            "sp.severity, sp.consent_sensitive, sp.assistive_tech, "
             "sp.mobility_type, sp.daily_work_hours, sp.work_pref, "
             "r.sido AS region_sido, r.sigungu AS region_sigungu "
             "FROM users u "
@@ -168,10 +198,15 @@ async def mgr_seekers_unassigned(
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
-        seekers = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
     finally:
         conn.close()
+    seekers = []
+    for s in rows:
+        d = dict(s)
+        d["device_icons"], d["device_overflow"] = _device_icons(s["assistive_tech"])
+        seekers.append(d)
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
     if disability_type_id: qs_parts.append(f"disability_type_id={disability_type_id}")
@@ -187,6 +222,7 @@ async def mgr_seekers_unassigned(
             "selected_disability": disability_type_id or "",
             "selected_severity": severity or "",
             "selected_sido": sido or "",
+            "disability_icons": DISABILITY_ICONS,
             "pagination": pagination, "base_qs": "&".join(qs_parts),
         }
     )
@@ -262,6 +298,13 @@ async def mgr_seeker_detail(request: Request, user_id: int):
                    ORDER BY c.created_at DESC""",
                 (user_id,),
             ).fetchall()
+        disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
+        selected_devices = []
+        if profile and profile["assistive_tech"]:
+            try:
+                selected_devices = json.loads(profile["assistive_tech"])
+            except (json.JSONDecodeError, TypeError):
+                pass
         # 열람 기록
         conn.execute(
             "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
@@ -276,13 +319,43 @@ async def mgr_seeker_detail(request: Request, user_id: int):
             "user_name": user["name"], "user_role": "manager",
             "seeker": seeker,
             "profile": profile,
+            "disability_types": disability_types,
+            "disability_icons": DISABILITY_ICONS,
+            "assistive_devices": ASSISTIVE_DEVICES,
+            "selected_devices": selected_devices,
             "certifications": certifications,
             "sessions": sessions,
+            "type_labels": SESSION_TYPE_LABELS,
+            "method_labels": METHOD_LABELS,
+            "consult_status_labels": CONSULT_STATUS_LABELS,
             "assessment": assessment,
             "candidacies": candidacies,
             "consent_given": consent_given,
             "communication_pref_display": _parse_json_list(profile["communication_pref"]) if profile else '-',
-            "assistive_tech_display": _parse_json_list(profile["assistive_tech"]) if profile else '-',
             "accommodation_needs_display": _parse_json_list(profile["accommodation_needs"]) if profile else '-',
         }
     )
+
+
+@router.post("/seekers/{user_id}/disability")
+async def mgr_update_disability(request: Request, user_id: int):
+    user = require_role(request, "manager")
+    form = await request.form()
+    disability_type_id = int(form.get("disability_type_id") or 0) or None
+    severity = form.get("severity", "경증")
+    assistive_tech = json.dumps(form.getlist("assistive_tech"), ensure_ascii=False)
+    conn = get_sqlite()
+    try:
+        profile = conn.execute(
+            "SELECT id FROM seeker_profiles WHERE user_id=?", (user_id,)
+        ).fetchone()
+        if not profile:
+            raise HTTPException(status_code=404)
+        conn.execute(
+            "UPDATE seeker_profiles SET disability_type_id=?, severity=?, assistive_tech=?, updated_at=datetime('now','localtime') WHERE user_id=?",
+            (disability_type_id, severity, assistive_tech, user_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url=f"/mgr/seekers/{user_id}", status_code=303)

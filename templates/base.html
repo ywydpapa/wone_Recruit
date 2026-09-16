@@ -114,6 +114,9 @@
         <a href="/mgr/seekers/unassigned" class="sidebar-link{% if request.url.path == '/mgr/seekers/unassigned' %} active{% endif %}">
             <i class="fas fa-user-plus"></i><span>미배정 구직자</span>
         </a>
+        <a href="/mgr/consultations" class="sidebar-link{% if request.url.path == '/mgr/consultations' %} active{% endif %}">
+            <i class="fas fa-calendar-check"></i><span>상담 관리</span>
+        </a>
 
         <div class="sidebar-section">매칭</div>
         <a href="/mgr/matching" class="sidebar-link{% if '/mgr/matching' in request.url.path %} active{% endif %}">

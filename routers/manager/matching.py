@@ -144,7 +144,12 @@ async def mgr_propose(
 
 
 @router.get("/candidacies", response_class=HTMLResponse)
-async def mgr_candidacies(request: Request, page: int = Query(1)):
+async def mgr_candidacies(
+    request: Request,
+    seeker_id: Optional[int] = Query(None),
+    status: Optional[str] = Query(None),
+    page: int = Query(1),
+):
     user = require_role(request, "manager")
     conn = get_sqlite()
     try:
@@ -156,24 +161,45 @@ async def mgr_candidacies(request: Request, page: int = Query(1)):
                JOIN users u ON c.seeker_user_id = u.id
                WHERE c.seeker_user_id IN (
                    SELECT seeker_user_id FROM manager_assignments WHERE manager_user_id = ?
-               )
-               ORDER BY c.created_at DESC"""
+               )"""
         params = [user["id"]]
+        if seeker_id:
+            sql += " AND c.seeker_user_id = ?"
+            params.append(seeker_id)
+        if status:
+            sql += " AND c.status = ?"
+            params.append(status)
+        sql += " ORDER BY c.created_at DESC"
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
         candidacies = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
+        # 필터 드롭다운용 담당 구직자 목록
+        seekers = conn.execute(
+            "SELECT u.id, u.name FROM users u "
+            "JOIN manager_assignments ma ON ma.seeker_user_id = u.id "
+            "WHERE ma.manager_user_id = ? ORDER BY u.name",
+            (user["id"],),
+        ).fetchall()
     finally:
         conn.close()
+    qs_parts = []
+    if seeker_id:
+        qs_parts.append(f"seeker_id={seeker_id}")
+    if status:
+        qs_parts.append(f"status={status}")
     return templates.TemplateResponse(
         request=request, name="manager/candidacies.html", context={
             "request": request, "page_title": "지원 현황",
             "user_name": user["name"], "user_role": "manager",
             "candidacies": candidacies,
+            "seekers": seekers,
+            "selected_seeker": seeker_id or "",
+            "selected_status": status or "",
             "status_labels": STATUS_LABELS,
             "match_stage_labels": MATCH_STAGE_LABELS,
-            "pagination": pagination, "base_qs": "",
+            "pagination": pagination, "base_qs": "&".join(qs_parts),
         }
     )
 

@@ -5,7 +5,7 @@
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">내 담당 배치 <span class="text-muted fs-6 fw-normal">({{ placements|length }}건)</span></h4>
+        <h4 class="fw-bold m-0">담당 구직자 배치 <span class="text-muted fs-6 fw-normal">({{ placements|length }}건)</span></h4>
     </div>
     <div class="content-card">
         {% if placements %}
@@ -25,7 +25,7 @@
                 <tbody>
                     {% for p in placements %}
                     {% set fs = followup_summary.get(p['id'], {}) %}
-                    <tr onclick="location.href='/mgr/placements/{{ p['id'] }}'" style="cursor:pointer">
+                    <tr onclick="location.href='/mgr/placements/{{ p['id'] }}'" class="row-link">
                         <td class="fw-semibold">{{ p['seeker_name'] }}</td>
                         <td>{{ p['disability_name'] or '-' }}</td>
                         <td>{{ p['company_name'] }}</td>

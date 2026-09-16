@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
+from routers.manager.consultations import SESSION_TYPE_LABELS, METHOD_LABELS
 
 router = APIRouter()
 
@@ -86,12 +87,21 @@ async def mgr_dashboard(request: Request):
             (uid,),
         ).fetchone()[0]
 
-        # 최근 상담 활동
+        # 예정 상담
+        upcoming_sessions = conn.execute(
+            """SELECT cs.*, u.name AS seeker_name
+               FROM consultation_sessions cs
+               JOIN users u ON cs.seeker_user_id = u.id
+               WHERE cs.manager_user_id=? AND cs.status='scheduled'
+               ORDER BY cs.scheduled_at ASC LIMIT 5""",
+            (uid,),
+        ).fetchall()
+        # 최근 완료 상담
         recent_sessions = conn.execute(
             """SELECT cs.*, u.name AS seeker_name
                FROM consultation_sessions cs
                JOIN users u ON cs.seeker_user_id = u.id
-               WHERE cs.manager_user_id=?
+               WHERE cs.manager_user_id=? AND cs.status != 'scheduled'
                ORDER BY cs.created_at DESC LIMIT 5""",
             (uid,),
         ).fetchall()
@@ -116,6 +126,9 @@ async def mgr_dashboard(request: Request):
             "unassigned_count": unassigned_count,
             "total_caseload": total_caseload,
             "pipeline": pipeline,
+            "upcoming_sessions": upcoming_sessions,
             "recent_sessions": recent_sessions,
+            "type_labels": SESSION_TYPE_LABELS,
+            "method_labels": METHOD_LABELS,
         }
     )

@@ -11,8 +11,7 @@ from core.upload import save_upload
 from core.constants import (
     EMPLOYMENT_TYPES, STATUS_LABELS,
     MOBILITY_TYPES, COMMUTE_OPTIONS,
-    COMMUNICATION_OPTIONS, ASSISTIVE_TECH_OPTIONS,
-    ACCOMMODATION_OPTIONS,
+    COMMUNICATION_OPTIONS, ACCOMMODATION_OPTIONS,
 )
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
@@ -28,7 +27,6 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
     conn = get_sqlite()
     try:
         profile = conn.execute("SELECT * FROM seeker_profiles WHERE user_id=?", (user["id"],)).fetchone()
-        disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
         cats_raw = conn.execute(
             "SELECT * FROM support_categories ORDER BY sort_order, id"
         ).fetchall()
@@ -53,7 +51,6 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
             if region_row:
                 selected_sido = region_row["sido"]
         communication_pref = json.loads(profile["communication_pref"]) if profile and profile["communication_pref"] else []
-        assistive_tech = json.loads(profile["assistive_tech"]) if profile and profile["assistive_tech"] else []
         accommodation_needs = json.loads(profile["accommodation_needs"]) if profile and profile["accommodation_needs"] else []
     finally:
         conn.close()
@@ -62,17 +59,15 @@ async def profile_form(request: Request, error: str = "", success: str = "", msg
             "request": request, "page_title": "내 프로필",
             "user_name": user["name"], "user_role": "seeker",
             "user": user,
-            "profile": profile, "disability_types": disability_types,
+            "profile": profile,
             "support_categories": support_categories,
             "selected_support_ids": selected_support_ids,
             "selected_sido": selected_sido,
             "communication_pref": communication_pref,
-            "assistive_tech": assistive_tech,
             "accommodation_needs": accommodation_needs,
             "mobility_types": MOBILITY_TYPES,
             "commute_options": COMMUTE_OPTIONS,
             "communication_options": COMMUNICATION_OPTIONS,
-            "assistive_tech_options": ASSISTIVE_TECH_OPTIONS,
             "accommodation_options": ACCOMMODATION_OPTIONS,
             "error": error, "success": success, "msg": msg,
         }
@@ -87,8 +82,6 @@ async def profile_save(request: Request):
     if not consent_sensitive:
         return RedirectResponse(url="/profile?error=consent", status_code=303)
 
-    disability_type_id = int(form.get("disability_type_id", 0))
-    severity = form.get("severity", "경증")
     gender = form.get("gender", "")
     birth_year = int(form.get("birth_year") or 0) or None
     region_id = int(form.get("region_id") or 0) or None
@@ -96,7 +89,6 @@ async def profile_save(request: Request):
     commute_max_minutes = int(form.get("commute_max_minutes") or 0) or None
     disability_visibility = form.get("disability_visibility", "manager_only")
     communication_pref = json.dumps(form.getlist("communication_pref"), ensure_ascii=False)
-    assistive_tech = json.dumps(form.getlist("assistive_tech"), ensure_ascii=False)
     daily_work_hours = int(form.get("daily_work_hours") or 8)
     preferred_time = form.get("preferred_time", "풀타임")
     rest_frequency = form.get("rest_frequency", "불필요")
@@ -127,9 +119,9 @@ async def profile_save(request: Request):
             resume_path = existing["resume_path"] or ""
         if existing:
             conn.execute("""UPDATE seeker_profiles SET
-                disability_type_id=?, severity=?, gender=?, birth_year=?, region_id=?,
+                gender=?, birth_year=?, region_id=?,
                 mobility_type=?, commute_max_minutes=?,
-                communication_pref=?, assistive_tech=?,
+                communication_pref=?,
                 daily_work_hours=?, preferred_time=?, rest_frequency=?, accommodation_needs=?,
                 education_level=?, school_name=?, major=?,
                 career_years=?, recent_company=?, recent_job_title=?, experience_summary=?,
@@ -138,9 +130,9 @@ async def profile_save(request: Request):
                 consented_at=datetime('now','localtime'),
                 updated_at=datetime('now','localtime')
                 WHERE user_id=?""",
-                (disability_type_id, severity, gender, birth_year, region_id,
+                (gender, birth_year, region_id,
                  mobility_type, commute_max_minutes,
-                 communication_pref, assistive_tech,
+                 communication_pref,
                  daily_work_hours, preferred_time, rest_frequency, accommodation_needs,
                  education_level, school_name, major,
                  career_years, recent_company, recent_job_title, experience_summary,
@@ -148,18 +140,18 @@ async def profile_save(request: Request):
                  disability_visibility, consent_sensitive, uid))
         else:
             conn.execute("""INSERT INTO seeker_profiles
-                (user_id, disability_type_id, severity, gender, birth_year, region_id,
+                (user_id, gender, birth_year, region_id,
                  mobility_type, commute_max_minutes,
-                 communication_pref, assistive_tech,
+                 communication_pref,
                  daily_work_hours, preferred_time, rest_frequency, accommodation_needs,
                  education_level, school_name, major,
                  career_years, recent_company, recent_job_title, experience_summary,
                  desired_job, work_pref, resume_path,
                  disability_visibility, consent_sensitive, consented_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))""",
-                (uid, disability_type_id, severity, gender, birth_year, region_id,
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))""",
+                (uid, gender, birth_year, region_id,
                  mobility_type, commute_max_minutes,
-                 communication_pref, assistive_tech,
+                 communication_pref,
                  daily_work_hours, preferred_time, rest_frequency, accommodation_needs,
                  education_level, school_name, major,
                  career_years, recent_company, recent_job_title, experience_summary,
@@ -394,10 +386,6 @@ async def apply_form(request: Request, job_id: int):
         if not profile["consent_sensitive"]:
             return RedirectResponse(url="/profile?error=consent", status_code=303)
         missing = []
-        if not profile["disability_type_id"]:
-            missing.append("장애유형")
-        if not profile["severity"]:
-            missing.append("장애정도")
         accommodation_needs = profile["accommodation_needs"]
         try:
             parsed_needs = json.loads(accommodation_needs) if accommodation_needs else []

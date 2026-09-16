@@ -643,6 +643,10 @@ def _ensure_db():
         ("placements", "end_date", "ALTER TABLE placements ADD COLUMN end_date TEXT"),
         ("company_reviews", "pros", "ALTER TABLE company_reviews ADD COLUMN pros TEXT NOT NULL DEFAULT ''"),
         ("company_reviews", "cons", "ALTER TABLE company_reviews ADD COLUMN cons TEXT NOT NULL DEFAULT ''"),
+        ("consultation_sessions", "scheduled_at", "ALTER TABLE consultation_sessions ADD COLUMN scheduled_at TEXT"),
+        ("consultation_sessions", "method", "ALTER TABLE consultation_sessions ADD COLUMN method TEXT NOT NULL DEFAULT 'in_person'"),
+        ("consultation_sessions", "location", "ALTER TABLE consultation_sessions ADD COLUMN location TEXT NOT NULL DEFAULT ''"),
+        ("consultation_sessions", "status", "ALTER TABLE consultation_sessions ADD COLUMN status TEXT NOT NULL DEFAULT 'completed'"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:

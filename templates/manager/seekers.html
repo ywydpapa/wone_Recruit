@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}내 담당 구직자 - WONE Recruit{% endblock %}
+{% block title %}담당 구직자 - WONE Recruit{% endblock %}
 {% block content %}
-<div class="page-header"><h2>{{ stage_label ~ ' 구직자' if stage_label else '내 담당 구직자' }}</h2></div>
+<div class="page-header"><h2>{{ stage_label ~ ' 구직자' if stage_label else '담당 구직자' }}</h2></div>
 
 {% if selected_stage %}
 <div class="mb-3">
@@ -74,9 +74,19 @@
                 </thead>
                 <tbody>
                     {% for s in seekers %}
-                    <tr onclick="location.href='/mgr/seekers/{{ s['id'] }}'" style="cursor:pointer">
+                    <tr onclick="location.href='/mgr/seekers/{{ s['id'] }}'" class="row-link">
                         <td class="fw-semibold">{{ s['name'] }}</td>
-                        <td>{{ s['disability_name'] or '-' }}</td>
+                        <td>
+                            {% if s['device_icons'] %}
+                            <span class="device-icon-row">
+                                {% for d in s['device_icons'] %}<i class="fas {{ d['icon'] }} me-1" title="{{ d['name'] }}"></i>{% endfor %}
+                                {% if s['device_overflow'] %}<span class="text-muted small">+{{ s['device_overflow'] }}</span>{% endif %}
+                            </span>
+                            {% elif s['disability_name'] %}
+                            <i class="fas {{ disability_icons.get(s['disability_name'], 'fa-user') }}" title="{{ s['disability_name'] }}"></i>
+                            <span class="ms-1">{{ s['disability_name'] }}</span>
+                            {% else %}-{% endif %}
+                        </td>
                         <td>
                             {% if s['severity'] == '중증' %}
                             <span class="badge bg-danger">중증</span>

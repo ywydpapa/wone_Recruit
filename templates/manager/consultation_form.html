@@ -6,6 +6,7 @@
 </div>
 
 <div class="container narrow-form">
+    {% if seeker %}
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="/mgr/seekers">구직자</a></li>
@@ -13,19 +14,62 @@
             <li class="breadcrumb-item active">{{ page_title }}</li>
         </ol>
     </nav>
+    {% endif %}
 
     <div class="content-card">
         <form method="post" action="{% if consultation %}/mgr/consultations/{{ consultation['id'] }}{% else %}/mgr/consultations{% endif %}">
             {{ csrf_input }}
-            <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
 
+            {% if seeker %}
+            <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
             <div class="mb-3">
-                <label for="session_type" class="form-label">상담 유형</label>
-                <select id="session_type" name="session_type" class="form-select" required>
-                    {% for key, label in session_types.items() %}
-                    <option value="{{ key }}" {% if consultation and consultation['session_type'] == key %}selected{% endif %}>{{ label }}</option>
+                <span class="form-label d-block">구직자</span>
+                <span class="fw-semibold">{{ seeker['name'] }}</span>
+            </div>
+            {% else %}
+            <div class="mb-3">
+                <label for="seeker_id" class="form-label">구직자</label>
+                <select id="seeker_id" name="seeker_id" class="form-select" required>
+                    <option value="">구직자 선택</option>
+                    {% for sk in seekers %}
+                    <option value="{{ sk['id'] }}" {% if preselect_seeker_id == sk['id'] %}selected{% endif %}>{{ sk['name'] }}</option>
                     {% endfor %}
                 </select>
+            </div>
+            {% endif %}
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="session_type" class="form-label">상담 유형</label>
+                    <select id="session_type" name="session_type" class="form-select" required>
+                        {% for key, label in session_types.items() %}
+                        <option value="{{ key }}" {% if consultation and consultation['session_type'] == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="method" class="form-label">상담 방식</label>
+                    <select id="method" name="method" class="form-select">
+                        {% for key, label in method_labels.items() %}
+                        <option value="{{ key }}" {% if consultation and consultation['method'] == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="scheduled_at" class="form-label">상담 일시</label>
+                    <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control"
+                           value="{{ consultation['scheduled_at'][:16] if consultation and consultation['scheduled_at'] else '' }}">
+                    <div class="form-text">비워두면 즉시 완료로 기록</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="location" class="form-label">장소 / 링크</label>
+                    <input type="text" id="location" name="location" class="form-control"
+                           placeholder="상담실, 전화번호, 화상회의 링크 등"
+                           value="{{ consultation['location'] if consultation else '' }}">
+                </div>
             </div>
 
             <div class="mb-3">
@@ -33,9 +77,16 @@
                 <textarea id="notes" name="notes" class="form-control" rows="10" placeholder="상담 내용을 입력하세요">{{ consultation['notes'] if consultation else '' }}</textarea>
             </div>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>저장</button>
+                {% if seeker %}
                 <a href="/mgr/seekers/{{ seeker['id'] }}" class="btn btn-outline-secondary">취소</a>
+                {% else %}
+                <a href="/mgr/consultations" class="btn btn-outline-secondary">취소</a>
+                {% endif %}
+                {% if consultation and consultation['status'] == 'completed' and seeker %}
+                <a href="/mgr/consultations/new?seeker_id={{ seeker['id'] }}" class="btn btn-outline-primary ms-auto">다음 상담 등록</a>
+                {% endif %}
             </div>
         </form>
     </div>

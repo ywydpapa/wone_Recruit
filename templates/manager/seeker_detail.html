@@ -20,19 +20,58 @@
         </button>
     </div>
     <div class="content-card">
+        <form method="post" action="/mgr/seekers/{{ seeker['id'] }}/disability" class="mb-3" id="disabilityForm">
+            {{ csrf_input }}
+            <div class="row g-2 align-items-end mb-3">
+                <div class="col-auto">
+                    <label for="disability_type_id" class="form-label small text-muted mb-0">장애유형</label>
+                    <select id="disability_type_id" name="disability_type_id" class="form-select form-select-sm">
+                        <option value="">-- 미지정 --</option>
+                        {% for dt in disability_types %}
+                        <option value="{{ dt['id'] }}" {% if profile['disability_type_id'] == dt['id'] %}selected{% endif %}>{{ dt['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small text-muted mb-0">중증도</label>
+                    <div class="d-flex gap-2 mt-1">
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="severity" id="sev_light" value="경증" {% if profile['severity'] != '중증' %}checked{% endif %}>
+                            <label class="form-check-label small" for="sev_light">경증</label>
+                        </div>
+                        <div class="form-check form-check-inline mb-0">
+                            <input class="form-check-input" type="radio" name="severity" id="sev_heavy" value="중증" {% if profile['severity'] == '중증' %}checked{% endif %}>
+                            <label class="form-check-label small" for="sev_heavy">중증</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <span class="form-label small text-muted">보조기기</span>
+            </div>
+            {% for cat, devices in assistive_devices.items() %}
+            <div class="mb-2">
+                <div class="device-cat-label">{{ cat }}</div>
+                <div class="device-grid">
+                    {% for name, icon in devices %}
+                    <input type="checkbox" class="device-check" name="assistive_tech" value="{{ name }}" id="dev_{{ loop.index }}_{{ cat }}"
+                        {% if name in selected_devices %}checked{% endif %}>
+                    <label class="device-item" for="dev_{{ loop.index }}_{{ cat }}">
+                        <i class="fas {{ icon }}"></i>
+                        <span>{{ name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            <div class="device-hint small text-muted mt-1 mb-3" id="deviceHint"></div>
+            <div>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>저장</button>
+            </div>
+        </form>
         <div class="row g-4">
             <div class="col-md-6">
                 <dl class="row mb-0 small">
-                    <dt class="col-5 text-muted">장애유형</dt>
-                    <dd class="col-7">{{ profile['disability_name'] or '-' }}</dd>
-                    <dt class="col-5 text-muted">중증도</dt>
-                    <dd class="col-7">
-                        {% if profile['severity'] == '중증' %}
-                        <span class="status-badge status-rejected">중증</span>
-                        {% elif profile['severity'] %}
-                        {{ profile['severity'] }}
-                        {% else %}-{% endif %}
-                    </dd>
                     <dt class="col-5 text-muted">지역</dt>
                     <dd class="col-7">{{ profile['region_sido'] or '-' }} {{ profile['region_sigungu'] or '' }}</dd>
                     <dt class="col-5 text-muted">근무형태</dt>
@@ -49,8 +88,6 @@
                     <dd class="col-7">{{ profile['desired_job'] or '-' }}</dd>
                     <dt class="col-5 text-muted">의사소통</dt>
                     <dd class="col-7">{{ communication_pref_display }}</dd>
-                    <dt class="col-5 text-muted">보조기기</dt>
-                    <dd class="col-7">{{ assistive_tech_display }}</dd>
                     <dt class="col-5 text-muted">편의시설</dt>
                     <dd class="col-7">{{ accommodation_needs_display }}</dd>
                 </dl>
@@ -86,7 +123,7 @@
     <div class="tab-pane fade show active" id="tab-timeline" role="tabpanel">
         <div class="d-flex justify-content-end mb-3">
             <a href="/mgr/consultations/new?seeker_id={{ seeker['id'] }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i>상담 기록 추가
+                <i class="fas fa-plus me-1"></i>상담 등록
             </a>
         </div>
         {% if sessions %}
@@ -94,12 +131,25 @@
         <div class="content-card mb-3">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    {% set type_labels = {'initial_assessment': '초기 평가', 'career_counseling': '진로 상담', 'interview_prep': '면접 준비', 'followup_call': '후속 통화', 'company_visit': '기업 방문', 'other': '기타'} %}
                     <span class="fw-semibold me-2">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
-                    <small class="text-muted">{{ s['created_at'][:10] }} &middot; {{ s['manager_name'] }}</small>
+                    <span class="badge bg-light text-dark">{{ method_labels.get(s['method'], '대면') }}</span>
+                    <span class="status-badge status-{{ s['status'] or 'completed' }} ms-1">{{ consult_status_labels.get(s['status'] or 'completed', s['status']) }}</span>
+                    <br>
+                    <small class="text-muted">
+                        {% if s['scheduled_at'] %}{{ s['scheduled_at'][:16] }}{% else %}{{ s['created_at'][:10] }}{% endif %}
+                        &middot; {{ s['manager_name'] }}
+                        {% if s['location'] %} &middot; {{ s['location'] }}{% endif %}
+                    </small>
                 </div>
-                <div>
-                    <a href="/mgr/consultations/{{ s['id'] }}/edit" class="btn btn-outline-secondary btn-sm me-1" title="수정"><i class="fas fa-edit"></i></a>
+                <div class="d-flex gap-1">
+                    {% if s['status'] == 'scheduled' %}
+                    <form method="post" action="/mgr/consultations/{{ s['id'] }}/complete" class="d-inline">
+                        {{ csrf_input }}
+                        <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
+                        <button type="submit" class="btn btn-success btn-sm" title="완료"><i class="fas fa-check"></i></button>
+                    </form>
+                    {% endif %}
+                    <a href="/mgr/consultations/{{ s['id'] }}/edit" class="btn btn-outline-secondary btn-sm" title="수정"><i class="fas fa-edit"></i></a>
                     <form method="post" action="/mgr/consultations/{{ s['id'] }}/delete" class="d-inline" onsubmit="return confirm('삭제하시겠습니까?')">
                         {{ csrf_input }}
                         <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
@@ -107,7 +157,7 @@
                     </form>
                 </div>
             </div>
-            <p class="mt-2 mb-0 text-prewrap">{{ s['notes'] }}</p>
+            {% if s['notes'] %}<p class="mt-2 mb-0 text-prewrap">{{ s['notes'] }}</p>{% endif %}
         </div>
         {% endfor %}
         {% else %}
@@ -187,6 +237,27 @@
 {% endblock %}
 {% block scripts %}
 <script>
+(function() {
+    var CAT_MAP = {
+        {% for cat, devices in assistive_devices.items() %}
+        {% for name, icon in devices %}"{{ name }}": "{{ cat }}",
+        {% endfor %}
+        {% endfor %}
+    };
+    function updateHint() {
+        var boxes = document.querySelectorAll('.device-check:checked');
+        var cats = new Set();
+        boxes.forEach(function(b) { if (CAT_MAP[b.value]) cats.add(CAT_MAP[b.value]); });
+        var hint = document.getElementById('deviceHint');
+        if (!hint) return;
+        hint.textContent = cats.size ? '선택 기기: ' + Array.from(cats).join(', ') + ' 관련' : '';
+    }
+    document.querySelectorAll('.device-check').forEach(function(b) {
+        b.addEventListener('change', updateHint);
+    });
+    updateHint();
+})();
+
 (function() {
     function setupLock(sectionId, btnId) {
         var section = document.getElementById(sectionId);

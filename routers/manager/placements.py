@@ -35,7 +35,7 @@ async def mgr_placements(request: Request, company: Optional[int] = Query(None))
             params.append(company)
         sql += " ORDER BY p.created_at DESC"
         placements = conn.execute(sql, params).fetchall()
-        # follow-up 요약
+        # 사후관리 요약
         followup_summary = {}
         for p in placements:
             row = conn.execute(

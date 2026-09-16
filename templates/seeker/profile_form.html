@@ -155,30 +155,6 @@
 
             <div {% if profile and not profile.consent_sensitive and profile.consent_withdrawn_at %}class="field-disabled"{% endif %}>
             <div class="mb-3">
-                <label for="disability_type_id" class="form-label fw-semibold">장애유형 <span class="text-muted fw-normal small"></span></label>
-                <select class="form-select" id="disability_type_id" name="disability_type_id">
-                    <option value="">-- 선택 --</option>
-                    {% for dt in disability_types %}
-                    <option value="{{ dt.id }}" {% if profile and profile.disability_type_id == dt.id %}selected{% endif %}>{{ dt.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <fieldset class="mb-3">
-                <legend class="form-label fw-semibold">장애정도</legend>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="severity" id="severity_light" value="경증"
-                        {% if not profile or profile.severity == '경증' %}checked{% endif %}>
-                    <label class="form-check-label" for="severity_light">경증</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="severity" id="severity_heavy" value="중증"
-                        {% if profile and profile.severity == '중증' %}checked{% endif %}>
-                    <label class="form-check-label" for="severity_heavy">중증</label>
-                </div>
-            </fieldset>
-
-            <div class="mb-3">
                 <label for="mobility_type" class="form-label fw-semibold">이동수단</label>
                 <select class="form-select" id="mobility_type" name="mobility_type">
                     <option value="">-- 선택 --</option>
@@ -208,18 +184,6 @@
                         id="comm_{{ loop.index }}"
                         {% if co in communication_pref %}checked{% endif %}>
                     <label class="form-check-label" for="comm_{{ loop.index }}">{{ co }}</label>
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-semibold">사용 중인 보조기기</label>
-                {% for at in assistive_tech_options %}
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="assistive_tech" value="{{ at }}"
-                        id="at_{{ loop.index }}"
-                        {% if at in assistive_tech %}checked{% endif %}>
-                    <label class="form-check-label" for="at_{{ loop.index }}">{{ at }}</label>
                 </div>
                 {% endfor %}
             </div>
@@ -279,7 +243,7 @@
                         민감정보 제공에 동의합니다.
                     </label>
                 </div>
-                <div class="form-text"> 회원님께서 제공해주신 민감정보는 취업 알선 목적으로만 사용됩니다. 언제든 동의를 철회하실 수 있습니다.</div>
+                <div class="form-text">상담 시 보다 정확한 직업 추천을 위해 상담 정보가 채용매니저에게 공개됩니다. 기업에는 공개되지 않습니다. 동의를 원치 않으시면 개인정보 관리에서 언제든 철회할 수 있습니다.</div>
             </div>
             {% endif %}
 

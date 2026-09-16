@@ -67,7 +67,17 @@
                     {% for s in seekers %}
                     <tr>
                         <td class="fw-semibold">{{ s['name'] }}</td>
-                        <td>{{ s['disability_name'] or '-' }}</td>
+                        <td>
+                            {% if s['device_icons'] %}
+                            <span class="device-icon-row">
+                                {% for d in s['device_icons'] %}<i class="fas {{ d['icon'] }} me-1" title="{{ d['name'] }}"></i>{% endfor %}
+                                {% if s['device_overflow'] %}<span class="text-muted small">+{{ s['device_overflow'] }}</span>{% endif %}
+                            </span>
+                            {% elif s['disability_name'] %}
+                            <i class="fas {{ disability_icons.get(s['disability_name'], 'fa-user') }}" title="{{ s['disability_name'] }}"></i>
+                            <span class="ms-1">{{ s['disability_name'] }}</span>
+                            {% else %}-{% endif %}
+                        </td>
                         <td>
                             {% if s['severity'] == '중증' %}
                             <span class="badge bg-danger">중증</span>

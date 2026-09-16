@@ -107,9 +107,15 @@ a.stat-card-link:hover .stat-card {
 .status-badge.status-hired,
 .status-badge.status-accepted { background-color: #e8f5e9; color: #2e7d32; }
 .status-badge.status-rejected { background-color: #fce4e4; color: #b71c1c; }
+.status-badge.status-scheduled { background-color: #e3f2fd; color: #1565c0; }
+.status-badge.status-completed { background-color: #e8f5e9; color: #2e7d32; }
+.status-badge.status-cancelled { background-color: #f5f5f5; color: #888; }
+.status-badge.status-no_show { background-color: #fce4e4; color: #b71c1c; }
 .status-badge.stage-proposed,
 .status-badge.stage-seeker_confirmed,
 .status-badge.stage-submitted { background-color: #f5f5f5; color: #555; }
+
+.truncate-cell { max-width: 160px; }
 
 /* 테이블 */
 .table-custom { margin-bottom: 0; }

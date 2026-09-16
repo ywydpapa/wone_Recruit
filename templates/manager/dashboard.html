@@ -54,13 +54,36 @@
         </div>
     </div>
 
+
+    <div class="content-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">예정 상담</h5>
+            <a href="/mgr/consultations?status=scheduled" class="btn btn-outline-secondary btn-sm">전체 보기</a>
+        </div>
+        {% if upcoming_sessions %}
+        <div class="list-group list-group-flush">
+            {% for s in upcoming_sessions %}
+            <a href="/mgr/consultations/{{ s['id'] }}/edit" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-semibold">{{ s['seeker_name'] }}</span>
+                    <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
+                    <span class="badge bg-light text-dark ms-1">{{ method_labels.get(s['method'], s['method']) }}</span>
+                </div>
+                <small class="text-muted">{{ s['scheduled_at'][:16] if s['scheduled_at'] else '-' }}</small>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">예정된 상담이 없습니다.</p>
+        {% endif %}
+    </div>
+
     <div class="content-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0">최근 상담</h5>
-            <a href="/mgr/seekers" class="btn btn-outline-secondary btn-sm">전체 보기</a>
+            <a href="/mgr/consultations" class="btn btn-outline-secondary btn-sm">전체 보기</a>
         </div>
         {% if recent_sessions %}
-        {% set type_labels = {'initial_assessment': '초기 평가', 'career_counseling': '진로 상담', 'interview_prep': '면접 준비', 'followup_call': '후속 통화', 'company_visit': '기업 방문', 'other': '기타'} %}
         <div class="list-group list-group-flush">
             {% for s in recent_sessions %}
             <a href="/mgr/seekers/{{ s['seeker_user_id'] }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">

@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}상담 관리 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>상담 관리</h2></div>
+
+<div class="container">
+    {% if view == 'list' and today_sessions %}
+    <div class="content-card mb-3">
+        <h6 class="fw-bold mb-2">오늘 예정</h6>
+        <div class="list-group list-group-flush">
+            {% for s in today_sessions %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="/mgr/consultations/{{ s['id'] }}/edit" class="text-decoration-none text-dark flex-grow-1">
+                    <span class="fw-semibold">{{ s['seeker_name'] }}</span>
+                    <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
+                    <span class="badge bg-light text-dark ms-1">{{ method_labels.get(s['method'], s['method']) }}</span>
+                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted">{{ s['scheduled_at'][11:16] if s['scheduled_at'] else '-' }}</small>
+                    <form method="post" action="/mgr/consultations/{{ s['id'] }}/complete" class="d-inline">
+                        {{ csrf_input }}
+                        <input type="hidden" name="seeker_id" value="{{ s['seeker_user_id'] }}">
+                        <input type="hidden" name="redirect" value="/mgr/consultations">
+                        <button type="submit" class="btn btn-success btn-sm">완료</button>
+                    </form>
+                    <form method="post" action="/mgr/consultations/{{ s['id'] }}/no_show" class="d-inline">
+                        {{ csrf_input }}
+                        <input type="hidden" name="seeker_id" value="{{ s['seeker_user_id'] }}">
+                        <input type="hidden" name="redirect" value="/mgr/consultations">
+                        <button type="submit" class="btn btn-outline-warning btn-sm">노쇼</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="get" action="/mgr/consultations" class="filter-bar mb-2">
+        <input type="hidden" name="view" value="{{ view }}">
+        {% if selected_status %}<input type="hidden" name="status" value="{{ selected_status }}">{% endif %}
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <select name="seeker_id" class="form-select form-select-sm">
+                    <option value="">구직자 전체</option>
+                    {% for s in seekers %}
+                    <option value="{{ s['id'] }}" {% if selected_seeker == s['id'] %}selected{% endif %}>{{ s['name'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary btn-sm">조회</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <ul class="nav nav-tabs mb-0 border-0 flex-grow-1">
+            <li class="nav-item">
+                <a class="nav-link{% if selected_status == '' %} active{% endif %}"
+                   href="/mgr/consultations?view={{ view }}{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}">전체</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link{% if selected_status == 'scheduled' %} active{% endif %}"
+                   href="/mgr/consultations?view={{ view }}&status=scheduled{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}">예정</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link{% if selected_status == 'completed' %} active{% endif %}"
+                   href="/mgr/consultations?view={{ view }}&status=completed{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}">완료</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link{% if selected_status == 'cancelled' %} active{% endif %}"
+                   href="/mgr/consultations?view={{ view }}&status=cancelled{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}">취소</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link{% if selected_status == 'no_show' %} active{% endif %}"
+                   href="/mgr/consultations?view={{ view }}&status=no_show{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}">노쇼</a>
+            </li>
+        </ul>
+        <div class="cal-toggle ms-2">
+            <a href="/mgr/consultations?view=list{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}"
+               class="cal-toggle-btn{% if view == 'list' %} active{% endif %}">
+                <i class="fas fa-list"></i>
+            </a>
+            <a href="/mgr/consultations?view=calendar{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}"
+               class="cal-toggle-btn{% if view == 'calendar' %} active{% endif %}">
+                <i class="fas fa-calendar-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {% if view == 'calendar' %}
+    <div class="content-card">
+        <div class="cal-nav">
+            <a href="/mgr/consultations?view=calendar&year={{ prev_year }}&month={{ prev_month }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}" class="cal-nav-btn">&laquo;</a>
+            <span class="cal-month-title">{{ cal_year }}년 {{ cal_month }}월</span>
+            <a href="/mgr/consultations?view=calendar&year={{ next_year }}&month={{ next_month }}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}" class="cal-nav-btn">&raquo;</a>
+            {% if cal_year != today_year or cal_month != today_month %}
+            <a href="/mgr/consultations?view=calendar{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_seeker %}&seeker_id={{ selected_seeker }}{% endif %}" class="cal-today-link">오늘</a>
+            {% endif %}
+        </div>
+        <div class="cal-grid">
+            <div class="cal-dow">일</div>
+            <div class="cal-dow">월</div>
+            <div class="cal-dow">화</div>
+            <div class="cal-dow">수</div>
+            <div class="cal-dow">목</div>
+            <div class="cal-dow">금</div>
+            <div class="cal-dow">토</div>
+            {% for week in weeks %}
+            {% for day in week %}
+            <div class="cal-cell{% if not day['in_month'] %} cal-out{% endif %}{% if day['is_today'] %} cal-today{% endif %}">
+                <div class="cal-date">{{ day['date'].day }}</div>
+                {% for cs in day['sessions'] %}
+                <a href="/mgr/consultations/{{ cs['id'] }}/edit" class="cal-entry cal-entry-{{ cs['status'] }}">
+                    {{ cs['time'] }} {{ cs['seeker_name'] }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="content-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">{{ pagination.total }}건</span>
+            <a href="/mgr/consultations/new" class="btn btn-primary btn-sm">새 상담 등록</a>
+        </div>
+        {% if sessions %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>구직자</th>
+                        <th>유형</th>
+                        <th>방식</th>
+                        <th>일시</th>
+                        <th>장소</th>
+                        <th>상태</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/mgr/seekers/{{ s['seeker_user_id'] }}">{{ s['seeker_name'] }}</a></td>
+                        <td>{{ type_labels.get(s['session_type'], s['session_type']) }}</td>
+                        <td>{{ method_labels.get(s['method'], s['method']) }}</td>
+                        <td class="small{% if s['overdue'] %} text-danger{% endif %}">
+                            {{ s['scheduled_at'][:16] if s['scheduled_at'] else s['created_at'][:10] }}
+                            {% if s['overdue'] %}<span class="badge bg-light text-danger ms-1">지연</span>{% endif %}
+                        </td>
+                        <td class="small text-truncate truncate-cell">{{ s['location'] or '-' }}</td>
+                        <td><span class="status-badge status-{{ s['status'] }}">{{ status_labels.get(s['status'], s['status']) }}</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                {% if s['status'] == 'scheduled' %}
+                                <form method="post" action="/mgr/consultations/{{ s['id'] }}/complete" class="d-inline">
+                                    {{ csrf_input }}
+                                    <input type="hidden" name="seeker_id" value="{{ s['seeker_user_id'] }}">
+                                    <input type="hidden" name="redirect" value="/mgr/consultations{% if base_qs %}?{{ base_qs }}{% endif %}">
+                                    <button type="submit" class="btn btn-success btn-sm">완료</button>
+                                </form>
+                                <form method="post" action="/mgr/consultations/{{ s['id'] }}/no_show" class="d-inline">
+                                    {{ csrf_input }}
+                                    <input type="hidden" name="seeker_id" value="{{ s['seeker_user_id'] }}">
+                                    <input type="hidden" name="redirect" value="/mgr/consultations{% if base_qs %}?{{ base_qs }}{% endif %}">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm">노쇼</button>
+                                </form>
+                                <form method="post" action="/mgr/consultations/{{ s['id'] }}/cancel" class="d-inline">
+                                    {{ csrf_input }}
+                                    <input type="hidden" name="seeker_id" value="{{ s['seeker_user_id'] }}">
+                                    <input type="hidden" name="redirect" value="/mgr/consultations{% if base_qs %}?{{ base_qs }}{% endif %}">
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">취소</button>
+                                </form>
+                                {% endif %}
+                                {% if s['status'] == 'completed' %}
+                                <a href="/mgr/consultations/new?seeker_id={{ s['seeker_user_id'] }}" class="btn btn-outline-primary btn-sm">다음 상담 등록</a>
+                                {% endif %}
+                                <a href="/mgr/consultations/{{ s['id'] }}/edit" class="btn btn-outline-secondary btn-sm">수정</a>
+                                <form method="post" action="/mgr/consultations/{{ s['id'] }}/delete" class="d-inline" onsubmit="return confirm('삭제하시겠습니까?')">
+                                    {{ csrf_input }}
+                                    <input type="hidden" name="seeker_id" value="{{ s['seeker_user_id'] }}">
+                                    <input type="hidden" name="redirect" value="/mgr/consultations{% if base_qs %}?{{ base_qs }}{% endif %}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">삭제</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">상담 내역이 없습니다.</p>
+        {% endif %}
+    </div>
+    {% if sessions %}
+    {% include "common/pagination.html" %}
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

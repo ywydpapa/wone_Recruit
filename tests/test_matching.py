@@ -64,7 +64,7 @@ def test_build_capability_profile_worst_case(client):
         conn.commit()
         from core.matching import build_capability_profile
         profile = build_capability_profile(conn, uid)
-        assert profile["visual_acuity"] == "no"  # no > limit
+        assert profile["visual_acuity"] == "no"  # 우선순위: no > limit
         assert profile["screen_use"] == "at"
     finally:
         conn.close()
