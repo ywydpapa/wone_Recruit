@@ -263,24 +263,87 @@
     <fieldset class="form-section">
         <legend><i class="fas fa-gift"></i>복리후생</legend>
         <div class="form-section-body">
-
-                    <div class="mb-3">
-                        <label for="benefits" class="form-label fw-semibold">복리후생</label>
-                        <textarea class="form-control" id="benefits" name="benefits" rows="3"
-                            placeholder="예: 4대보험, 유연근무제, 재택근무, 자기개발비">{{ company.benefits if company else '' }}</textarea>
+            <div class="row g-2">
+                {% for opt in benefit_options %}
+                <div class="col-md-4 col-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                            name="benefits" value="{{ opt }}"
+                            id="ben_{{ loop.index }}"
+                            {{ 'checked' if opt in selected_benefits else '' }}>
+                        <label class="form-check-label" for="ben_{{ loop.index }}">{{ opt }}</label>
                     </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </fieldset>
 
     <fieldset class="form-section">
         <legend><i class="fas fa-info-circle"></i>기업 소개</legend>
         <div class="form-section-body">
+            <div class="mb-3">
+                <label for="tagline" class="form-label fw-semibold">한줄 소개</label>
+                <input type="text" class="form-control" id="tagline" name="tagline"
+                    maxlength="20"
+                    value="{{ company.tagline if company else '' }}"
+                    placeholder="예: 장애인과 함께 성장하는 IT 기업">
+                <div class="form-text">최대 20자</div>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label fw-semibold">기업 소개</label>
+                <textarea class="form-control" id="description" name="description" rows="5"
+                    maxlength="500"
+                    placeholder="기업 소개를 작성해 주세요.">{{ company.description if company else '' }}</textarea>
+                <div class="form-text">최대 500자</div>
+            </div>
+            <div class="mb-3">
+                <label for="intro" class="form-label fw-semibold">추가 안내</label>
+                <textarea class="form-control" id="intro" name="intro" rows="3"
+                    placeholder="지원자에게 전달할 추가 안내사항">{{ company.intro if company else '' }}</textarea>
+            </div>
+        </div>
+    </fieldset>
 
-                    <div class="mb-3">
-                        <label for="intro" class="form-label fw-semibold">기업 소개</label>
-                        <textarea class="form-control" id="intro" name="intro" rows="4"
-                            placeholder="기업 소개를 작성해 주세요.">{{ company.intro if company else '' }}</textarea>
+    <fieldset class="form-section">
+        <legend><i class="fas fa-images"></i>근무환경 사진</legend>
+        <div class="form-section-body">
+            {% if photos %}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">등록된 사진</label>
+                <div class="row g-3">
+                    {% for photo in photos %}
+                    <div class="col-md-3 col-6">
+                        <div class="photo-item">
+                            <img src="{{ photo.file_path }}" alt="근무환경 사진" class="photo-thumb">
+                            <div class="mt-1 small text-muted">{{ photo.caption }}</div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                    name="delete_photo" value="{{ photo.id }}"
+                                    id="del_photo_{{ photo.id }}">
+                                <label class="form-check-label text-danger small" for="del_photo_{{ photo.id }}">삭제</label>
+                            </div>
+                        </div>
                     </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% set remaining = 4 - photos|length %}
+            {% if remaining > 0 %}
+            <div class="mb-1">
+                <label class="form-label fw-semibold">사진 추가 <span class="text-muted fw-normal">(최대 {{ remaining }}장 추가 가능, JPEG/PNG/WebP, 5MB 이하)</span></label>
+            </div>
+            {% for i in range(remaining) %}
+            <div class="mb-3 photo-upload-row">
+                <input type="file" class="form-control mb-1" name="photos"
+                    accept="image/jpeg,image/png,image/webp">
+                <input type="text" class="form-control form-control-sm" name="photo_caption"
+                    placeholder="사진 설명 (선택)" maxlength="50">
+            </div>
+            {% endfor %}
+            {% endif %}
         </div>
     </fieldset>
 

@@ -30,7 +30,7 @@ async def job_detail(request: Request, job_id: int):
             (job_id, company["id"]),
         ).fetchone()
         applicant_count = conn.execute(
-            "SELECT COUNT(*) AS cnt FROM applications WHERE job_id=?", (job_id,)
+            "SELECT COUNT(*) AS cnt FROM candidacies WHERE job_id=?", (job_id,)
         ).fetchone()["cnt"]
     finally:
         conn.close()

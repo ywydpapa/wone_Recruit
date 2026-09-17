@@ -24,6 +24,24 @@ async def job_list(
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
         approval = company["approval_status"]
+
+        # 탭별 카운트 (검색어 조건 반영, 상태 필터는 제외)
+        tab_count_params = [company["id"]]
+        tab_count_where = "jp.company_id=?"
+        if q and q.strip():
+            tab_count_where += " AND jp.title LIKE ?"
+            tab_count_params.append(f"%{q.strip()}%")
+        tab_rows = conn.execute(
+            f"SELECT status, COUNT(*) AS cnt FROM job_postings jp WHERE {tab_count_where} GROUP BY status",
+            tab_count_params,
+        ).fetchall()
+        tab_counts = {r["status"]: r["cnt"] for r in tab_rows}
+        tab_counts["all"] = sum(tab_counts.values())
+        tab_counts.setdefault("open", 0)
+        tab_counts.setdefault("pending_review", 0)
+        tab_counts.setdefault("draft", 0)
+        tab_counts.setdefault("closed", 0)
+
         where = ["jp.company_id=?"]
         params = [company["id"]]
         if q and q.strip():
@@ -32,10 +50,23 @@ async def job_list(
         if status and status in ("open", "draft", "closed", "filled", "pending_review", "rejected"):
             where.append("jp.status=?")
             params.append(status)
+
         sql = f"""SELECT jp.*, r.sido AS region_sido, r.sigungu AS region_sigungu,
                       (SELECT COUNT(*) FROM candidacies c2
                        WHERE c2.job_id=jp.id
-                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS applicant_count
+                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS applicant_count,
+                      (SELECT COUNT(*) FROM candidacies c2
+                       WHERE c2.job_id=jp.id AND c2.status='pending'
+                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS cnt_unread,
+                      (SELECT COUNT(*) FROM candidacies c2
+                       WHERE c2.job_id=jp.id AND c2.status='reviewing'
+                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS cnt_read,
+                      (SELECT COUNT(*) FROM candidacies c2
+                       WHERE c2.job_id=jp.id AND c2.status='shortlisted'
+                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS cnt_pass,
+                      (SELECT COUNT(*) FROM candidacies c2
+                       WHERE c2.job_id=jp.id AND c2.status='hired'
+                         AND (c2.source='direct' OR c2.match_stage='submitted')) AS cnt_final
                FROM job_postings jp
                LEFT JOIN regions r ON jp.region_id = r.id
                WHERE {' AND '.join(where)} ORDER BY jp.created_at DESC"""
@@ -58,7 +89,7 @@ async def job_list(
             "user_name": user["name"], "user_role": "company",
             "jobs": jobs, "q": q or "", "selected_status": status or "",
             "pagination": pagination, "base_qs": base_qs,
-            "approval": approval,
+            "approval": approval, "tab_counts": tab_counts,
         }
     )
 
@@ -211,6 +242,33 @@ async def job_status_change(
         conn.execute(
             "UPDATE job_postings SET status=? WHERE id=? AND company_id=?",
             (set_status, job_id, company["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url="/company/jobs", status_code=303)
+
+
+@router.post("/jobs/{job_id}/extend")
+async def job_extend(
+    request: Request,
+    job_id: int,
+    deadline: str = Form(...),
+):
+    user = require_role(request, "company")
+    conn = get_sqlite()
+    try:
+        company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+        if not company:
+            return RedirectResponse(url="/company/profile", status_code=303)
+        job = conn.execute(
+            "SELECT * FROM job_postings WHERE id=? AND company_id=?", (job_id, company["id"])
+        ).fetchone()
+        if not job or job["status"] != "closed":
+            return RedirectResponse(url="/company/jobs", status_code=303)
+        conn.execute(
+            "UPDATE job_postings SET status='pending_review', deadline=? WHERE id=? AND company_id=?",
+            (deadline, job_id, company["id"]),
         )
         conn.commit()
     finally:

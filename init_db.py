@@ -18,7 +18,7 @@ def init():
               "resume_educations", "resume_careers", "resume_certifications", "resume_languages",
               "resume_awards", "resume_portfolios", "resume_intros", "resumes",
               "consultations", "job_categories", "access_log", "placements", "status_history", "candidacies",
-              "job_postings", "seeker_profiles", "companies",
+              "job_postings", "seeker_profiles", "company_photos", "companies",
               "regions", "levy_rates", "disability_types", "users",
               "job_applications"):
         conn.execute(f"DROP TABLE IF EXISTS {t}")
@@ -300,7 +300,16 @@ def init():
         approval_status TEXT NOT NULL DEFAULT 'pending',
         biz_doc_path TEXT NOT NULL DEFAULT '',
         rejection_reason TEXT NOT NULL DEFAULT '',
+        tagline TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
         updated_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE TABLE IF NOT EXISTS company_photos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER NOT NULL REFERENCES companies(id),
+        file_path TEXT NOT NULL,
+        caption TEXT NOT NULL DEFAULT '',
+        sort_order INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS job_categories (
         id                  INTEGER PRIMARY KEY AUTOINCREMENT,

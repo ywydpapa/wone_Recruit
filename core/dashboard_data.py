@@ -1,3 +1,6 @@
+import json
+
+
 def calc_profile_completeness(conn, uid):
     profile = conn.execute(
         "SELECT * FROM seeker_profiles WHERE user_id=?", (uid,)
@@ -29,7 +32,6 @@ def calc_profile_completeness(conn, uid):
     for field, label in required_fields.items():
         val = profile[field]
         if field == "accommodation_needs":
-            import json
             try:
                 parsed = json.loads(val) if val else []
             except (json.JSONDecodeError, TypeError):
@@ -57,7 +59,6 @@ def calc_profile_completeness(conn, uid):
 
 
 def get_recommended_jobs(conn, uid, limit=5):
-    import json
 
     profile = conn.execute(
         "SELECT sp.disability_type_id, sp.accommodation_needs, dt.name as disability_name "
@@ -126,7 +127,6 @@ def get_recommended_jobs(conn, uid, limit=5):
 
 
 def _count_new_alert_jobs(conn, uid):
-    import json
     searches = conn.execute(
         "SELECT filters, last_checked_at, created_at FROM saved_searches WHERE user_id=?",
         (uid,),
@@ -264,13 +264,33 @@ def get_company_dashboard(conn, uid):
             WHERE jp.company_id=? AND c.status='hired' {_filter}
         """, (cid,)).fetchone()[0]
         placement_count = conn.execute(
-            "SELECT COUNT(*) FROM placements WHERE company_id=? AND (end_date IS NULL OR end_date='')", (cid,)
+            "SELECT COUNT(*) FROM placements WHERE company_id=? AND status='active'", (cid,)
         ).fetchone()[0]
         interview_count = conn.execute(f"""
             SELECT COUNT(*) FROM candidacies c
             JOIN job_postings jp ON c.job_id=jp.id
             WHERE jp.company_id=? AND c.status='interview' {_filter}
         """, (cid,)).fetchone()[0]
+
+        unread_count = conn.execute(f"""
+            SELECT COUNT(*) FROM candidacies c
+            JOIN job_postings jp ON c.job_id=jp.id
+            WHERE jp.company_id=? AND c.status='pending' {_filter}
+        """, (cid,)).fetchone()[0]
+
+        upcoming_interviews = conn.execute(f"""
+            SELECT isc.interview_date, isc.interview_time, isc.interview_type,
+                   u.name as seeker_name, jp.title as job_title,
+                   c.id as candidacy_id, jp.id as job_id
+            FROM interview_schedules isc
+            JOIN candidacies c ON isc.candidacy_id=c.id
+            JOIN job_postings jp ON c.job_id=jp.id
+            JOIN users u ON c.seeker_user_id=u.id
+            WHERE jp.company_id=? {_filter}
+              AND isc.interview_date >= date('now','localtime')
+              AND isc.interview_date <= date('now','localtime','+7 days')
+            ORDER BY isc.interview_date, isc.interview_time
+        """, (cid,)).fetchall()
 
         pipeline_rows = conn.execute(f"""
             SELECT c.status, COUNT(*) as cnt FROM candidacies c
@@ -331,7 +351,8 @@ def get_company_dashboard(conn, uid):
                     pipeline_stages=pipeline_stages, status_labels=stage_labels,
                     stage_colors=stage_colors,
                     weekly_trend=weekly_trend, conversion_rate=conversion_rate,
-                    avg_days_to_hire=avg_days_to_hire, jobs_closing_soon=jobs_closing_soon)
+                    avg_days_to_hire=avg_days_to_hire, jobs_closing_soon=jobs_closing_soon,
+                    unread_count=unread_count, upcoming_interviews=upcoming_interviews)
     else:
         return dict(company=None, job_count=0, open_count=0,
                     total_applicants=0, pending_apps=0, new_apps_this_week=0,
@@ -339,7 +360,8 @@ def get_company_dashboard(conn, uid):
                     interview_count=0, pipeline={},
                     recent_apps=[], pipeline_stages=[], status_labels={},
                     stage_colors={}, weekly_trend=[], conversion_rate=0,
-                    avg_days_to_hire=None, jobs_closing_soon=0)
+                    avg_days_to_hire=None, jobs_closing_soon=0,
+                    unread_count=0, upcoming_interviews=[])
 
 
 def get_operator_dashboard(conn):

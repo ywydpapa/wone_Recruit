@@ -18,19 +18,45 @@
 </div>
 {% endif %}
 
-<form method="get" action="/company/jobs" class="d-flex gap-2 mb-3">
+<!-- 검색 -->
+<form method="get" action="/company/jobs" class="d-flex gap-2 mb-3" id="job-search-form">
     <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="공고 제목 검색">
-    <select name="status" class="form-select w-auto">
-        <option value="">전체 상태</option>
-        <option value="open" {% if selected_status == 'open' %}selected{% endif %}>공개</option>
-        <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>임시저장</option>
-        <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>마감</option>
-        <option value="filled" {% if selected_status == 'filled' %}selected{% endif %}>채용완료</option>
-        <option value="pending_review" {% if selected_status == 'pending_review' %}selected{% endif %}>검토 중</option>
-        <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>반려</option>
-    </select>
     <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
 </form>
+
+<!-- 상태 탭 -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if not selected_status %}active{% endif %}"
+           href="/company/jobs{% if q %}?q={{ q }}{% endif %}">
+            전체 <span class="badge bg-secondary">{{ tab_counts['all'] }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if selected_status == 'open' %}active{% endif %}"
+           href="/company/jobs?status=open{% if q %}&q={{ q }}{% endif %}">
+            진행중 <span class="badge bg-secondary">{{ tab_counts['open'] }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if selected_status == 'pending_review' %}active{% endif %}"
+           href="/company/jobs?status=pending_review{% if q %}&q={{ q }}{% endif %}">
+            심사중 <span class="badge bg-secondary">{{ tab_counts['pending_review'] }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if selected_status == 'draft' %}active{% endif %}"
+           href="/company/jobs?status=draft{% if q %}&q={{ q }}{% endif %}">
+            임시저장 <span class="badge bg-secondary">{{ tab_counts['draft'] }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if selected_status == 'closed' %}active{% endif %}"
+           href="/company/jobs?status=closed{% if q %}&q={{ q }}{% endif %}">
+            마감 <span class="badge bg-secondary">{{ tab_counts['closed'] }}</span>
+        </a>
+    </li>
+</ul>
 
 <div class="content-card">
     {% if jobs %}
@@ -58,6 +84,14 @@
                     <a href="/company/jobs/{{ job['id'] }}/applicants" class="text-decoration-none">
                         {{ job['applicant_count'] }}명
                     </a>
+                    {% if job['applicant_count'] > 0 %}
+                    <div class="applicant-status-breakdown">
+                        {% if job['cnt_unread'] %}<span class="appl-stat unread">미열람 {{ job['cnt_unread'] }}</span>{% endif %}
+                        {% if job['cnt_read'] %}<span class="appl-stat read">열람 {{ job['cnt_read'] }}</span>{% endif %}
+                        {% if job['cnt_pass'] %}<span class="appl-stat pass">서류합격 {{ job['cnt_pass'] }}</span>{% endif %}
+                        {% if job['cnt_final'] %}<span class="appl-stat final">최종합격 {{ job['cnt_final'] }}</span>{% endif %}
+                    </div>
+                    {% endif %}
                 </td>
                 <td>
                     {% set s = job['status'] %}
@@ -89,6 +123,12 @@
                             {{ csrf_input }}
                             <button type="submit" class="btn btn-sm btn-outline-success">복사</button>
                         </form>
+                        {% if job['status'] == 'closed' %}
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-job-id="{{ job['id'] }}"
+                                data-job-title="{{ job['title'] }}"
+                                onclick="openExtendModal(this)">연장</button>
+                        {% endif %}
                         <form method="post" action="/company/jobs/{{ job['id'] }}/status" class="d-inline">
                             {{ csrf_input }}
                             <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()" aria-label="상태 변경">
@@ -119,4 +159,56 @@
     </div>
     {% endif %}
 </div>
+
+<!-- 공고 연장 모달 -->
+<div class="modal fade" id="extendModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">공고 연장</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="extend-form" method="post">
+                {{ csrf_input }}
+                <div class="modal-body">
+                    <p class="extend-job-title mb-3"></p>
+                    <label class="form-label">새 마감일</label>
+                    <input type="date" name="deadline" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary btn-sm">연장 신청</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* 지원자 상태 분류 */
+.applicant-status-breakdown { margin-top: 3px; display: flex; gap: 4px; flex-wrap: wrap; }
+.appl-stat { font-size: 0.7rem; padding: 1px 5px; border-radius: 3px; }
+.appl-stat.unread { background: #fff3cd; color: #856404; }
+.appl-stat.read { background: #e2e3e5; color: #41464b; }
+.appl-stat.pass { background: #cfe2ff; color: #084298; }
+.appl-stat.final { background: #d1e7dd; color: #0a3622; }
+.extend-job-title { font-weight: 600; font-size: 0.9rem; word-break: break-word; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openExtendModal(btn) {
+    var jobId = btn.dataset.jobId;
+    var title = btn.dataset.jobTitle;
+    var modal = document.getElementById('extendModal');
+    modal.querySelector('.extend-job-title').textContent = title;
+    document.getElementById('extend-form').action = '/company/jobs/' + jobId + '/extend';
+    var today = new Date().toISOString().slice(0, 10);
+    modal.querySelector('input[name="deadline"]').min = today;
+    new bootstrap.Modal(modal).show();
+}
+</script>
 {% endblock %}

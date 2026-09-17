@@ -581,6 +581,10 @@ a.stat-card-link:hover .stat-card {
     padding: 20px;
 }
 
+/* 기업 사진 */
+.photo-item { text-align: center; }
+.photo-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+
 /* 페이지 헤더 */
 .page-header {
     margin-bottom: 20px;

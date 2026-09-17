@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block styles %}
+<style>
+/* 채용 보고서 */
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+.report-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.report-card {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+}
+.report-card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    margin-bottom: 1rem;
+}
+.report-chart-wrap {
+    position: relative;
+    height: 220px;
+}
+.report-chart-wrap-line {
+    position: relative;
+    height: 220px;
+}
+@media (max-width: 768px) {
+    .report-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="report-header">
+    <a href="/company/jobs/{{ job['id'] }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>공고 상세
+    </a>
+    <h5 class="mb-0 fw-semibold">{{ job['title'] }} - 채용 보고서</h5>
+    <a href="/company/jobs/{{ job['id'] }}/applicants" class="btn btn-sm btn-outline-primary">
+        지원자 목록
+    </a>
+</div>
+
+<div class="report-grid">
+
+    <!-- 장애유형별 분포 -->
+    <div class="report-card">
+        <div class="report-card-title">장애유형별 분포</div>
+        <div class="report-chart-wrap">
+            <canvas id="chartDtype"></canvas>
+        </div>
+    </div>
+
+    <!-- 중증도별 분포 -->
+    <div class="report-card">
+        <div class="report-card-title">중증도별 분포</div>
+        <div class="report-chart-wrap">
+            <canvas id="chartSeverity"></canvas>
+        </div>
+    </div>
+
+    <!-- 일별 지원 추이 -->
+    <div class="report-card">
+        <div class="report-card-title">일별 지원 추이</div>
+        <div class="report-chart-wrap-line">
+            <canvas id="chartTrend"></canvas>
+        </div>
+    </div>
+
+    <!-- 채용 파이프라인 전환 -->
+    <div class="report-card">
+        <div class="report-card-title">채용 파이프라인 전환</div>
+        <div class="report-chart-wrap-line">
+            <canvas id="chartPipeline"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function () {
+    var DONUT_COLORS = [
+        '#4e79a7','#f28e2b','#e15759','#76b7b2',
+        '#59a14f','#edc948','#b07aa1','#ff9da7',
+        '#9c755f','#bab0ac','#d37295','#fabfd2',
+        '#8cd17d','#b6992d'
+    ];
+
+    function donut(id, labels, data) {
+        var ctx = document.getElementById(id);
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: DONUT_COLORS.slice(0, labels.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    donut('chartDtype', {{ dtype_labels | safe }}, {{ dtype_data | safe }});
+    donut('chartSeverity', {{ severity_labels | safe }}, {{ severity_data | safe }});
+
+    // 일별 추이
+    (function () {
+        var ctx = document.getElementById('chartTrend');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ trend_labels | safe }},
+                datasets: [{
+                    label: '지원자 수',
+                    data: {{ trend_data | safe }},
+                    borderColor: '#4e79a7',
+                    backgroundColor: 'rgba(78,121,167,0.12)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } },
+                    x: { ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    })();
+
+    // 파이프라인 전환
+    (function () {
+        var ctx = document.getElementById('chartPipeline');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ pipeline_labels | safe }},
+                datasets: [{
+                    label: '인원',
+                    data: {{ pipeline_data | safe }},
+                    backgroundColor: '#4e79a7'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } },
+                    y: { ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    })();
+})();
+</script>
+
+{% endblock %}
