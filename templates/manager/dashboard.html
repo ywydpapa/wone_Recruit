@@ -4,99 +4,94 @@
 <div class="page-header"><h2>대시보드</h2></div>
 
 <div class="container">
+    <!-- 숫자 카드 -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
-            <a href="/mgr/placements" class="text-decoration-none">
-                <div class="content-card text-center h-100">
-                    <div class="fs-2 fw-bold">{{ today_followups }}</div>
-                    <small class="text-muted">오늘 할 일</small>
-                </div>
+            <a href="/mgr/placements" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-calendar-check me-1" aria-hidden="true"></i>오늘 할 일</div>
+                <div class="dash-metric-value">{{ today_followups }}<span class="unit">건</span></div>
             </a>
         </div>
         <div class="col-6 col-lg-3">
-            <a href="/mgr/placements" class="text-decoration-none">
-                <div class="content-card text-center h-100 {% if overdue_followups > 0 %}border-danger{% endif %}">
-                    <div class="fs-2 fw-bold {% if overdue_followups > 0 %}text-danger{% endif %}">{{ overdue_followups }}</div>
-                    <small class="text-muted">지연 사후관리</small>
-                </div>
+            <a href="/mgr/placements" class="dash-metric-card {% if overdue_followups > 0 %}metric-danger{% endif %}">
+                <div class="dash-metric-label"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>지연 사후관리</div>
+                <div class="dash-metric-value">{{ overdue_followups }}<span class="unit">건</span></div>
             </a>
         </div>
         <div class="col-6 col-lg-3">
-            <a href="/mgr/candidacies" class="text-decoration-none">
-                <div class="content-card text-center h-100">
-                    <div class="fs-2 fw-bold">{{ pending_matches }}</div>
-                    <small class="text-muted">대기중 매칭</small>
-                </div>
+            <a href="/mgr/pending-matches" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-handshake me-1" aria-hidden="true"></i>대기중 매칭</div>
+                <div class="dash-metric-value">{{ pending_matches }}<span class="unit">건</span></div>
             </a>
         </div>
         <div class="col-6 col-lg-3">
-            <a href="/mgr/seekers/unassigned" class="text-decoration-none">
-                <div class="content-card text-center h-100">
-                    <div class="fs-2 fw-bold">{{ unassigned_count }}</div>
-                    <small class="text-muted">미배정 구직자</small>
-                </div>
+            <a href="/mgr/seekers/unassigned" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-user-plus me-1" aria-hidden="true"></i>미배정 구직자</div>
+                <div class="dash-metric-value">{{ unassigned_count }}<span class="unit">명</span></div>
             </a>
         </div>
     </div>
 
+    <!-- 파이프라인 -->
     <div class="content-card mb-4">
-        <h5 class="fw-bold mb-3">담당 현황 <span class="text-muted fs-6 fw-normal">(총 {{ total_caseload }}명)</span></h5>
-        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap py-3">
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">담당 현황</h3>
+            <span class="dash-session-type">총 {{ total_caseload }}명</span>
+        </div>
+        <div class="dash-pipeline">
             {% for label, count, stage_key in pipeline %}
-            <a href="/mgr/seekers?stage={{ stage_key }}" class="text-center px-3 text-decoration-none">
-                <div class="fs-3 fw-bold">{{ count }}</div>
-                <small class="text-muted">{{ label }}</small>
+            <a href="/mgr/seekers?stage={{ stage_key }}" class="dash-pipeline-step">
+                <div class="dash-pipeline-count">{{ count }}</div>
+                <div class="dash-pipeline-label">{{ label }}</div>
             </a>
             {% if not loop.last %}
-            <i class="fas fa-chevron-right text-muted small"></i>
+            <i class="fas fa-chevron-right dash-pipeline-arrow" aria-hidden="true"></i>
             {% endif %}
             {% endfor %}
         </div>
     </div>
 
-
+    <!-- 예정 상담 -->
     <div class="content-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0">예정 상담</h5>
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">예정 상담</h3>
             <a href="/mgr/consultations?status=scheduled" class="btn btn-outline-secondary btn-sm">전체 보기</a>
         </div>
         {% if upcoming_sessions %}
-        <div class="list-group list-group-flush">
             {% for s in upcoming_sessions %}
-            <a href="/mgr/consultations/{{ s['id'] }}/edit" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="fw-semibold">{{ s['seeker_name'] }}</span>
-                    <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
-                    <span class="badge bg-light text-dark ms-1">{{ method_labels.get(s['method'], s['method']) }}</span>
+            <a href="/mgr/consultations/{{ s['id'] }}/edit" class="dash-session-item">
+                <div class="dash-session-avatar">{{ s['initial'] }}</div>
+                <div class="dash-session-info">
+                    <div class="dash-session-name">{{ s['seeker_name'] }}</div>
+                    <div class="dash-session-type">{{ type_labels.get(s['session_type'], s['session_type']) }} &middot; {{ method_labels.get(s['method'], s['method']) }}</div>
                 </div>
-                <small class="text-muted">{{ s['scheduled_at']|fdatetime }}</small>
+                <div class="dash-session-time">{{ s['scheduled_at']|fdatetime }}</div>
             </a>
             {% endfor %}
-        </div>
         {% else %}
-        <p class="text-center py-3 text-muted mb-0">예정된 상담이 없습니다.</p>
+        <p class="text-center py-4 mb-0 dash-empty">예정된 상담이 없습니다.</p>
         {% endif %}
     </div>
 
+    <!-- 최근 상담 -->
     <div class="content-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0">최근 상담</h5>
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">최근 상담</h3>
             <a href="/mgr/consultations" class="btn btn-outline-secondary btn-sm">전체 보기</a>
         </div>
         {% if recent_sessions %}
-        <div class="list-group list-group-flush">
             {% for s in recent_sessions %}
-            <a href="/mgr/seekers/{{ s['seeker_user_id'] }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="fw-semibold">{{ s['seeker_name'] }}</span>
-                    <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
+            <a href="/mgr/seekers/{{ s['seeker_user_id'] }}" class="dash-session-item">
+                <div class="dash-session-avatar">{{ s['initial'] }}</div>
+                <div class="dash-session-info">
+                    <div class="dash-session-name">{{ s['seeker_name'] }}</div>
+                    <div class="dash-session-type">{{ type_labels.get(s['session_type'], s['session_type']) }}</div>
                 </div>
-                <small class="text-muted">{{ s['created_at']|fdate }}</small>
+                <div class="dash-session-time">{{ s['created_at']|fdate }}</div>
             </a>
             {% endfor %}
-        </div>
         {% else %}
-        <p class="text-center py-3 text-muted mb-0">최근 상담 기록이 없습니다.</p>
+        <p class="text-center py-4 mb-0 dash-empty">최근 상담 기록이 없습니다.</p>
         {% endif %}
     </div>
 </div>

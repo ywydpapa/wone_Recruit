@@ -143,11 +143,42 @@ async def mgr_propose(
     return RedirectResponse(url=f"/mgr/matching?job_id={job_id}", status_code=303)
 
 
+@router.get("/pending-matches", response_class=HTMLResponse)
+async def mgr_pending_matches(request: Request):
+    user = require_role(request, "manager")
+    conn = get_sqlite()
+    try:
+        rows = conn.execute(
+            """SELECT c.id, c.seeker_user_id, c.job_id, c.match_stage, c.created_at,
+                      u.name AS seeker_name, jp.title AS job_title,
+                      co.company_name, jp.company_id
+               FROM candidacies c
+               JOIN users u ON c.seeker_user_id = u.id
+               JOIN job_postings jp ON c.job_id = jp.id
+               JOIN companies co ON jp.company_id = co.id
+               WHERE c.seeker_user_id IN (
+                   SELECT seeker_user_id FROM manager_assignments WHERE manager_user_id = ?
+               ) AND c.match_stage = 'proposed' AND c.status = 'pending'
+               ORDER BY c.created_at DESC""",
+            (user["id"],),
+        ).fetchall()
+    finally:
+        conn.close()
+    return templates.TemplateResponse(
+        request=request, name="manager/pending_matches.html", context={
+            "request": request, "page_title": "대기중 매칭",
+            "user_name": user["name"], "user_role": "manager",
+            "rows": rows,
+        }
+    )
+
+
 @router.get("/candidacies", response_class=HTMLResponse)
 async def mgr_candidacies(
     request: Request,
     seeker_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
+    match_stage: Optional[str] = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "manager")
@@ -169,6 +200,9 @@ async def mgr_candidacies(
         if status:
             sql += " AND c.status = ?"
             params.append(status)
+        if match_stage:
+            sql += " AND c.match_stage = ?"
+            params.append(match_stage)
         sql += " ORDER BY c.created_at DESC"
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]

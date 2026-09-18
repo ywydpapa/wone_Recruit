@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}대기중 매칭 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>대기중 매칭</h2></div>
+
+<div class="container">
+    <div class="dash-section-header mb-3">
+        <h4 class="dash-section-title">제안 후 구직자 확인 대기 <span class="dash-count-sub">({{ rows|length }}건)</span></h4>
+        <a href="/mgr/candidacies" class="btn btn-outline-secondary btn-sm">전체 지원 현황</a>
+    </div>
+    <div class="content-card">
+        {% if rows %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>구직자</th>
+                        <th>공고</th>
+                        <th>기업</th>
+                        <th>제안일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr>
+                        <td class="fw-semibold"><a href="/mgr/seekers/{{ r['seeker_user_id'] }}">{{ r['seeker_name'] }}</a></td>
+                        <td><a href="/mgr/jobs/{{ r['job_id'] }}">{{ r['job_title'] }}</a></td>
+                        <td><a href="/mgr/companies/{{ r['company_id'] }}">{{ r['company_name'] }}</a></td>
+                        <td class="text-muted small">{{ r['created_at']|fdate }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-4 mb-0 dash-empty">대기중인 매칭 제안이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

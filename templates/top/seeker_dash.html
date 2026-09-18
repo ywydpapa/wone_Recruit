@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 {% block title %}구직자 대시보드 - WONE Recruit{% endblock %}
 {% block content %}
+<div class="page-header"><h2>대시보드</h2></div>
+
+<div class="container">
 
 {% if not has_profile %}
 <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
-    <i class="fas fa-exclamation-triangle me-2"></i>
+    <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
     <div>프로필을 먼저 작성해 주세요. <a href="/profile" class="alert-link">프로필 작성하기</a></div>
 </div>
 {% endif %}
@@ -13,11 +16,11 @@
 <div class="content-card mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary"></i>담당 매니저</span>
+            <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary" aria-hidden="true"></i>담당 매니저</span>
             <span class="ms-2">{{ manager['name'] }}</span>
         </div>
         <a href="/messages/{{ manager['id'] }}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-envelope me-1"></i>메시지 보내기
+            <i class="fas fa-envelope me-1" aria-hidden="true"></i>메시지 보내기
         </a>
     </div>
 </div>
@@ -25,18 +28,18 @@
 <div class="content-card mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary"></i>담당 매니저</span>
+            <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary" aria-hidden="true"></i>담당 매니저</span>
             <span class="text-muted ms-2">아직 배정되지 않았습니다</span>
         </div>
         {% if not consult_requested %}
         <form method="post" action="/request-consultation">
             {{ csrf_input }}
             <button type="submit" class="btn btn-primary btn-sm">
-                <i class="fas fa-hand-paper me-1"></i>상담 신청
+                <i class="fas fa-hand-paper me-1" aria-hidden="true"></i>상담 신청
             </button>
         </form>
         {% else %}
-        <span class="badge bg-success"><i class="fas fa-check me-1"></i>신청 완료</span>
+        <span class="badge bg-success"><i class="fas fa-check me-1" aria-hidden="true"></i>신청 완료</span>
         {% endif %}
     </div>
 </div>
@@ -54,7 +57,7 @@
                         <span class="small {% if profile_completeness.percent >= 50 %}text-warning{% else %}text-danger{% endif %}">{{ profile_completeness.percent }}%</span>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar {% if profile_completeness.percent >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ profile_completeness.percent }}%"></div>
+                        <div class="progress-bar {% if profile_completeness.percent >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ profile_completeness.percent }}%" role="progressbar" aria-valuenow="{{ profile_completeness.percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
                 <a href="/profile" class="btn btn-outline-secondary btn-sm">작성</a>
@@ -70,7 +73,7 @@
                         <span class="small {% if resume_completeness >= 50 %}text-warning{% else %}text-danger{% endif %}">{{ resume_completeness }}%</span>
                     </div>
                     <div class="progress progress-sm">
-                        <div class="progress-bar {% if resume_completeness >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ resume_completeness }}%"></div>
+                        <div class="progress-bar {% if resume_completeness >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ resume_completeness }}%" role="progressbar" aria-valuenow="{{ resume_completeness }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
                 <a href="/resumes" class="btn btn-outline-secondary btn-sm">작성</a>
@@ -81,115 +84,118 @@
 </div>
 {% endif %}
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-8">
-        <div class="content-card">
-            <div class="card-title">
-                <span><i class="fas fa-list-check me-2 text-primary"></i>지원 현황</span>
-                <span class="badge bg-primary rounded-pill">{{ app_count }}</span>
-            </div>
-            {% if status_summary %}
-            <div class="text-muted small mb-3">{{ status_summary }}</div>
-            {% endif %}
-            {% if apps %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">공고명</th>
-                            <th scope="col">기업명</th>
-                            <th scope="col">상태</th>
-                            <th scope="col">지원일</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for app in apps %}
-                    <tr>
-                        <td class="fw-semibold"><a href="/jobs/{{ app['job_id'] }}">{{ app['job_title'] }}</a></td>
-                        <td>{{ app['company_name'] }}</td>
-                        <td>
-                            {% set s = app['status'] %}
-                            {% if s == 'pending' %}
-                                <span class="badge bg-secondary">검토 대기</span>
-                            {% elif s == 'reviewing' %}
-                                <span class="badge bg-primary">검토 중</span>
-                            {% elif s == 'shortlisted' %}
-                                <span class="badge bg-info text-dark">서류 통과</span>
-                            {% elif s == 'interview' %}
-                                <span class="badge bg-warning text-dark">면접 예정</span>
-                            {% elif s == 'offer' %}
-                                <span class="badge bg-success">합격 제안</span>
-                            {% elif s == 'hired' %}
-                                <span class="badge bg-success">채용 완료</span>
-                            {% elif s == 'rejected' %}
-                                <span class="badge bg-danger">불합격</span>
-                            {% elif s == 'withdrawn' %}
-                                <span class="badge bg-light text-dark border">취소</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ s }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-muted small">{{ app['created_at']|fdate }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-file-alt"></i></div>
-                <p class="empty-state-text">아직 지원한 공고가 없습니다.</p>
-                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
-            </div>
-            {% endif %}
-        </div>
+<!-- 숫자 카드 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <a href="/applications" class="dash-metric-card">
+            <div class="dash-metric-label"><i class="fas fa-list-check me-1" aria-hidden="true"></i>지원 현황</div>
+            <div class="dash-metric-value">{{ app_count }}<span class="unit">건</span></div>
+        </a>
     </div>
-
-    <div class="col-lg-4">
-        <div class="content-card">
-            <div class="card-title">요약</div>
-            <div class="dash-summary-list">
-                <a href="/proposals" class="dash-summary-item">
-                    <i class="fas fa-handshake text-primary"></i>
-                    <span>매칭 제안</span>
-                    <span class="ms-auto fw-semibold">{{ proposals }}</span>
-                    {% if proposals > 0 %}<span class="badge bg-primary ms-1">NEW</span>{% endif %}
-                </a>
-                <a href="/jobs" class="dash-summary-item">
-                    <i class="fas fa-briefcase text-primary"></i>
-                    <span>열린 공고</span>
-                    <span class="ms-auto fw-semibold">{{ open_jobs }}</span>
-                </a>
-                <a href="/bookmarks" class="dash-summary-item">
-                    <i class="fas fa-bookmark text-primary"></i>
-                    <span>저장한 공고</span>
-                    <span class="ms-auto fw-semibold">{{ bookmark_count }}</span>
-                </a>
-                {% if profile_view_count > 0 %}
-                <a href="/profile/views" class="dash-summary-item">
-                    <i class="fas fa-eye text-primary"></i>
-                    <span>프로필 열람</span>
-                    <span class="ms-auto fw-semibold">{{ profile_view_count }}</span>
-                    {% if recent_views_count > 0 %}<span class="badge bg-light text-dark ms-1">+{{ recent_views_count }}</span>{% endif %}
-                </a>
-                {% endif %}
-                {% if alert_new_count > 0 %}
-                <a href="/saved-searches" class="dash-summary-item">
-                    <i class="fas fa-bell text-primary"></i>
-                    <span>검색 알림</span>
-                    <span class="ms-auto"><span class="badge bg-danger">{{ alert_new_count }}</span></span>
-                </a>
-                {% endif %}
-            </div>
-        </div>
+    <div class="col-6 col-lg-3">
+        <a href="/proposals" class="dash-metric-card">
+            <div class="dash-metric-label"><i class="fas fa-handshake me-1" aria-hidden="true"></i>매칭 제안</div>
+            <div class="dash-metric-value">{{ proposals }}<span class="unit">건</span></div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="/jobs" class="dash-metric-card">
+            <div class="dash-metric-label"><i class="fas fa-briefcase me-1" aria-hidden="true"></i>열린 공고</div>
+            <div class="dash-metric-value">{{ open_jobs }}<span class="unit">건</span></div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="/bookmarks" class="dash-metric-card">
+            <div class="dash-metric-label"><i class="fas fa-bookmark me-1" aria-hidden="true"></i>저장한 공고</div>
+            <div class="dash-metric-value">{{ bookmark_count }}<span class="unit">건</span></div>
+        </a>
     </div>
 </div>
 
+<!-- 지원 현황 -->
+<div class="content-card mb-4">
+    <div class="dash-section-header">
+        <h3 class="dash-section-title">지원 현황</h3>
+        <a href="/applications" class="btn btn-outline-secondary btn-sm">전체 보기</a>
+    </div>
+    {% if status_summary %}
+    <p class="text-muted small mb-3">{{ status_summary }}</p>
+    {% endif %}
+    {% if apps %}
+        {% for app in apps %}
+        {% set s = app['status'] %}
+        <a href="/jobs/{{ app['job_id'] }}" class="dash-session-item">
+            <div class="dash-session-avatar" aria-hidden="true">{{ app['initial'] }}</div>
+            <div class="dash-session-info">
+                <div class="dash-session-name">{{ app['job_title'] }}</div>
+                <div class="dash-session-type">{{ app['company_name'] }}</div>
+            </div>
+            <div class="dash-session-time">
+                {% if s == 'pending' %}
+                    <span class="badge bg-secondary">검토 대기</span>
+                {% elif s == 'reviewing' %}
+                    <span class="badge bg-primary">검토 중</span>
+                {% elif s == 'shortlisted' %}
+                    <span class="badge bg-info text-dark">서류 통과</span>
+                {% elif s == 'interview' %}
+                    <span class="badge bg-warning text-dark">면접 예정</span>
+                {% elif s == 'offer' %}
+                    <span class="badge bg-success">합격 제안</span>
+                {% elif s == 'hired' %}
+                    <span class="badge bg-success">채용 완료</span>
+                {% elif s == 'rejected' %}
+                    <span class="badge bg-danger">불합격</span>
+                {% elif s == 'withdrawn' %}
+                    <span class="badge bg-light text-dark border">취소</span>
+                {% else %}
+                    <span class="badge bg-secondary">{{ s }}</span>
+                {% endif %}
+                <div class="mt-1">{{ app['created_at']|fdate }}</div>
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+    <p class="text-center py-4 mb-0 dash-empty">아직 지원한 공고가 없습니다. <a href="/jobs">공고 검색하기</a></p>
+    {% endif %}
+</div>
+
+<!-- 프로필 열람 / 검색 알림 -->
+{% if profile_view_count > 0 or alert_new_count > 0 %}
+<div class="content-card mb-4">
+    <div class="dash-section-header">
+        <h3 class="dash-section-title">활동 알림</h3>
+    </div>
+    {% if profile_view_count > 0 %}
+    <a href="/profile/views" class="dash-session-item">
+        <div class="dash-session-avatar" aria-hidden="true"><i class="fas fa-eye"></i></div>
+        <div class="dash-session-info">
+            <div class="dash-session-name">프로필 열람</div>
+            {% if recent_views_count > 0 %}
+            <div class="dash-session-type">최근 {{ recent_views_count }}건 새로 열람</div>
+            {% endif %}
+        </div>
+        <div class="dash-session-time fw-semibold">{{ profile_view_count }}회</div>
+    </a>
+    {% endif %}
+    {% if alert_new_count > 0 %}
+    <a href="/saved-searches" class="dash-session-item">
+        <div class="dash-session-avatar" aria-hidden="true"><i class="fas fa-bell"></i></div>
+        <div class="dash-session-info">
+            <div class="dash-session-name">검색 알림</div>
+            <div class="dash-session-type">새 공고가 등록됐습니다</div>
+        </div>
+        <div class="dash-session-time"><span class="badge bg-danger">{{ alert_new_count }}</span></div>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- 맞춤 공고 -->
 {% if recommended %}
 <div class="content-card mb-4">
-    <div class="card-title">
-        <span><i class="fas fa-magic me-2 text-primary"></i>맞춤 공고</span>
-        <a href="/jobs" class="btn btn-sm btn-outline-primary">전체 공고 보기</a>
+    <div class="dash-section-header">
+        <h3 class="dash-section-title"><i class="fas fa-magic me-2 text-primary" aria-hidden="true"></i>맞춤 공고</h3>
+        <a href="/jobs" class="btn btn-outline-secondary btn-sm">전체 공고 보기</a>
     </div>
     <div class="row g-3">
         {% for rec in recommended %}
@@ -223,4 +229,5 @@
 </div>
 {% endif %}
 
+</div>
 {% endblock %}

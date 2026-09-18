@@ -28,10 +28,11 @@
 /* 콘텐츠 카드 */
 .content-card {
     background: var(--bg-card);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .card-title {
     font-weight: 700;
@@ -45,14 +46,16 @@
 
 /* 통계 카드 */
 .stat-card {
-    padding: 16px 20px;
-    border-radius: 8px;
+    padding: 20px 24px;
+    border-radius: 12px;
     background: var(--bg-card);
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s;
 }
 .stat-card:hover {
-    border-color: #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .stat-icon {
     display: none;
@@ -90,7 +93,7 @@ a.stat-card-link:hover .stat-card {
 /* 상태 뱃지 */
 .status-badge {
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 0.82rem;
     font-weight: 600;
     white-space: nowrap;
@@ -121,6 +124,8 @@ a.stat-card-link:hover .stat-card {
 .table-custom { margin-bottom: 0; }
 .table-custom th { font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); padding: 0.6rem 0.5rem; }
 .table-custom td { vertical-align: middle; font-size: 0.9rem; padding: 0.6rem 0.5rem; }
+.table > :not(caption) > * > * { border-bottom-color: #F2F4F6; }
+.table-hover > tbody > tr:hover > * { background-color: #F7F8FA; }
 
 .badge .badge-icon {
     margin-right: 0.25rem;
@@ -139,16 +144,17 @@ a.stat-card-link:hover .stat-card {
 /* 공고 카드 */
 .job-card {
     background: var(--bg-card);
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
-    transition: border-color 0.15s;
+    transition: box-shadow 0.15s;
 }
 .job-card:hover {
-    border-color: #bbb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .job-card-header {
     padding: 16px 20px 10px;
@@ -254,8 +260,9 @@ a.stat-card-link:hover .stat-card {
 /* 프로필 카드 */
 .profile-card {
     background: var(--bg-card);
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     margin-bottom: 16px;
     overflow: hidden;
     display: flex;
@@ -339,14 +346,15 @@ a.stat-card-link:hover .stat-card {
 /* 아이템 카드 */
 .item-card {
     background: var(--bg-card);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 20px;
     height: 100%;
-    border: 1px solid var(--border);
-    transition: border-color 0.15s;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s;
 }
 .item-card:hover {
-    border-color: #bbb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .item-title {
     font-size: 1.1rem;
@@ -555,8 +563,9 @@ a.stat-card-link:hover .stat-card {
 /* 프로필 양식 */
 .form-section {
     background: var(--bg-card);
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     margin-bottom: 20px;
 }
 .form-section legend {
@@ -589,7 +598,7 @@ a.stat-card-link:hover .stat-card {
 .page-header {
     margin-bottom: 20px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
     display: flex;
     align-items: center;
     justify-content: space-between;

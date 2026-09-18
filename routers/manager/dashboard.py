@@ -108,6 +108,9 @@ async def mgr_dashboard(request: Request):
     finally:
         conn.close()
 
+    upcoming_sessions = [{**dict(r), "initial": r["seeker_name"][:1]} for r in upcoming_sessions]
+    recent_sessions = [{**dict(r), "initial": r["seeker_name"][:1]} for r in recent_sessions]
+
     pipeline = [
         ("상담중", in_counseling, "counseling"),
         ("매칭중", in_matching, "matching"),

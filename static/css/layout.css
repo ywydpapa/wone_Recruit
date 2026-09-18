@@ -267,7 +267,7 @@
     z-index: 900;
     height: var(--topbar-h);
     background: #fff;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #E5E8EB;
     display: flex;
     align-items: center;
     padding: 0 20px;
@@ -354,6 +354,7 @@ button.topbar-icon { background: none; border: none; padding: 0; }
 .content-area {
     padding: 24px 28px;
     min-height: calc(100vh - var(--topbar-h));
+    background: var(--bg);
 }
 
 .main-wrap .dash-header { margin-bottom: 0; }

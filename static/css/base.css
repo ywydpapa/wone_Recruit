@@ -2,11 +2,11 @@
 :root {
     --primary: #0056b3;
     --primary-hover: #004494;
-    --text: #222;
-    --text-secondary: #666;
-    --text-muted: #999;
-    --border: #e5e5e5;
-    --bg: #f7f8fa;
+    --text: #191F28;
+    --text-secondary: #6B7684;
+    --text-muted: #8B95A1;
+    --border: #E5E8EB;
+    --bg: #F2F4F6;
     --bg-card: #fff;
     --danger: #dc3545;
     --success: #28a745;
@@ -17,7 +17,7 @@ body {
     font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
     font-size: 14px;
     color: var(--text);
-    background-color: #fff;
+    background-color: var(--bg);
 }
 
 /* 접근성 */
@@ -45,6 +45,15 @@ body {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+
+/* 부트스트랩 오버라이드 */
+.text-muted { color: var(--text-muted) !important; }
+
+/* 폼 전역 */
+.form-control, .form-select { border-radius: 8px; border-color: var(--border); }
+.form-control:focus, .form-select:focus { box-shadow: none; border-color: var(--primary); }
+.btn { border-radius: 8px; }
+.btn-sm { border-radius: 6px; }
 
 /* 유틸 */
 .field-disabled { opacity: 0.4; pointer-events: none; }

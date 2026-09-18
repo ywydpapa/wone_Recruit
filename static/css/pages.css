@@ -28,6 +28,146 @@
 .candidacy-header .fa-chevron-down { transition: transform 0.2s; }
 .candidacy-header[aria-expanded="true"] .fa-chevron-down { transform: rotate(180deg); }
 
+/* 대시보드 숫자 카드 */
+.dash-metric-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 20px 24px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.15s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+.dash-metric-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    color: inherit;
+}
+.dash-metric-label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+.dash-metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+.dash-metric-value .unit {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+.dash-metric-card.metric-danger .dash-metric-value {
+    color: var(--danger);
+}
+
+/* 대시보드 파이프라인 */
+.dash-pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 8px 0;
+}
+.dash-pipeline-step {
+    flex: 1;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    padding: 12px 4px;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+.dash-pipeline-step:hover {
+    background: var(--bg);
+    color: inherit;
+}
+.dash-pipeline-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+.dash-pipeline-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.dash-pipeline-arrow {
+    color: #D1D6DB;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+/* 대시보드 상담 목록 */
+.dash-session-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #F2F4F6;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.1s;
+}
+.dash-session-item:last-child {
+    border-bottom: none;
+}
+.dash-session-item:hover {
+    color: inherit;
+}
+.dash-session-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #E8F0FE;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+.dash-session-info {
+    flex: 1;
+    min-width: 0;
+}
+.dash-session-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+.dash-session-type {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+.dash-session-time {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.dash-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.dash-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+.dash-count-sub { color: var(--text-muted); font-weight: 400; }
+.dash-empty { color: var(--text-muted); }
+
 /* 대시보드 차트 */
 .funnel-progress {
     height: 32px;

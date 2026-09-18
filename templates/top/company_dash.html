@@ -1,265 +1,216 @@
 {% extends "base.html" %}
-
-{% block title %}기업 대시보드 | WONE Recruit{% endblock %}
-
+{% block title %}기업 대시보드 - WONE Recruit{% endblock %}
 {% block content %}
+<div class="page-header"><h2>대시보드</h2></div>
 
-        {% if not company %}
-        <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <div>기업 정보를 먼저 등록해 주세요. <a href="/company/profile" class="alert-link">기업 정보 등록하기</a></div>
+<div class="container">
+
+    {% if not company %}
+    <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
+        <div>기업 정보를 먼저 등록해 주세요. <a href="/company/profile" class="alert-link">기업 정보 등록하기</a></div>
+    </div>
+    {% endif %}
+
+    {% if unread_count > 0 or jobs_closing_soon > 0 %}
+    <div class="row g-2 mb-3">
+        {% if unread_count > 0 %}
+        <div class="col-auto">
+            <a href="/company/applicants?status=pending" class="alert alert-danger d-flex align-items-center py-2 px-3 mb-0">
+                <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
+                미열람 지원자 <strong class="ms-1">{{ unread_count }}명</strong>
+            </a>
         </div>
         {% endif %}
+        {% if jobs_closing_soon > 0 %}
+        <div class="col-auto">
+            <a href="/company/jobs" class="alert alert-warning d-flex align-items-center py-2 px-3 mb-0">
+                <i class="fas fa-clock me-2" aria-hidden="true"></i>
+                7일 내 마감 공고 <strong class="ms-1">{{ jobs_closing_soon }}건</strong>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 
-        {% if unread_count > 0 or jobs_closing_soon > 0 %}
-        <div class="row mb-3">
-            {% if unread_count > 0 %}
-            <div class="col-auto">
-                <a href="/company/applicants?status=pending" class="alert alert-danger d-flex align-items-center py-2 px-3 mb-0">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    미열람 지원자 <strong class="ms-1">{{ unread_count }}명</strong>
-                </a>
-            </div>
+    <!-- 숫자 카드 -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <a href="/company/applicants" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-users me-1" aria-hidden="true"></i>전체 지원자</div>
+                <div class="dash-metric-value">{{ total_applicants }}<span class="unit">명</span></div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="/company/jobs" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-clipboard-list me-1" aria-hidden="true"></i>모집 중 공고</div>
+                <div class="dash-metric-value">{{ open_count }}<span class="unit">건</span></div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="/company/applicants" class="dash-metric-card {% if unread_count > 0 %}metric-danger{% endif %}">
+                <div class="dash-metric-label"><i class="fas fa-user-plus me-1" aria-hidden="true"></i>이번 주 신규</div>
+                <div class="dash-metric-value">{{ new_apps_this_week }}<span class="unit">명</span></div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="/company/placements" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-briefcase me-1" aria-hidden="true"></i>현재 근무중</div>
+                <div class="dash-metric-value">{{ placement_count }}<span class="unit">명</span></div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 채용 파이프라인 -->
+    <div class="content-card mb-4">
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">채용 파이프라인</h3>
+            <span class="dash-session-type">
+                {% if conversion_rate > 0 %}전환율 {{ conversion_rate }}%{% endif %}
+                {% if avg_days_to_hire is not none %}&nbsp;&middot;&nbsp;평균 {{ avg_days_to_hire }}일{% endif %}
+            </span>
+        </div>
+        {% if total_applicants > 0 %}
+        <div class="dash-pipeline">
+            {% for key, label, color in pipeline_stages %}
+            <a href="/company/applicants?status={{ key }}" class="dash-pipeline-step">
+                <div class="dash-pipeline-count">{{ pipeline.get(key, 0) }}</div>
+                <div class="dash-pipeline-label">{{ label }}</div>
+            </a>
+            {% if not loop.last %}
+            <i class="fas fa-chevron-right dash-pipeline-arrow" aria-hidden="true"></i>
             {% endif %}
-            {% if jobs_closing_soon > 0 %}
-            <div class="col-auto">
-                <a href="/company/jobs" class="alert alert-warning d-flex align-items-center py-2 px-3 mb-0">
-                    <i class="fas fa-clock me-2"></i>
-                    7일 내 마감 공고 <strong class="ms-1">{{ jobs_closing_soon }}건</strong>
-                </a>
-            </div>
-            {% endif %}
+            {% endfor %}
+            <i class="fas fa-chevron-right dash-pipeline-arrow" aria-hidden="true"></i>
+            <a href="/company/applicants?status=rejected" class="dash-pipeline-step">
+                <div class="dash-pipeline-count">{{ pipeline.get('rejected', 0) }}</div>
+                <div class="dash-pipeline-label">불합격</div>
+            </a>
+            <a href="/company/applicants?status=withdrawn" class="dash-pipeline-step">
+                <div class="dash-pipeline-count">{{ pipeline.get('withdrawn', 0) }}</div>
+                <div class="dash-pipeline-label">철회</div>
+            </a>
         </div>
+        {% else %}
+        <p class="text-center py-4 mb-0 dash-empty">지원자가 없습니다.</p>
         {% endif %}
+    </div>
 
-        <div class="row mb-4">
-            <div class="col-md-3 col-6 mb-3">
-                <a href="/company/applicants" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>{{ total_applicants }}</h3>
-                            <p>전체 지원자</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3 col-6 mb-3">
-                <a href="/company/jobs" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>{{ open_count }}</h3>
-                            <p>모집 중 공고</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3 col-6 mb-3">
-                <a href="/company/applicants" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>{{ new_apps_this_week }}</h3>
-                            <p>이번 주 신규</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3 col-6 mb-3">
-                <a href="/company/placements" class="stat-card-link">
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>{{ placement_count }}</h3>
-                            <p>현재 근무중</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
+    <!-- 공고별 현황 -->
+    <div class="content-card mb-4">
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">공고별 현황</h3>
+            <a href="/company/jobs" class="btn btn-outline-secondary btn-sm">전체 보기</a>
         </div>
-
-        <div class="row mb-4">
-            <div class="col-lg-8">
-                <div class="content-card">
-                    <div class="card-title">
-                        <span>채용 파이프라인</span>
-                        <div class="d-flex align-items-center gap-3">
-                            {% if conversion_rate > 0 %}
-                            <span class="text-muted small">전환율 {{ conversion_rate }}%</span>
-                            {% endif %}
-                            {% if avg_days_to_hire is not none %}
-                            <span class="text-muted small">평균 {{ avg_days_to_hire }}일</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% if total_applicants > 0 %}
-                    <div class="pipeline-bar">
-                        {% for key, label, color in pipeline_stages %}
-                        {% if not loop.first %}
-                        <div class="pipeline-arrow"><i class="fas fa-chevron-right"></i></div>
-                        {% endif %}
-                        <a href="/company/applicants?status={{ key }}" class="pipeline-stage text-decoration-none">
-                            <div class="pipeline-count{% if pipeline.get(key, 0) == 0 %} pipeline-count-out{% endif %}">{{ pipeline.get(key, 0) }}</div>
-                            <div class="pipeline-label">{{ label }}</div>
-                        </a>
-                        {% endfor %}
-                        <div class="pipeline-divider"></div>
-                        <a href="/company/applicants?status=rejected" class="pipeline-stage text-decoration-none">
-                            <div class="pipeline-count pipeline-count-out">{{ pipeline.get('rejected', 0) }}</div>
-                            <div class="pipeline-label">불합격</div>
-                        </a>
-                        <a href="/company/applicants?status=withdrawn" class="pipeline-stage text-decoration-none">
-                            <div class="pipeline-count pipeline-count-out">{{ pipeline.get('withdrawn', 0) }}</div>
-                            <div class="pipeline-label">철회</div>
-                        </a>
-                    </div>
-                    {% else %}
-                    <p class="text-muted small mb-0">지원자가 없습니다.</p>
+        {% if job_stats %}
+        <div class="job-stats-list">
+            {% for js in job_stats %}
+            <a href="/company/jobs/{{ js['id'] }}/applicants" class="job-stats-row">
+                <div class="job-stats-title">
+                    {{ js['title'] }}
+                    {% if js['status'] == 'open' %}
+                    <span class="status-badge status-open">모집중</span>
+                    {% elif js['status'] == 'closed' %}
+                    <span class="status-badge status-closed">마감</span>
                     {% endif %}
                 </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="content-card">
-                    <div class="card-title">
-                        <span>공고별 현황</span>
-                    </div>
-                    {% if job_stats %}
-                    <div class="job-stats-list">
-                        {% for js in job_stats %}
-                        <a href="/company/jobs/{{ js['id'] }}/applicants" class="job-stats-row">
-                            <div class="job-stats-title">
-                                {{ js['title'] }}
-                                {% if js['status'] == 'open' %}
-                                <span class="status-badge status-open">모집중</span>
-                                {% elif js['status'] == 'closed' %}
-                                <span class="status-badge status-closed">마감</span>
-                                {% endif %}
-                            </div>
-                            <div class="job-stats-nums">
-                                <span title="조회수"><i class="fas fa-eye"></i> {{ js['view_count'] }}</span>
-                                <span title="지원자"><i class="fas fa-user"></i> {{ js['app_count'] }}</span>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted small mb-0">등록된 공고가 없습니다.</p>
-                    {% endif %}
+                <div class="job-stats-nums">
+                    <span title="조회수"><i class="fas fa-eye" aria-hidden="true"></i> {{ js['view_count'] }}</span>
+                    <span title="지원자"><i class="fas fa-user" aria-hidden="true"></i> {{ js['app_count'] }}</span>
                 </div>
-            </div>
+            </a>
+            {% endfor %}
         </div>
-
-        {% if upcoming_interviews %}
-        <div class="row mb-4">
-            <div class="col-lg-12">
-                <div class="content-card">
-                    <div class="card-title">
-                        <span>이번 주 면접 예정</span>
-                        <span class="text-muted small">{{ upcoming_interviews|length }}건</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th scope="col">지원자</th>
-                                    <th scope="col">공고명</th>
-                                    <th scope="col">일시</th>
-                                    <th scope="col">유형</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for iv in upcoming_interviews %}
-                            <tr onclick="location.href='/company/jobs/{{ iv['job_id'] }}/applicants/{{ iv['candidacy_id'] }}'" class="row-link">
-                                <td>{{ iv['seeker_name'] }}</td>
-                                <td class="text-muted small">{{ iv['job_title'] }}</td>
-                                <td class="text-muted small">{{ iv['interview_date'] }} {{ iv['interview_time'] }}</td>
-                                <td>
-                                    {% if iv['interview_type'] == 'onsite' %}
-                                        <span class="badge bg-light text-dark border">대면</span>
-                                    {% elif iv['interview_type'] == 'video' %}
-                                        <span class="badge bg-light text-dark border">화상</span>
-                                    {% else %}
-                                        <span class="badge bg-light text-dark border">{{ iv['interview_type'] }}</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% else %}
+        <p class="text-center py-4 mb-0 dash-empty">등록된 공고가 없습니다.</p>
         {% endif %}
+    </div>
 
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="content-card">
-                    <div class="card-title">
-                        <span>최근 지원자</span>
-                        {% if pending_apps > 0 %}
-                        <span class="badge bg-light text-dark border rounded-pill">{{ pending_apps }} 검토 대기</span>
-                        {% endif %}
-                    </div>
-                    {% if recent_apps %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th scope="col">공고명</th>
-                                    <th scope="col">지원자명</th>
-                                    <th scope="col">상태</th>
-                                    <th scope="col">지원일</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for app in recent_apps %}
-                            <tr>
-                                <td class="fw-semibold"><a href="/company/jobs/{{ app['job_id'] }}/applicants">{{ app['job_title'] }}</a></td>
-                                <td><a href="/company/jobs/{{ app['job_id'] }}/applicants/{{ app['id'] }}">{{ app['seeker_name'] }}</a></td>
-                                <td>
-                                    {% set s = app['status'] %}
-                                    {% if s == 'rejected' %}
-                                        <span class="badge bg-danger">{{ status_labels.get(s, s) }}</span>
-                                    {% elif s == 'withdrawn' %}
-                                        <span class="badge bg-light text-dark border">{{ status_labels.get(s, s) }}</span>
-                                    {% else %}
-                                        {% set bc = stage_colors.get(s, 'secondary') %}
-                                        <span class="badge bg-{{ bc }}{% if bc in ['warning', 'info'] %} text-dark{% endif %}">{{ status_labels.get(s, s) }}</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-muted small">{{ app['applied_date'] or '-' }}</td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted small mb-0">아직 지원자가 없습니다.</p>
-                    {% endif %}
+    <!-- 면접 예정 -->
+    {% if upcoming_interviews %}
+    <div class="content-card mb-4">
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">이번 주 면접 예정</h3>
+            <span class="dash-session-type">{{ upcoming_interviews|length }}건</span>
+        </div>
+        {% for iv in upcoming_interviews %}
+        <a href="/company/jobs/{{ iv['job_id'] }}/applicants/{{ iv['candidacy_id'] }}" class="dash-session-item">
+            <div class="dash-session-avatar">{{ iv['initial'] }}</div>
+            <div class="dash-session-info">
+                <div class="dash-session-name">{{ iv['seeker_name'] }}</div>
+                <div class="dash-session-type">
+                    {{ iv['job_title'] }} &middot;
+                    {% if iv['interview_type'] == 'onsite' %}대면
+                    {% elif iv['interview_type'] == 'video' %}화상
+                    {% else %}{{ iv['interview_type'] }}{% endif %}
                 </div>
             </div>
+            <div class="dash-session-time">{{ iv['interview_date'] }} {{ iv['interview_time'] }}</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-            <div class="col-lg-4">
-                <div class="content-card">
-                    <div class="card-title">
-                        <span>바로가기</span>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="/company/jobs" class="btn btn-outline-primary">
-                            <i class="fas fa-clipboard-list me-1"></i>공고 관리
-                        </a>
-                        <a href="/company/talents" class="btn btn-outline-primary">
-                            <i class="fas fa-search me-1"></i>인재 검색
-                        </a>
-                        <a href="/company/profile" class="btn btn-outline-primary">
-                            <i class="fas fa-building me-1"></i>기업 정보
-                        </a>
-                        <a href="/company/levy" class="btn btn-outline-primary">
-                            <i class="fas fa-calculator me-1"></i>부담금 계산
-                        </a>
-                    </div>
+    <div class="row g-4">
+        <!-- 최근 지원자 -->
+        <div class="col-lg-8">
+            <div class="content-card">
+                <div class="dash-section-header">
+                    <h3 class="dash-section-title">최근 지원자</h3>
+                    {% if pending_apps > 0 %}
+                    <span class="dash-session-type">{{ pending_apps }}명 검토 대기</span>
+                    {% endif %}
                 </div>
+                {% if recent_apps %}
+                    {% for app in recent_apps %}
+                    <a href="/company/jobs/{{ app['job_id'] }}/applicants/{{ app['id'] }}" class="dash-session-item">
+                        <div class="dash-session-avatar">{{ app['initial'] }}</div>
+                        <div class="dash-session-info">
+                            <div class="dash-session-name">{{ app['seeker_name'] }}</div>
+                            <div class="dash-session-type">{{ app['job_title'] }}</div>
+                        </div>
+                        <div class="dash-session-time">
+                            {% set s = app['status'] %}
+                            {% if s == 'rejected' %}
+                            <span class="badge bg-danger">{{ status_labels.get(s, s) }}</span>
+                            {% elif s == 'withdrawn' %}
+                            <span class="badge bg-light text-dark border">{{ status_labels.get(s, s) }}</span>
+                            {% else %}
+                            {% set bc = stage_colors.get(s, 'secondary') %}
+                            <span class="badge bg-{{ bc }}{% if bc in ['warning', 'info'] %} text-dark{% endif %}">{{ status_labels.get(s, s) }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                <p class="text-center py-4 mb-0 dash-empty">아직 지원자가 없습니다.</p>
+                {% endif %}
             </div>
         </div>
 
+        <!-- 바로가기 -->
+        <div class="col-lg-4">
+            <div class="content-card">
+                <div class="dash-section-header">
+                    <h3 class="dash-section-title">바로가기</h3>
+                </div>
+                <div class="dash-summary-list">
+                    <a href="/company/jobs" class="dash-summary-item">
+                        <i class="fas fa-clipboard-list" aria-hidden="true"></i>공고 관리
+                    </a>
+                    <a href="/company/talents" class="dash-summary-item">
+                        <i class="fas fa-search" aria-hidden="true"></i>인재 검색
+                    </a>
+                    <a href="/company/profile" class="dash-summary-item">
+                        <i class="fas fa-building" aria-hidden="true"></i>기업 정보
+                    </a>
+                    <a href="/company/levy" class="dash-summary-item">
+                        <i class="fas fa-calculator" aria-hidden="true"></i>부담금 계산
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
+</div>
 {% endblock %}
