@@ -70,7 +70,7 @@
                     {% endif %}
                 </tr>
                 {% endif %}
-                {% set addr = company['address'] or ((company['region_sido'] or '') ~ ' ' ~ (company['region_sigungu'] or ''))|trim %}
+                {% set addr = company['address'] or company|region('') %}
                 {% if addr %}
                 <tr>
                     <th>소재지</th>
@@ -170,7 +170,7 @@
                         {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
                         {% endfor %}
                     </div>
-                    <span class="text-muted small">{{ rv['created_at'][:10] }}</span>
+                    <span class="text-muted small">{{ rv['created_at']|fdate }}</span>
                 </div>
                 {% if rv['pros'] %}
                 <div class="review-pros-cons mb-1">
@@ -243,7 +243,7 @@
                         {% endif %}
                         <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
                         <div class="item-meta">
-                            <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+                            <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
                         </div>
                     </div>
                     <hr class="text-muted">

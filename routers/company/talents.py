@@ -23,6 +23,20 @@ async def talent_search(
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
+        company = conn.execute(
+            "SELECT approval_status FROM companies WHERE user_id=?", (user["id"],)
+        ).fetchone()
+        if not company or company["approval_status"] != "approved":
+            return templates.TemplateResponse(
+                request=request,
+                name="company/talents_blocked.html",
+                context={
+                    "request": request, "page_title": "인재 검색",
+                    "user_name": user["name"], "user_role": "company",
+                    "has_company": company is not None,
+                    "status": company["approval_status"] if company else None,
+                },
+            )
         sql = (
             "SELECT sp.*, u.name AS seeker_name, dt.name AS disability_name, "
             "r.sido AS region_sido, r.sigungu AS region_sigungu "
@@ -110,6 +124,12 @@ async def talent_detail(request: Request, seeker_user_id: int):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
+        company_check = conn.execute(
+            "SELECT approval_status FROM companies WHERE user_id=?", (user["id"],)
+        ).fetchone()
+        if not company_check or company_check["approval_status"] != "approved":
+            return RedirectResponse(url="/company/talents", status_code=303)
+
         profile = conn.execute(
             "SELECT sp.*, u.name AS seeker_name, dt.name AS disability_name, "
             "r.sido AS region_sido, r.sigungu AS region_sigungu "

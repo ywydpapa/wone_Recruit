@@ -73,7 +73,7 @@
             <div class="col-md-6">
                 <dl class="row mb-0 small">
                     <dt class="col-5 text-muted">지역</dt>
-                    <dd class="col-7">{{ profile['region_sido'] or '-' }} {{ profile['region_sigungu'] or '' }}</dd>
+                    <dd class="col-7">{{ profile|region('-') }}</dd>
                     <dt class="col-5 text-muted">근무형태</dt>
                     <dd class="col-7">{{ profile['work_pref'] or '-' }}</dd>
                     <dt class="col-5 text-muted">근무시간</dt>
@@ -136,7 +136,7 @@
                     <span class="status-badge status-{{ s['status'] or 'completed' }} ms-1">{{ consult_status_labels.get(s['status'] or 'completed', s['status']) }}</span>
                     <br>
                     <small class="text-muted">
-                        {% if s['scheduled_at'] %}{{ s['scheduled_at'][:16] }}{% else %}{{ s['created_at'][:10] }}{% endif %}
+                        {% if s['scheduled_at'] %}{{ s['scheduled_at']|fdatetime }}{% else %}{{ s['created_at']|fdate }}{% endif %}
                         &middot; {{ s['manager_name'] }}
                         {% if s['location'] %} &middot; {{ s['location'] }}{% endif %}
                     </small>
@@ -168,7 +168,7 @@
     <div class="tab-pane fade" id="tab-assessment" role="tabpanel">
         {% if assessment %}
         <div class="content-card">
-            <small class="text-muted d-block mb-3">{{ assessment['created_at'][:10] }} &middot; {{ assessment['operator_name'] }}</small>
+            <small class="text-muted d-block mb-3">{{ assessment['created_at']|fdate }} &middot; {{ assessment['operator_name'] }}</small>
             {% set fields = [('신체', assessment['physical_note']), ('감각', assessment['sensory_note']), ('인지', assessment['cognitive_note']), ('의사소통', assessment['communication_note']), ('업무능력', assessment['work_capacity_note']), ('환경', assessment['environment_note']), ('종합의견', assessment['summary'])] %}
             {% for label, val in fields %}
             {% if val %}
@@ -209,15 +209,13 @@
                         <tr><th>공고</th><th>기업</th><th>상태</th><th>매칭단계</th><th>날짜</th></tr>
                     </thead>
                     <tbody>
-                        {% set status_labels = {'pending': '접수', 'reviewing': '검토중', 'shortlisted': '서류합격', 'interview': '면접', 'offer': '제의', 'hired': '채용', 'rejected': '불합격', 'withdrawn': '지원취소'} %}
-                        {% set stage_labels = {'proposed': '제안됨', 'seeker_confirmed': '구직자수락', 'submitted': '기업전달'} %}
                         {% for c in candidacies %}
                         <tr>
                             <td><a href="/mgr/jobs/{{ c['job_id'] }}">{{ c['job_title'] }}</a></td>
                             <td><a href="/mgr/companies/{{ c['company_id'] }}">{{ c['company_name'] }}</a></td>
                             <td><span class="status-badge status-{{ c['status'] }}">{{ status_labels.get(c['status'], c['status']) }}</span></td>
                             <td>{% if c['match_stage'] %}<span class="status-badge stage-{{ c['match_stage'] }}">{{ stage_labels.get(c['match_stage'], c['match_stage']) }}</span>{% else %}-{% endif %}</td>
-                            <td class="text-muted small">{{ c['created_at'][:10] }}</td>
+                            <td class="text-muted small">{{ c['created_at']|fdate }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

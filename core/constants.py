@@ -101,6 +101,21 @@ AWARD_CATEGORIES = ['수상', '봉사활동', '동아리', '대외활동', '교�
 
 PORTFOLIO_LINK_TYPES = ['GitHub', '블로그', '포트폴리오', '노션', '기타']
 
+PURPOSE_LABELS = {
+    "applicant_review": "지원자 검토",
+    "talent_search": "인재 검색",
+    "operator_view": "운영자 조회",
+}
+
+COMMUNITY_CATEGORIES = [
+    ("all", "전체"),
+    ("general", "자유"),
+    ("job", "취업"),
+    ("qna", "Q&A"),
+    ("tip", "꿀팁"),
+    ("life", "일상"),
+]
+
 COMPANY_SIZES = [
     '소기업(50인미만)',
     '중소기업(50~299인)',

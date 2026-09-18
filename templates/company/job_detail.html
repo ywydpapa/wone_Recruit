@@ -80,7 +80,7 @@
         <div class="job-summary-item">
             <i class="fas fa-map-marker-alt"></i>
             <div class="summary-label">근무지역</div>
-            <div class="summary-value">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+            <div class="summary-value">{{ job|region('전국') }}</div>
         </div>
         <div class="job-summary-item">
             <i class="fas fa-graduation-cap"></i>
@@ -205,12 +205,9 @@
         <div class="mb-3">
             <div class="fw-semibold small mb-1">채용 절차</div>
             <div class="hiring-steps">
-                {% set steps = job['hiring_process'].split(',') %}
-                {% for step in steps %}
-                {% if step.strip() %}
-                <span class="hiring-step">{{ step.strip() }}</span>
+                {% for step in job['hiring_process']|split_steps %}
+                <span class="hiring-step">{{ step }}</span>
                 {% if not loop.last %}<span class="hiring-arrow">&rarr;</span>{% endif %}
-                {% endif %}
                 {% endfor %}
             </div>
         </div>

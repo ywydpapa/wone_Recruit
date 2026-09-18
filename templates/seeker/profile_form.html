@@ -170,7 +170,7 @@
                     <option value="">-- 선택 --</option>
                     {% for cm in commute_options %}
                     <option value="{{ cm }}" {% if profile and profile.commute_max_minutes == cm %}selected{% endif %}>
-                        {% if cm < 60 %}{{ cm }}분{% elif cm % 60 == 0 %}{{ cm // 60 }}시간{% else %}{{ cm // 60 }}시간 {{ cm % 60 }}분{% endif %}
+                        {{ cm|fmt_minutes }}
                     </option>
                     {% endfor %}
                 </select>

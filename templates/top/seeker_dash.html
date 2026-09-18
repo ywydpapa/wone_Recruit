@@ -88,18 +88,8 @@
                 <span><i class="fas fa-list-check me-2 text-primary"></i>지원 현황</span>
                 <span class="badge bg-primary rounded-pill">{{ app_count }}</span>
             </div>
-            {% if app_status_dist %}
-            <div class="text-muted small mb-3">
-                {% set parts = [] %}
-                {% if app_status_dist.get('pending') %}{% set _ = parts.append('검토 대기 ' ~ app_status_dist['pending']) %}{% endif %}
-                {% if app_status_dist.get('reviewing') %}{% set _ = parts.append('검토 중 ' ~ app_status_dist['reviewing']) %}{% endif %}
-                {% if app_status_dist.get('shortlisted') %}{% set _ = parts.append('서류 통과 ' ~ app_status_dist['shortlisted']) %}{% endif %}
-                {% if app_status_dist.get('interview') %}{% set _ = parts.append('면접 ' ~ app_status_dist['interview']) %}{% endif %}
-                {% if app_status_dist.get('offer') %}{% set _ = parts.append('합격 제안 ' ~ app_status_dist['offer']) %}{% endif %}
-                {% if app_status_dist.get('hired') %}{% set _ = parts.append('채용 완료 ' ~ app_status_dist['hired']) %}{% endif %}
-                {% if app_status_dist.get('rejected') %}{% set _ = parts.append('불합격 ' ~ app_status_dist['rejected']) %}{% endif %}
-                {{ parts | join(' / ') }}
-            </div>
+            {% if status_summary %}
+            <div class="text-muted small mb-3">{{ status_summary }}</div>
             {% endif %}
             {% if apps %}
             <div class="table-responsive">
@@ -139,7 +129,7 @@
                                 <span class="badge bg-secondary">{{ s }}</span>
                             {% endif %}
                         </td>
-                        <td class="text-muted small">{{ app['created_at'][:10] if app['created_at'] else '-' }}</td>
+                        <td class="text-muted small">{{ app['created_at']|fdate }}</td>
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -212,7 +202,7 @@
                 </div>
                 <div class="job-card-body">
                     <div class="job-card-meta">
-                        <span><i class="fas fa-map-marker-alt" aria-hidden="true"></i>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</span>
+                        <span><i class="fas fa-map-marker-alt" aria-hidden="true"></i>{{ job|region('전국') }}</span>
                         <span><i class="fas fa-clock" aria-hidden="true"></i>{{ job['employment_type'] }}</span>
                         {% if job['remote_available'] %}
                         <span><i class="fas fa-home" aria-hidden="true"></i>재택</span>

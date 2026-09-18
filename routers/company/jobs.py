@@ -25,7 +25,7 @@ async def job_list(
             return RedirectResponse(url="/company/profile", status_code=303)
         approval = company["approval_status"]
 
-        # 탭별 카운트 (검색어 조건 반영, 상태 필터는 제외)
+        # 탭별 카운트
         tab_count_params = [company["id"]]
         tab_count_where = "jp.company_id=?"
         if q and q.strip():

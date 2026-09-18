@@ -8,7 +8,6 @@
             <div class="content-card">
                 <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                     <ul class="nav nav-pills gap-2">
-                        {% set cats = [("all", "전체"), ("general", "자유"), ("job", "취업"), ("qna", "Q&A"), ("tip", "꿀팁"), ("life", "일상")] %}
                         {% for key, label in cats %}
                         <li class="nav-item">
                             <a class="nav-link {% if current_category == key %}active{% else %}text-dark bg-light{% endif %} rounded-pill px-3 py-1" href="/community?category={{ key }}">{{ label }}</a>

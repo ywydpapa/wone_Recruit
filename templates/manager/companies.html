@@ -62,7 +62,7 @@
                         <td class="fw-semibold">{{ c['company_name'] }}</td>
                         <td>{{ c['industry'] or '-' }}</td>
                         <td>{{ c['company_size'] or '-' }}</td>
-                        <td>{{ c['region_sido'] or '-' }} {{ c['region_sigungu'] or '' }}</td>
+                        <td>{{ c|region('-') }}</td>
                         <td>{{ c['facility_count'] }}개</td>
                     </tr>
                     {% endfor %}

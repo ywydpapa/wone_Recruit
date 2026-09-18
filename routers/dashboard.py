@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from core.constants import STATUS_LABELS
 from core.db import get_sqlite
 from core.deps import check_login, get_current_user, templates
 from core.dashboard_data import get_seeker_dashboard, get_company_dashboard, get_operator_dashboard
@@ -28,6 +29,7 @@ async def dashboard(request: Request):
             return RedirectResponse(url="/mgr/", status_code=303)
         elif role == "operator":
             ctx.update(get_operator_dashboard(conn))
+            ctx["status_labels"] = STATUS_LABELS
             tpl = "top/operator_dash.html"
         else:
             tpl = "top/seeker_dash.html"

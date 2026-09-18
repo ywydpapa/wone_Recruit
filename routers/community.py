@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from core.db import get_sqlite
 from core.deps import check_login, templates
-from core.constants import POST_CATEGORIES
+from core.constants import POST_CATEGORIES, COMMUNITY_CATEGORIES
 from core.notifications import create_notification
 
 router = APIRouter()
@@ -78,6 +78,7 @@ async def community_list(
             "user_role": user["role"],
             "posts": posts,
             "categories": POST_CATEGORIES,
+            "cats": COMMUNITY_CATEGORIES,
             "current_category": category,
             "q": q,
             "page": page,

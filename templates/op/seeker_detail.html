@@ -15,7 +15,7 @@
                         <div class="text-muted">
                             <span class="me-3"><i class="fas fa-at me-1" aria-hidden="true"></i>{{ seeker['username'] }}</span>
                             <span class="me-3"><i class="fas fa-phone me-1" aria-hidden="true"></i>{{ seeker['phone'] or '-' }}</span>
-                            <span><i class="fas fa-calendar me-1" aria-hidden="true"></i>{{ seeker['created_at'][:10] if seeker['created_at'] else '-' }}</span>
+                            <span><i class="fas fa-calendar me-1" aria-hidden="true"></i>{{ seeker['created_at']|fdate }}</span>
                         </div>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                         </div>
                         <div class="profile-field">
                             <span class="profile-field-label">거주 지역</span>
-                            <span class="profile-field-value">{{ (profile['region_sido']|default('') ~ ' ' ~ profile['region_sigungu']|default(''))|trim or '-' }}</span>
+                            <span class="profile-field-value">{{ profile|region('-') }}</span>
                         </div>
                         <div class="profile-field">
                             <span class="profile-field-label">이동수단</span>
@@ -225,7 +225,7 @@
                             <span class="profile-field-value">
                                 {% if profile['consent_sensitive'] %}
                                 <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>동의</span>
-                                <span class="text-muted ms-1">({{ profile['consented_at'][:10] if profile['consented_at'] else '' }})</span>
+                                <span class="text-muted ms-1">({{ profile['consented_at']|fdate }})</span>
                                 {% else %}
                                 <span class="badge bg-secondary"><i class="fas fa-times badge-icon" aria-hidden="true"></i>미동의</span>
                                 {% endif %}
@@ -254,7 +254,7 @@
             {% for c in recent_consultations %}
             <div class="border-top pt-2 mt-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-semibold">{{ c['created_at'][:10] }}</span>
+                    <span class="fw-semibold">{{ c['created_at']|fdate }}</span>
                     <span class="text-muted small">{{ c['operator_name'] }}</span>
                 </div>
                 {% if c['summary'] %}

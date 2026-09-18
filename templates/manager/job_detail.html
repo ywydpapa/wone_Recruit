@@ -18,7 +18,7 @@
                     <dt class="col-sm-4 text-muted">급여</dt>
                     <dd class="col-sm-8">{{ job['salary'] or '-' }}</dd>
                     <dt class="col-sm-4 text-muted">지역</dt>
-                    <dd class="col-sm-8">{{ job['region_sido'] or '-' }} {{ job['region_sigungu'] or '' }}</dd>
+                    <dd class="col-sm-8">{{ job|region('-') }}</dd>
                 </dl>
             </div>
             <div class="col-md-6">

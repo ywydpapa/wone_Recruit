@@ -53,7 +53,7 @@
                         <td><a href="/mgr/companies/{{ c['company_id'] }}">{{ c['company_name'] }}</a></td>
                         <td><span class="status-badge status-{{ c['status'] }}">{{ status_labels.get(c['status'], c['status']) }}</span></td>
                         <td>{% if c['match_stage'] %}<span class="status-badge stage-{{ c['match_stage'] }}">{{ match_stage_labels.get(c['match_stage'], c['match_stage']) }}</span>{% else %}-{% endif %}</td>
-                        <td class="text-muted small">{{ c['created_at'][:10] }}</td>
+                        <td class="text-muted small">{{ c['created_at']|fdate }}</td>
                         <td>
                             {% if c['match_stage'] == 'seeker_confirmed' %}
                             <form method="post" action="/mgr/matching/{{ c['id'] }}/submit" class="d-inline">

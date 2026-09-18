@@ -72,7 +72,7 @@
                     </td>
                     <td>{{ p['company_name'] }}</td>
                     <td>{{ p['job_title'] }}</td>
-                    <td>{{ p['start_date'][:10] if p['start_date'] else '-' }}</td>
+                    <td>{{ p['start_date']|fdate }}</td>
                 </tr>
                 {% endfor %}
                 </tbody>

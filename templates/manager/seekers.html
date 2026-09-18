@@ -94,7 +94,7 @@
                             <span class="badge bg-success">{{ s['severity'] }}</span>
                             {% else %}-{% endif %}
                         </td>
-                        <td>{{ s['region_sido'] or '-' }} {{ s['region_sigungu'] or '' }}</td>
+                        <td>{{ s|region('-') }}</td>
                         <td>{{ s['work_pref'] or '-' }}</td>
                         <td>{{ s['daily_work_hours'] or '-' }}시간</td>
                         <td>

@@ -12,7 +12,7 @@
                 <dd class="col-sm-9">{{ job['category_name'] or '-' }}</dd>
 
                 <dt class="col-sm-3">지역</dt>
-                <dd class="col-sm-9">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</dd>
+                <dd class="col-sm-9">{{ job|region('-') }}</dd>
 
                 <dt class="col-sm-3">고용 형태</dt>
                 <dd class="col-sm-9">{{ job['employment_type'] }}</dd>

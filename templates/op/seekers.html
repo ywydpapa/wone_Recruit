@@ -79,7 +79,7 @@
                         <td class="fw-semibold">{{ s['name'] }}</td>
                         <td>{{ s['disability_name'] or '-' }}</td>
                         <td>{{ s['severity'] or '-' }}</td>
-                        <td>{{ (s['region_sido']|default('') ~ ' ' ~ s['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ s|region('-') }}</td>
                         <td>{{ s['mobility_type'] or '-' }}</td>
                         <td>{{ s['work_pref'] or '-' }} / {{ s['daily_work_hours'] or '-' }}h</td>
                         <td>

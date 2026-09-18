@@ -20,6 +20,57 @@ def _fromjson(v):
 
 templates.env.filters["fromjson"] = _fromjson
 
+
+def _fdate(v):
+    if not v:
+        return "-"
+    return v[:10]
+
+
+def _fdatetime(v):
+    if not v:
+        return "-"
+    return v[:16]
+
+
+def _region(row, fallback="미지정"):
+    sido = ""
+    sigungu = ""
+    if isinstance(row, dict):
+        sido = row.get("region_sido") or ""
+        sigungu = row.get("region_sigungu") or ""
+    else:
+        sido = getattr(row, "region_sido", "") or ""
+        sigungu = getattr(row, "region_sigungu", "") or ""
+    text = f"{sido} {sigungu}".strip()
+    return text or fallback
+
+
+templates.env.filters["fdate"] = _fdate
+templates.env.filters["fdatetime"] = _fdatetime
+templates.env.filters["region"] = _region
+
+
+def _split_steps(v):
+    if not v:
+        return []
+    return [s.strip() for s in v.split(",") if s.strip()]
+
+
+def _fmt_minutes(v):
+    if not v:
+        return ""
+    v = int(v)
+    if v < 60:
+        return f"{v}분"
+    if v % 60 == 0:
+        return f"{v // 60}시간"
+    return f"{v // 60}시간 {v % 60}분"
+
+
+templates.env.filters["split_steps"] = _split_steps
+templates.env.filters["fmt_minutes"] = _fmt_minutes
+
 _orig_response = templates.TemplateResponse
 
 

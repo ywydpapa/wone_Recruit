@@ -22,9 +22,9 @@
                     <tr>
                         <td class="fw-semibold"><a href="/jobs/{{ p['job_id'] }}">{{ p['job_title'] }}</a></td>
                         <td>{{ p['company_name'] }}</td>
-                        <td>{{ (p['region_sido']|default('') ~ ' ' ~ p['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ p|region('-') }}</td>
                         <td>{{ p['employment_type'] or '-' }}</td>
-                        <td>{{ p['created_at'][:10] if p['created_at'] else '-' }}</td>
+                        <td>{{ p['created_at']|fdate }}</td>
                         <td>
                             {% if p['match_stage'] == 'accepted' %}
                             <span class="badge bg-success">수락됨</span>

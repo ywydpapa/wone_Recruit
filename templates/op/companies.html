@@ -116,7 +116,7 @@
                             <span class="badge bg-warning text-dark">대기</span>
                             {% endif %}
                         </td>
-                        <td>{{ (c['region_sido']|default('') ~ ' ' ~ c['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ c|region('-') }}</td>
                         <td><a href="/op/companies/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
                     </tr>
                     {% endfor %}

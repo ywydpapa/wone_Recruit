@@ -46,9 +46,9 @@
                         </div>
                         <small class="text-muted">장애유형, 장애정도 등 민감정보. 취업 알선 목적으로만 사용됩니다.</small>
                         {% if profile and profile.consented_at %}
-                        <div class="mt-1"><small class="text-secondary">동의일: {{ profile.consented_at[:10] }}</small></div>
+                        <div class="mt-1"><small class="text-secondary">동의일: {{ profile.consented_at|fdate }}</small></div>
                         {% elif profile and profile.consent_withdrawn_at %}
-                        <div class="mt-1"><small class="text-secondary">철회일: {{ profile.consent_withdrawn_at[:10] }}</small></div>
+                        <div class="mt-1"><small class="text-secondary">철회일: {{ profile.consent_withdrawn_at|fdate }}</small></div>
                         {% endif %}
                     </div>
                     {% if profile and profile.consent_sensitive %}
@@ -96,7 +96,7 @@
                     </div>
                     <small class="text-muted">채용 공고, 서비스 안내 등 유용한 정보를 받아볼 수 있습니다.</small>
                     {% if user_row and user_row.agreed_marketing_at %}
-                    <div class="mt-1"><small class="text-secondary">동의일: {{ user_row.agreed_marketing_at[:10] }}</small></div>
+                    <div class="mt-1"><small class="text-secondary">동의일: {{ user_row.agreed_marketing_at|fdate }}</small></div>
                     {% endif %}
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -155,7 +155,6 @@
 
         <!-- 최근 열람 기록 -->
         <h6 class="text-muted fw-semibold mb-3 mt-4">최근 열람 기록</h6>
-        {% set purpose_labels = {"applicant_review": "지원자 검토", "talent_search": "인재 검색", "operator_view": "운영자 조회"} %}
         {% if access_logs %}
         <div class="list-group mb-2">
             {% for log in access_logs %}
@@ -164,7 +163,7 @@
                     <span class="fw-semibold">{{ log.company_name or log.viewer_name }}</span>
                     <small class="text-muted ms-2">{{ purpose_labels.get(log.purpose, log.purpose) }}</small>
                 </div>
-                <small class="text-muted text-nowrap">{{ log.created_at[:16] }}</small>
+                <small class="text-muted text-nowrap">{{ log.created_at|fdatetime }}</small>
             </div>
             {% endfor %}
         </div>

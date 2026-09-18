@@ -25,7 +25,7 @@
                     <tr>
                         <td class="fw-semibold">{{ j['title'] }}</td>
                         <td>{{ j['company_name'] }}</td>
-                        <td>{{ (j['region_sido']|default('') ~ ' ' ~ j['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ j|region('-') }}</td>
                         <td>{{ j['deadline'] or '-' }}</td>
                         <td>
                             <a href="/op/matching?job_id={{ j['id'] }}" class="btn btn-sm btn-primary">선택</a>
@@ -43,7 +43,7 @@
         {# 후보자 목록 화면 #}
         <div class="content-card mb-3">
             <h5 class="mb-2">선택된 공고</h5>
-            <p class="mb-1"><strong>{{ job['title'] }}</strong> / {{ job['company_name'] }} / {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }} / 마감: {{ job['deadline'] or '-' }}</p>
+            <p class="mb-1"><strong>{{ job['title'] }}</strong> / {{ job['company_name'] }} / {{ job|region('-') }} / 마감: {{ job['deadline'] or '-' }}</p>
             <a href="/op/matching" class="btn btn-sm btn-outline-secondary mt-1">다른 공고 선택</a>
         </div>
         <div class="content-card">
@@ -73,7 +73,7 @@
                         <td class="fw-semibold"><a href="/op/seekers/{{ c['id'] }}">{{ c['name'] }}</a></td>
                         <td>{{ c['disability_name'] or '-' }}</td>
                         <td>{{ c['severity'] or '-' }}</td>
-                        <td>{{ (c['region_sido']|default('') ~ ' ' ~ c['region_sigungu']|default(''))|trim or '-' }}</td>
+                        <td>{{ c|region('-') }}</td>
                         <td>{{ c['work_pref'] or '-' }}</td>
                         <td>{{ c['desired_job'] or '-' }}</td>
                         {% set compat = compatibility.get(c['id'], {}) %}

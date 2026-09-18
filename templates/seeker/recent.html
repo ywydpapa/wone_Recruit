@@ -23,7 +23,7 @@
                             {% endif %}
                             <div class="item-meta">
                                 <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
-                                <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+                                <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
                                 {% if job['category_name'] %}
                                 <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
                                 {% endif %}
@@ -32,7 +32,7 @@
                     </div>
                     <hr class="text-muted">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small"><i class="far fa-eye me-1"></i>{{ job['viewed_at'][:16] }} 열람</span>
+                        <span class="text-muted small"><i class="far fa-eye me-1"></i>{{ job['viewed_at']|fdatetime }} 열람</span>
                         <div class="d-flex align-items-center gap-2">
                             {% if job['salary'] %}
                             <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>

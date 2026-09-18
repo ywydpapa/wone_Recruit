@@ -14,10 +14,9 @@
                 </tr>
             </thead>
             <tbody>
-                {% set purpose_labels = {"applicant_review": "지원자 검토", "talent_search": "인재 검색", "operator_view": "운영자 조회"} %}
                 {% for v in views %}
                 <tr>
-                    <td class="text-nowrap text-muted small">{{ v['created_at'][:16] if v['created_at'] else '-' }}</td>
+                    <td class="text-nowrap text-muted small">{{ v['created_at']|fdatetime }}</td>
                     <td>
                         {% if v['company_name'] %}
                             {{ v['company_name'] }}

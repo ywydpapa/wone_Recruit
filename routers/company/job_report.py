@@ -50,7 +50,7 @@ async def job_report(request: Request, job_id: int):
         severity_labels = [r["severity"] or "미등록" for r in severity_rows]
         severity_data = [r["cnt"] for r in severity_rows]
 
-        # 일별 지원 추이 (created_at 날짜 기준)
+        # 일별 지원 추이
         trend_rows = conn.execute(
             """SELECT DATE(c.created_at) AS day, COUNT(*) AS cnt
                FROM candidacies c
@@ -63,7 +63,7 @@ async def job_report(request: Request, job_id: int):
         trend_labels = [r["day"] for r in trend_rows]
         trend_data = [r["cnt"] for r in trend_rows]
 
-        # 파이프라인 전환 (status별 카운트)
+        # 파이프라인 전환
         pipeline_rows = conn.execute(
             """SELECT c.status, COUNT(*) AS cnt
                FROM candidacies c
@@ -73,7 +73,6 @@ async def job_report(request: Request, job_id: int):
             (job_id,),
         ).fetchall()
 
-        # 커스텀 스테이지 레이블 적용
         stage_label_rows = conn.execute(
             "SELECT stage_key, label FROM company_pipeline_stages WHERE company_id=?",
             (company["id"],),

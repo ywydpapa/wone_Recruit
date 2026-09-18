@@ -40,7 +40,7 @@
                             <div class="name">{{ ap['seeker_name'] }}</div>
                             <div class="meta">
                                 {{ '직접' if ap['source'] == 'direct' else '매칭' }}
-                                &middot; {{ ap['created_at'][:10] if ap['created_at'] else '-' }}
+                                &middot; {{ ap['created_at']|fdate }}
                             </div>
                         </a>
                     </div>
@@ -56,7 +56,7 @@
                     <div class="mt-2">
                         {% for ap in rejected_list %}
                         <a href="/company/jobs/{{ job['id'] }}/applicants/{{ ap['id'] }}" class="text-decoration-none text-muted small me-3">
-                            {{ ap['seeker_name'] }} ({{ ap['created_at'][:10] if ap['created_at'] else '-' }})
+                            {{ ap['seeker_name'] }} ({{ ap['created_at']|fdate }})
                         </a>
                         {% endfor %}
                     </div>
@@ -101,7 +101,7 @@
                             {% endif %}
                         </td>
                         <td>{{ '직접' if ap['source'] == 'direct' else '매칭' }}</td>
-                        <td>{{ ap['created_at'][:10] if ap['created_at'] else '-' }}</td>
+                        <td>{{ ap['created_at']|fdate }}</td>
                         <td>
                             <a href="/company/jobs/{{ job['id'] }}/applicants/{{ ap['id'] }}"
                                class="btn btn-sm btn-outline-primary">상세</a>

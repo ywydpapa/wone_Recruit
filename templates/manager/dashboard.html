@@ -69,7 +69,7 @@
                     <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
                     <span class="badge bg-light text-dark ms-1">{{ method_labels.get(s['method'], s['method']) }}</span>
                 </div>
-                <small class="text-muted">{{ s['scheduled_at'][:16] if s['scheduled_at'] else '-' }}</small>
+                <small class="text-muted">{{ s['scheduled_at']|fdatetime }}</small>
             </a>
             {% endfor %}
         </div>
@@ -91,7 +91,7 @@
                     <span class="fw-semibold">{{ s['seeker_name'] }}</span>
                     <span class="text-muted ms-2 small">{{ type_labels.get(s['session_type'], s['session_type']) }}</span>
                 </div>
-                <small class="text-muted">{{ s['created_at'][:10] }}</small>
+                <small class="text-muted">{{ s['created_at']|fdate }}</small>
             </a>
             {% endfor %}
         </div>

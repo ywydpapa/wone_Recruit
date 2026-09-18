@@ -19,7 +19,7 @@
                     <dt class="col-sm-3 text-muted">규모</dt>
                     <dd class="col-sm-9">{{ company['company_size'] or '-' }}</dd>
                     <dt class="col-sm-3 text-muted">지역</dt>
-                    <dd class="col-sm-9">{{ company['region_sido'] or '-' }} {{ company['region_sigungu'] or '' }}</dd>
+                    <dd class="col-sm-9">{{ company|region('-') }}</dd>
                     <dt class="col-sm-3 text-muted">사업자번호</dt>
                     <dd class="col-sm-9">{{ company['biz_no'] or '-' }}</dd>
                     <dt class="col-sm-3 text-muted">대표</dt>
@@ -77,7 +77,7 @@
                         {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
                         {% endfor %}
                     </div>
-                    <span class="text-muted small">{{ rv['created_at'][:10] }}</span>
+                    <span class="text-muted small">{{ rv['created_at']|fdate }}</span>
                 </div>
                 {% if rv['pros'] %}
                 <div class="review-pros-cons mb-1">

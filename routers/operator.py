@@ -7,7 +7,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
-from core.constants import STATUS_LABELS, MATCH_STAGE_LABELS, EMPLOYMENT_TYPES, COMPANY_SIZES, INDUSTRY_TYPES
+from core.constants import STATUS_LABELS, MATCH_STAGE_LABELS, PURPOSE_LABELS, EMPLOYMENT_TYPES, COMPANY_SIZES, INDUSTRY_TYPES
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
 from core.matching import build_capability_profile, calc_category_fit
@@ -991,6 +991,7 @@ async def op_access_log(request: Request, page: int = Query(1)):
             "user_name": user["name"], "user_role": "operator",
             "logs": logs,
             "pagination": pagination,
+            "purpose_labels": PURPOSE_LABELS,
             "base_qs": "",
         }
     )

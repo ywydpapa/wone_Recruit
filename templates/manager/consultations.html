@@ -148,7 +148,7 @@
                         <td>{{ type_labels.get(s['session_type'], s['session_type']) }}</td>
                         <td>{{ method_labels.get(s['method'], s['method']) }}</td>
                         <td class="small{% if s['overdue'] %} text-danger{% endif %}">
-                            {{ s['scheduled_at'][:16] if s['scheduled_at'] else s['created_at'][:10] }}
+                            {{ s['scheduled_at']|fdatetime if s['scheduled_at'] else s['created_at']|fdate }}
                             {% if s['overdue'] %}<span class="badge bg-light text-danger ms-1">지연</span>{% endif %}
                         </td>
                         <td class="small text-truncate truncate-cell">{{ s['location'] or '-' }}</td>

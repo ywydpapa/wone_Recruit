@@ -76,7 +76,7 @@
                     <tr>
                         <td class="fw-semibold"><a href="/op/jobs/{{ job['id'] }}" class="link-plain">{{ job['title'] }}</a></td>
                         <td>{{ job['company_name'] }}</td>
-                        <td>{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</td>
+                        <td>{{ job|region('전국') }}</td>
                         <td>{{ job['employment_type'] }}{% if job['remote_available'] %} <span class="badge bg-success">재택</span>{% endif %}</td>
                         <td>{{ job['salary'] or '협의' }}</td>
                         <td>{{ job['deadline'] or '상시' }}</td>

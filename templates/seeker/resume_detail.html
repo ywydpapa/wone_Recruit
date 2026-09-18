@@ -213,9 +213,7 @@
             <div class="resume-field">
                 <div class="resume-field-label">최대 통근</div>
                 <div class="resume-field-value">
-                    {% if resume.commute_max_minutes < 60 %}{{ resume.commute_max_minutes }}분
-                    {% elif resume.commute_max_minutes % 60 == 0 %}{{ resume.commute_max_minutes // 60 }}시간
-                    {% else %}{{ resume.commute_max_minutes // 60 }}시간 {{ resume.commute_max_minutes % 60 }}분{% endif %}
+                    {{ resume.commute_max_minutes|fmt_minutes }}
                 </div>
             </div>
             {% endif %}

@@ -35,7 +35,7 @@ async def company_profile_form(request: Request, success: str = ""):
             if company["benefits"]:
                 try:
                     parsed = json.loads(company["benefits"])
-                    # JSON 배열이면 체크박스 선택값, 아니면 레거시 텍스트
+                    # 레거시 텍스트 호환
                     if isinstance(parsed, list):
                         selected_benefits = parsed
                 except (json.JSONDecodeError, ValueError):
@@ -169,13 +169,11 @@ async def company_profile_save(
                  tagline, description))
             company_id = cur.lastrowid
 
-        # 사진 삭제 처리
         delete_ids = form.getlist("delete_photo")
         if delete_ids:
             for pid in delete_ids:
                 conn.execute("DELETE FROM company_photos WHERE id=? AND company_id=?", (pid, company_id))
 
-        # 삭제 반영 후 현재 장수 확인
         current_count = conn.execute(
             "SELECT COUNT(*) FROM company_photos WHERE company_id=?", (company_id,)
         ).fetchone()[0]

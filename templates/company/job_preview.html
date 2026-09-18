@@ -50,7 +50,7 @@
         <div class="job-summary-item">
             <i class="fas fa-map-marker-alt"></i>
             <div class="summary-label">근무지역</div>
-            <div class="summary-value">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+            <div class="summary-value">{{ job|region('전국') }}</div>
         </div>
         <div class="job-summary-item">
             <i class="fas fa-graduation-cap"></i>
@@ -90,7 +90,7 @@
             </div>
             <div class="job-info-row">
                 <span class="job-info-label">근무지역</span>
-                <span class="job-info-value">{{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '-' }}</span>
+                <span class="job-info-value">{{ job|region('-') }}</span>
             </div>
             <div class="job-info-row">
                 <span class="job-info-label">근무시간</span>
@@ -173,12 +173,9 @@
     <div class="content-card mb-3">
         <h5 class="job-section-title"><i class="fas fa-route"></i> 전형절차</h5>
         <div class="hiring-steps">
-            {% set steps = job['hiring_process'].split(',') %}
-            {% for step in steps %}
-            {% if step.strip() %}
-            <span class="hiring-step">{{ step.strip() }}</span>
+            {% for step in job['hiring_process']|split_steps %}
+            <span class="hiring-step">{{ step }}</span>
             {% if not loop.last %}<span class="hiring-arrow">→</span>{% endif %}
-            {% endif %}
             {% endfor %}
         </div>
     </div>

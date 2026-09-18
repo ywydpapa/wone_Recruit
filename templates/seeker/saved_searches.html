@@ -17,7 +17,7 @@
                     <span class="badge bg-danger ms-2">{{ s.new_count }}건 새 공고</span>
                     {% endif %}
                 </div>
-                <span class="text-muted small">{{ s.created_at[:10] if s.created_at else '' }}</span>
+                <span class="text-muted small">{{ s.created_at|fdate }}</span>
             </div>
             {% if s.labels %}
             <div class="mb-2">

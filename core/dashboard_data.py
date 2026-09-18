@@ -193,6 +193,9 @@ def get_seeker_dashboard(conn, uid):
         "SELECT status, COUNT(*) as cnt FROM candidacies WHERE seeker_user_id=? GROUP BY status", (uid,)
     ).fetchall()
     app_status_dist = {r["status"]: r["cnt"] for r in status_rows}
+    _labels = [("pending", "검토 대기"), ("reviewing", "검토 중"), ("shortlisted", "서류 통과"),
+               ("interview", "면접"), ("offer", "합격 제안"), ("hired", "채용 완료"), ("rejected", "불합격")]
+    status_summary = " / ".join(f"{lbl} {app_status_dist[k]}" for k, lbl in _labels if app_status_dist.get(k))
 
     profile_view_count = conn.execute(
         "SELECT COUNT(*) FROM access_log WHERE seeker_user_id=?", (uid,)
@@ -221,7 +224,7 @@ def get_seeker_dashboard(conn, uid):
                 bookmark_count=bookmark_count, profile_completeness=completeness,
                 recommended=recommended, alert_new_count=alert_new_count,
                 resume_completeness=resume_completeness,
-                app_status_dist=app_status_dist,
+                app_status_dist=app_status_dist, status_summary=status_summary,
                 profile_view_count=profile_view_count,
                 recent_views_count=recent_views_count,
                 manager=manager, consult_requested=consult_requested)
@@ -301,7 +304,8 @@ def get_company_dashboard(conn, uid):
         pipeline = {r["status"]: r["cnt"] for r in pipeline_rows}
 
         recent_apps = conn.execute(f"""
-            SELECT c.*, jp.title as job_title, u.name as seeker_name
+            SELECT c.*, jp.title as job_title, u.name as seeker_name,
+                   DATE(c.created_at) as applied_date
             FROM candidacies c
             JOIN job_postings jp ON c.job_id=jp.id
             JOIN users u ON c.seeker_user_id=u.id
@@ -312,17 +316,19 @@ def get_company_dashboard(conn, uid):
         stage_labels = get_stage_labels(conn, cid)
         stage_colors = get_stage_color_map(conn, cid)
 
-        # 최근 4주 지원 추이
-        weekly_trend = []
-        for i in range(3, -1, -1):
-            row = conn.execute(f"""
-                SELECT COUNT(*) FROM candidacies c
-                JOIN job_postings jp ON c.job_id=jp.id
-                WHERE jp.company_id=? {_filter}
-                  AND c.created_at >= datetime('now','localtime','-{(i+1)*7} days')
-                  AND c.created_at < datetime('now','localtime','-{i*7} days')
-            """, (cid,)).fetchone()
-            weekly_trend.append({"week_label": f"{(i)*7+1}-{(i+1)*7}일전" if i > 0 else "이번 주", "count": row[0]})
+        # 공고별 지원자/조회수
+        job_stats = conn.execute(f"""
+            SELECT jp.id, jp.title, jp.status,
+                   COUNT(DISTINCT c.id) AS app_count,
+                   (SELECT COUNT(*) FROM recent_views rv WHERE rv.job_id=jp.id) AS view_count
+            FROM job_postings jp
+            LEFT JOIN candidacies c ON c.job_id=jp.id
+                 AND (c.source='direct' OR c.match_stage='submitted')
+            WHERE jp.company_id=?
+            GROUP BY jp.id
+            ORDER BY jp.created_at DESC
+            LIMIT 5
+        """, (cid,)).fetchall()
 
         conversion_rate = round(hired_count / total_applicants * 100) if total_applicants else 0
 
@@ -350,7 +356,7 @@ def get_company_dashboard(conn, uid):
                     recent_apps=recent_apps,
                     pipeline_stages=pipeline_stages, status_labels=stage_labels,
                     stage_colors=stage_colors,
-                    weekly_trend=weekly_trend, conversion_rate=conversion_rate,
+                    job_stats=job_stats, conversion_rate=conversion_rate,
                     avg_days_to_hire=avg_days_to_hire, jobs_closing_soon=jobs_closing_soon,
                     unread_count=unread_count, upcoming_interviews=upcoming_interviews)
     else:
@@ -359,7 +365,7 @@ def get_company_dashboard(conn, uid):
                     hired_count=0, placement_count=0,
                     interview_count=0, pipeline={},
                     recent_apps=[], pipeline_stages=[], status_labels={},
-                    stage_colors={}, weekly_trend=[], conversion_rate=0,
+                    stage_colors={}, job_stats=[], conversion_rate=0,
                     avg_days_to_hire=None, jobs_closing_soon=0,
                     unread_count=0, upcoming_interviews=[])
 

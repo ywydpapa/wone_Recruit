@@ -54,7 +54,7 @@
             <div class="pipeline-card">
                 <a href="/company/jobs/{{ ap['job_id'] }}/applicants/{{ ap['id'] }}">
                     <div class="name">{{ ap['seeker_name'] }}</div>
-                    <div class="meta">{{ ap['job_title'][:20] }} &middot; {{ ap['created_at'][:10] if ap['created_at'] else '-' }}</div>
+                    <div class="meta">{{ ap['job_title'][:20] }} &middot; {{ ap['created_at']|fdate }}</div>
                 </a>
             </div>
             {% endfor %}
@@ -68,7 +68,7 @@
             <summary class="text-muted small"><i class="fas fa-times-circle me-1"></i>불합격 ({{ rejected_list|length }}명)</summary>
             <div class="mt-2">
                 {% for ap in rejected_list %}
-                <a href="/company/jobs/{{ ap['job_id'] }}/applicants/{{ ap['id'] }}" class="text-decoration-none text-muted small me-3">{{ ap['seeker_name'] }} ({{ ap['created_at'][:10] if ap['created_at'] else '-' }})</a>
+                <a href="/company/jobs/{{ ap['job_id'] }}/applicants/{{ ap['id'] }}" class="text-decoration-none text-muted small me-3">{{ ap['seeker_name'] }} ({{ ap['created_at']|fdate }})</a>
                 {% endfor %}
             </div>
         </details>
@@ -115,7 +115,7 @@
                     {% endif %}
                 </td>
                 <td>{{ '직접' if ap['source'] == 'direct' else '매칭' }}</td>
-                <td>{{ ap['created_at'][:10] if ap['created_at'] else '-' }}</td>
+                <td>{{ ap['created_at']|fdate }}</td>
                 <td>
                     <a href="/company/jobs/{{ ap['job_id'] }}/applicants/{{ ap['id'] }}" class="btn btn-sm btn-outline-primary">상세</a>
                 </td>

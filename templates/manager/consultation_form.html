@@ -61,7 +61,7 @@
                 <div class="col-md-6">
                     <label for="scheduled_at" class="form-label">상담 일시</label>
                     <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control"
-                           value="{{ consultation['scheduled_at'][:16] if consultation and consultation['scheduled_at'] else '' }}">
+                           value="{{ consultation['scheduled_at']|fdatetime if consultation and consultation['scheduled_at'] else '' }}">
                     <div class="form-text">비워두면 즉시 완료로 기록</div>
                 </div>
                 <div class="col-md-6">

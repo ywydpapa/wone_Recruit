@@ -34,7 +34,7 @@
                         {% endif %}
 
                         <dt class="col-sm-4">지역</dt>
-                        <dd class="col-sm-8">{{ (profile['region_sido']|default('') ~ ' ' ~ profile['region_sigungu']|default(''))|trim or '-' }}</dd>
+                        <dd class="col-sm-8">{{ profile|region('-') }}</dd>
 
                         <dt class="col-sm-4">학력</dt>
                         <dd class="col-sm-8">{{ profile['education_level'] or '-' }}</dd>
@@ -181,7 +181,7 @@
                                 <td>{{ status_labels.get(h['to_status'], h['to_status']) }}</td>
                                 <td>{{ h['actor_name'] or '-' }}</td>
                                 <td>{{ h['comment'] or '-' }}</td>
-                                <td>{{ h['created_at'][:16] if h['created_at'] else '-' }}</td>
+                                <td>{{ h['created_at']|fdatetime }}</td>
                             </tr>
                             {% endfor %}
                             </tbody>
@@ -303,7 +303,7 @@
                         <div class="list-group-item px-0">
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-semibold small">{{ note['author_name'] or '알 수 없음' }}</span>
-                                <span class="text-muted small">{{ note['created_at'][:16] if note['created_at'] else '' }}</span>
+                                <span class="text-muted small">{{ note['created_at']|fdatetime }}</span>
                             </div>
                             <div class="text-prewrap">{{ note['content'] }}</div>
                         </div>

@@ -9,7 +9,7 @@ from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.upload import save_upload
 from core.constants import (
-    EMPLOYMENT_TYPES, STATUS_LABELS,
+    EMPLOYMENT_TYPES, STATUS_LABELS, PURPOSE_LABELS,
     MOBILITY_TYPES, COMMUTE_OPTIONS,
     COMMUNICATION_OPTIONS, ACCOMMODATION_OPTIONS,
 )
@@ -512,7 +512,17 @@ async def applications_list(request: Request):
                    ORDER BY id ASC""",
                 (app["id"],),
             ).fetchall()
-            history_map[app["id"]] = history
+            reached = []
+            dates = {}
+            for h in history:
+                if h["to_status"] not in reached:
+                    reached.append(h["to_status"])
+                dates[h["to_status"]] = (h["created_at"] or "")[:10]
+            history_map[app["id"]] = {
+                "history": history,
+                "reached": reached,
+                "dates": dates,
+            }
     finally:
         conn.close()
     return templates.TemplateResponse(
@@ -865,6 +875,7 @@ async def profile_views(request: Request):
             "request": request, "page_title": "프로필 열람 현황",
             "user_name": user["name"], "user_role": "seeker",
             "views": views,
+            "purpose_labels": PURPOSE_LABELS,
         }
     )
 

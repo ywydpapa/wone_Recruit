@@ -49,7 +49,7 @@
             <div class="cal-day{% if weekday == 0 %} sun{% elif weekday == 6 %} sat{% endif %}">{{ day }}</div>
             {% for iv in by_date.get(ds, []) %}
             <a href="/company/jobs/{{ iv['job_id'] }}/applicants/{{ iv['candidacy_id'] }}" class="cal-slot d-block text-decoration-none">
-                <span class="time">{{ iv['interview_time'][:5] if iv['interview_time'] else '' }}</span>
+                <span class="time">{{ iv['interview_time'][:5] }}</span>
                 {{ iv['seeker_name'] }}<br>
                 <span class="text-muted">{{ iv['job_title'][:15] }}</span>
                 {% if iv['interview_type'] %}

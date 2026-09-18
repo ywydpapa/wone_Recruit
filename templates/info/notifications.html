@@ -12,7 +12,7 @@
                         {% if not n.is_read %}<i class="fas fa-circle text-primary me-2 icon-dot" aria-hidden="true"></i>{% endif %}
                         {{ n.message }}
                     </div>
-                    <small class="text-muted ms-3 text-nowrap">{{ n.created_at[:10] if n.created_at else '' }}</small>
+                    <small class="text-muted ms-3 text-nowrap">{{ n.created_at|fdate }}</small>
                 </div>
             </a>
             {% endfor %}

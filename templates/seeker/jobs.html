@@ -143,7 +143,7 @@
                             {% endif %}
                             <div class="item-meta">
                                 <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
-                                <div><i class="fas fa-map-marker-alt"></i> {{ (job['region_sido']|default('') ~ ' ' ~ job['region_sigungu']|default(''))|trim or '전국' }}</div>
+                                <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
                                 {% if job['category_name'] %}
                                 <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
                                 {% endif %}

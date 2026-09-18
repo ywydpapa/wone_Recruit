@@ -77,7 +77,7 @@
                 {% if f['status'] == 'completed' %}
                 <div class="bg-light rounded p-2 small">
                     <p class="mb-1 text-prewrap">{{ f['notes'] or '(메모 없음)' }}</p>
-                    <small class="text-muted">완료: {{ f['completed_at'][:10] if f['completed_at'] else '' }}</small>
+                    <small class="text-muted">완료: {{ f['completed_at']|fdate }}</small>
                 </div>
                 {% else %}
                 <form method="post" action="/mgr/placements/{{ placement['id'] }}/followup/{{ f['id'] }}">

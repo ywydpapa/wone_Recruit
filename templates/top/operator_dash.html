@@ -192,19 +192,11 @@
                 <div class="content-card">
                     <div class="card-title"><span><i class="fas fa-exchange-alt me-2 text-primary"></i>매칭 파이프라인</span></div>
                     <div class="pipeline-bar">
-                        {% set stages = [
-                            ('pending', '검토 대기'),
-                            ('reviewing', '검토 중'),
-                            ('shortlisted', '서류 통과'),
-                            ('interview', '면접'),
-                            ('offer', '합격 제안'),
-                            ('hired', '채용 완료'),
-                        ] %}
                         {% set rejected = pipeline.get('rejected', 0) + pipeline.get('withdrawn', 0) %}
-                        {% for key, label in stages %}
+                        {% for key in ['pending', 'reviewing', 'shortlisted', 'interview', 'offer', 'hired'] %}
                         <div class="pipeline-stage">
                             <span class="pipeline-count">{{ pipeline.get(key, 0) }}</span>
-                            <span class="pipeline-label">{{ label }}</span>
+                            <span class="pipeline-label">{{ status_labels.get(key, key) }}</span>
                         </div>
                         {% if not loop.last %}
                         <i class="fas fa-chevron-right pipeline-arrow"></i>

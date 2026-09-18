@@ -3,6 +3,7 @@ import sqlite3
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from core.constants import PURPOSE_LABELS
 from core.db import get_sqlite
 from core.deps import check_login, require_role, templates
 from core.rate_limit import check_login_rate, record_login_attempt, clear_login_attempts, get_client_ip
@@ -204,6 +205,7 @@ async def consent_page(request: Request, error: str = "", success: str = ""):
             "user_row": user_row,
             "profile": profile,
             "access_logs": access_logs,
+            "purpose_labels": PURPOSE_LABELS,
             "error": error, "success": success,
         }
     )

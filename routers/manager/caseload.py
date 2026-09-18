@@ -7,7 +7,7 @@ from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
-from core.constants import DISABILITY_ICONS, ASSISTIVE_DEVICES
+from core.constants import DISABILITY_ICONS, ASSISTIVE_DEVICES, STATUS_LABELS, MATCH_STAGE_LABELS
 from routers.manager.consultations import SESSION_TYPE_LABELS, METHOD_LABELS, CONSULT_STATUS_LABELS
 
 
@@ -330,6 +330,8 @@ async def mgr_seeker_detail(request: Request, user_id: int):
             "consult_status_labels": CONSULT_STATUS_LABELS,
             "assessment": assessment,
             "candidacies": candidacies,
+            "status_labels": STATUS_LABELS,
+            "stage_labels": MATCH_STAGE_LABELS,
             "consent_given": consent_given,
             "communication_pref_display": _parse_json_list(profile["communication_pref"]) if profile else '-',
             "accommodation_needs_display": _parse_json_list(profile["accommodation_needs"]) if profile else '-',

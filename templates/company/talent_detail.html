@@ -23,7 +23,7 @@
                         <div class="col-sm-6">
                             <div class="p-3 bg-light rounded">
                                 <p class="small text-muted mb-1">지역</p>
-                                <p class="fw-bold mb-0"><i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ (profile.region_sido or '') ~ ' ' ~ (profile.region_sigungu or '') | trim or '미지정' }}</p>
+                                <p class="fw-bold mb-0"><i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ profile|region }}</p>
                             </div>
                         </div>
                         <div class="col-sm-6">

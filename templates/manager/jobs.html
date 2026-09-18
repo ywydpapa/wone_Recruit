@@ -62,7 +62,7 @@
                         <td class="fw-semibold"><a href="/mgr/jobs/{{ j['id'] }}">{{ j['title'] }}</a></td>
                         <td>{{ j['company_name'] }}</td>
                         <td>{{ j['employment_type'] or '-' }}</td>
-                        <td>{{ j['region_sido'] or '-' }} {{ j['region_sigungu'] or '' }}</td>
+                        <td>{{ j|region('-') }}</td>
                         <td>{{ j['applicant_count'] }}</td>
                         <td>
                             {% if j['status'] == 'open' %}게시중
