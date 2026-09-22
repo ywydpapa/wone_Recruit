@@ -4,16 +4,16 @@
 {% block styles %}
 <style>
 /* 캘린더 그리드 */
-.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:#dee2e6; border:1px solid #dee2e6; border-radius:8px; overflow:hidden; }
-.cal-header { background:#f8f9fa; text-align:center; padding:8px 4px; font-weight:600; font-size:0.85rem; }
-.cal-header.sun { color:#dc3545; }
-.cal-header.sat { color:#0d6efd; }
-.cal-cell { background:#fff; min-height:100px; padding:6px 8px; vertical-align:top; }
-.cal-cell.empty { background:#fafafa; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.cal-header { background:var(--bg-subtle); text-align:center; padding:8px 4px; font-weight:600; font-size:0.85rem; }
+.cal-header.sun { color:var(--danger); }
+.cal-header.sat { color:var(--primary); }
+.cal-cell { background:var(--bg-card); min-height:100px; padding:6px 8px; vertical-align:top; }
+.cal-cell.empty { background:var(--bg); }
 .cal-day { font-weight:600; font-size:0.85rem; margin-bottom:4px; }
-.cal-day.sun { color:#dc3545; }
-.cal-day.sat { color:#0d6efd; }
-.cal-slot { font-size:0.75rem; background:#e8f4fd; border-radius:4px; padding:3px 6px; margin-bottom:3px; line-height:1.3; }
+.cal-day.sun { color:var(--danger); }
+.cal-day.sat { color:var(--primary); }
+.cal-slot { font-size:0.75rem; background:var(--bg-subtle); border-radius:4px; padding:3px 6px; margin-bottom:3px; line-height:1.3; }
 .cal-slot .time { font-weight:600; }
 </style>
 {% endblock %}
@@ -52,8 +52,8 @@
                 <span class="time">{{ iv['interview_time'][:5] }}</span>
                 {{ iv['seeker_name'] }}<br>
                 <span class="text-muted">{{ iv['job_title'][:15] }}</span>
-                {% if iv['interview_type'] %}
-                &middot; {{ '대면' if iv['interview_type'] == 'onsite' else ('화상' if iv['interview_type'] == 'video' else '전화') }}
+                {% if iv['type_label'] %}
+                &middot; {{ iv['type_label'] }}
                 {% endif %}
             </a>
             {% endfor %}

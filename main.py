@@ -656,7 +656,6 @@ def _ensure_db():
             conn.execute(ddl)
             conn.commit()
 
-    # 기존 기업 승인 처리
     try:
         conn.execute("UPDATE companies SET approval_status='approved' WHERE approval_status='pending' AND biz_no != ''")
         conn.commit()
@@ -686,7 +685,6 @@ def _ensure_db():
             )
         conn.commit()
 
-    # 마감일 지난 공고 자동 마감
     from datetime import date
     today = date.today().isoformat()
     conn.execute(
@@ -701,6 +699,8 @@ def _ensure_db():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _ensure_db()
+    from core.jobs import close_expired_jobs
+    close_expired_jobs()
     yield
 
 

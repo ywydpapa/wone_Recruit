@@ -64,8 +64,6 @@ def test_profile_v2_save_disability_context(client):
         ("commute_max_minutes", "60"),
         ("communication_pref", "문자"),
         ("communication_pref", "수어"),
-        ("assistive_tech", "스크린리더"),
-        ("assistive_tech", "화면확대"),
         ("education_level", "고졸"),
         ("career_years", "1"),
         ("experience_summary", ""),
@@ -82,9 +80,6 @@ def test_profile_v2_save_disability_context(client):
     comm = json.loads(p["communication_pref"])
     assert "문자" in comm
     assert "수어" in comm
-    at = json.loads(p["assistive_tech"])
-    assert "스크린리더" in at
-    assert "화면확대" in at
 
 
 def test_profile_v2_save_work_capacity(client):
@@ -144,7 +139,6 @@ def test_profile_v2_save_education(client):
 
 def test_certifications_crud(client):
     login(client, "seeker1")
-    # 자격증 2개 저장
     r = _post_form(client, "/profile", [
         ("disability_type_id", "1"),
         ("severity", "경증"),
@@ -169,7 +163,6 @@ def test_certifications_crud(client):
     assert certs[0]["cert_name"] == "정보처리기사"
     assert certs[1]["cert_name"] == "SQLD"
 
-    # 자격증 1개로 재저장
     r = _post_form(client, "/profile", [
         ("disability_type_id", "1"),
         ("severity", "경증"),

@@ -42,9 +42,12 @@ async def interview_calendar(request: Request, year: int = 0, month: int = 0):
             (company["id"], date_from, date_to),
         ).fetchall()
 
+        _type_label = {"onsite": "대면", "video": "화상", "phone": "전화"}
         by_date = {}
         for iv in interviews:
-            by_date.setdefault(iv["interview_date"], []).append(iv)
+            d = dict(iv)
+            d["type_label"] = _type_label.get(iv["interview_type"], "")
+            by_date.setdefault(iv["interview_date"], []).append(d)
 
         prev_year, prev_month = (year, month - 1) if month > 1 else (year - 1, 12)
         next_year, next_month = (year, month + 1) if month < 12 else (year + 1, 1)

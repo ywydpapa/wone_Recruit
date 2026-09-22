@@ -2,7 +2,7 @@
 {% set user_role = request.session.get('role', 'seeker') %}
 {% set _notif = 0 %}
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +10,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+    (function(){var t=localStorage.getItem('recruit_theme');
+    if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+    document.documentElement.setAttribute('data-theme',t);})();
+    </script>
     <link rel="stylesheet" href="/static/css/base.css">
     <link rel="stylesheet" href="/static/css/layout.css">
     <link rel="stylesheet" href="/static/css/components.css">
@@ -176,14 +181,18 @@
 
         {% endif %}
 
+        {% if user_role in ('seeker', 'company') %}
         <a href="/messages" class="sidebar-link{% if '/messages' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-envelope"></i><span>메시지</span>
         </a>
+        {% endif %}
 
+        {% if user_role == 'seeker' %}
         <div class="sidebar-section">커뮤니티</div>
         <a href="/community" class="sidebar-link{% if '/community' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-comments"></i><span>커뮤니티</span>
         </a>
+        {% endif %}
 
     </nav>
     <div class="sidebar-footer">
@@ -205,6 +214,9 @@
             <a href="/"><span>WONE</span> Recruit</a>
         </div>
         <div class="topbar-actions">
+            <button type="button" class="topbar-icon" id="themeToggle" title="다크모드 전환" aria-label="다크모드 전환">
+                <i class="fas fa-moon" aria-hidden="true"></i>
+            </button>
             <a href="/messages" class="topbar-icon" id="topbar-msg-btn" title="메시지">
                 <i class="fas fa-envelope" aria-hidden="true"></i>
                 <span id="topbar-msg-badge" class="topbar-badge d-none">0</span>
@@ -418,6 +430,24 @@ document.querySelectorAll('[data-delete-url]').forEach(function(el) {
             .then(function(d) { location.href = d.redirect || location.pathname; });
     });
 });
+</script>
+<script>
+(function(){
+    var btn = document.getElementById('themeToggle');
+    var icon = btn.querySelector('i');
+    function apply(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        icon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        btn.title = t === 'dark' ? '라이트모드 전환' : '다크모드 전환';
+    }
+    var cur = document.documentElement.getAttribute('data-theme') || 'light';
+    apply(cur);
+    btn.addEventListener('click', function() {
+        cur = cur === 'dark' ? 'light' : 'dark';
+        apply(cur);
+        localStorage.setItem('recruit_theme', cur);
+    });
+})();
 </script>
 {% block scripts %}{% endblock %}
 </body>

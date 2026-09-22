@@ -2,9 +2,11 @@ from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from core.db import get_sqlite
-from core.deps import check_login, templates
+from core.deps import check_login, require_role, templates
 from core.constants import POST_CATEGORIES, COMMUNITY_CATEGORIES
 from core.notifications import create_notification
+
+_COMMUNITY_ROLES = ("seeker", "operator")
 
 router = APIRouter()
 
@@ -26,9 +28,7 @@ async def community_list(
     q: str = Query(""),
     page: int = Query(1),
 ):
-    if not check_login(request):
-        return RedirectResponse(url="/login", status_code=303)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
 
     conn = get_sqlite()
     try:
@@ -92,9 +92,7 @@ async def community_list(
 
 @router.get("/write_post", response_class=HTMLResponse)
 async def write_post_form(request: Request):
-    if not check_login(request):
-        return RedirectResponse(url="/login", status_code=303)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     return templates.TemplateResponse(
         request=request,
         name="community/write_post.html",
@@ -115,9 +113,7 @@ async def create_post(
     title: str = Form(...),
     content: str = Form(...),
 ):
-    if not check_login(request):
-        return RedirectResponse(url="/login", status_code=303)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         conn.execute(
@@ -132,9 +128,7 @@ async def create_post(
 
 @router.get("/post/{post_id}", response_class=HTMLResponse)
 async def post_detail(request: Request, post_id: int):
-    if not check_login(request):
-        return RedirectResponse(url="/login", status_code=303)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         post = conn.execute("SELECT * FROM posts WHERE id=?", (post_id,)).fetchone()
@@ -183,9 +177,7 @@ async def post_detail(request: Request, post_id: int):
 
 @router.post("/api/posts/{post_id}/comments")
 async def add_comment(request: Request, post_id: int, content: str = Form(...)):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         conn.execute(
@@ -200,9 +192,7 @@ async def add_comment(request: Request, post_id: int, content: str = Form(...)):
 
 @router.post("/api/posts/{post_id}/like")
 async def toggle_like(request: Request, post_id: int):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         existing = conn.execute(
@@ -232,9 +222,7 @@ async def toggle_like(request: Request, post_id: int):
 
 @router.post("/api/posts/{post_id}/bookmark")
 async def toggle_bookmark(request: Request, post_id: int):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         existing = conn.execute(
@@ -261,13 +249,12 @@ async def toggle_bookmark(request: Request, post_id: int):
 
 @router.delete("/api/posts/{post_id}")
 async def delete_post(request: Request, post_id: int):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         post = conn.execute("SELECT user_id FROM posts WHERE id=?", (post_id,)).fetchone()
-        if not post or post["user_id"] != user["id"]:
+        # 본인 글이거나 운영자면 삭제 가능
+        if not post or (post["user_id"] != user["id"] and user["role"] != "operator"):
             return JSONResponse({"error": "unauthorized"}, status_code=403)
         conn.execute("DELETE FROM comments WHERE post_id=?", (post_id,))
         conn.execute("DELETE FROM post_likes WHERE post_id=?", (post_id,))
@@ -281,13 +268,11 @@ async def delete_post(request: Request, post_id: int):
 
 @router.delete("/api/comments/{comment_id}")
 async def delete_comment(request: Request, comment_id: int):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         comment = conn.execute("SELECT user_id FROM comments WHERE id=?", (comment_id,)).fetchone()
-        if not comment or comment["user_id"] != user["id"]:
+        if not comment or (comment["user_id"] != user["id"] and user["role"] != "operator"):
             return JSONResponse({"error": "unauthorized"}, status_code=403)
         conn.execute("DELETE FROM comments WHERE id=?", (comment_id,))
         conn.commit()
@@ -298,9 +283,7 @@ async def delete_comment(request: Request, comment_id: int):
 
 @router.get("/my_posts", response_class=HTMLResponse)
 async def my_posts(request: Request):
-    if not check_login(request):
-        return RedirectResponse(url="/login", status_code=303)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         posts = conn.execute(
@@ -332,9 +315,7 @@ async def my_posts(request: Request):
 
 @router.get("/my_bookmarks_posts", response_class=HTMLResponse)
 async def my_bookmarked_posts(request: Request):
-    if not check_login(request):
-        return RedirectResponse(url="/login", status_code=303)
-    user = _get_session_user(request)
+    user = require_role(request, *_COMMUNITY_ROLES)
     conn = get_sqlite()
     try:
         posts = conn.execute(
@@ -362,9 +343,7 @@ async def my_bookmarked_posts(request: Request):
 
 @router.get("/api/messages/thread")
 async def message_thread(request: Request, with_name: str = Query(...)):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, "seeker", "company", "manager", "operator")
     conn = get_sqlite()
     try:
         messages = conn.execute(
@@ -384,9 +363,7 @@ async def send_message(
     to_name: str = Form(...),
     body: str = Form(...),
 ):
-    if not check_login(request):
-        return JSONResponse({"error": "login required"}, status_code=401)
-    user = _get_session_user(request)
+    user = require_role(request, "seeker", "company", "manager", "operator")
     conn = get_sqlite()
     try:
         from datetime import datetime

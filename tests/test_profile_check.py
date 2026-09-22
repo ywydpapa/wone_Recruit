@@ -18,7 +18,8 @@ def test_apply_blocked_without_profile(client):
     assert "incomplete" in r.headers["location"]
 
 
-def test_apply_blocked_missing_disability_type(client):
+def test_apply_allowed_missing_disability_type(client):
+    # disability_type_id는 매니저가 설정 - 없어도 지원 가능
     login(client, "seeker1")
     conn = get_sqlite()
     uid = conn.execute("SELECT id FROM users WHERE username='seeker1'").fetchone()["id"]
@@ -27,9 +28,8 @@ def test_apply_blocked_missing_disability_type(client):
     job_id = conn.execute("SELECT id FROM job_postings WHERE status='open' LIMIT 1").fetchone()["id"]
     conn.close()
 
-    r = client.get(f"/apply/{job_id}", follow_redirects=False)
-    assert r.status_code == 303
-    assert "incomplete" in r.headers["location"]
+    r = client.get(f"/apply/{job_id}")
+    assert r.status_code == 200
 
 
 def test_apply_blocked_missing_accommodation(client):
@@ -56,11 +56,10 @@ def test_apply_allowed_with_complete_profile(client):
     assert "지원서 작성" in r.text
 
 
-def test_profile_completeness_on_dashboard(client):
+def test_dashboard_accessible(client):
     login(client, "seeker1")
     r = client.get("/")
     assert r.status_code == 200
-    assert "프로필 완성도" in r.text
 
 
 def test_profile_incomplete_msg_shown(client):

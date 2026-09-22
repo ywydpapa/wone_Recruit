@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}보조기기별 구직자 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas {{ device_icon }} me-2" aria-hidden="true"></i>{{ device }} 사용 구직자</h2>
+</div>
+
+<div class="container">
+    <div class="mb-3">
+        <a href="/mgr/" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>대시보드로 돌아가기
+        </a>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0">{{ device }} <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
+    </div>
+    <div class="content-card">
+        {% if seekers %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>장애유형</th>
+                        <th>중증도</th>
+                        <th>지역</th>
+                        <th>희망근무</th>
+                        <th>보조기기</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in seekers %}
+                    <tr onclick="location.href='/mgr/seekers/{{ s['id'] }}'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/mgr/seekers/{{ s['id'] }}'}" class="row-link" tabindex="0" role="link" aria-label="{{ s['name'] }} 상세보기">
+                        <td class="fw-semibold">{{ s['name'] }}</td>
+                        <td>
+                            {% if s['disability_name'] %}
+                            <i class="fas {{ disability_icons.get(s['disability_name'], 'fa-user') }}" title="{{ s['disability_name'] }}"></i>
+                            <span class="ms-1">{{ s['disability_name'] }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if s['severity'] == '중증' %}
+                            <span class="badge bg-danger">중증</span>
+                            {% elif s['severity'] %}
+                            <span class="badge bg-success">{{ s['severity'] }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ s|region('-') }}</td>
+                        <td>{{ s['work_pref'] or '-' }}</td>
+                        <td>
+                            {% if s['device_icons'] %}
+                            <span class="device-icon-row">
+                                {% for d in s['device_icons'] %}<i class="fas {{ d['icon'] }} me-1" title="{{ d['name'] }}"></i>{% endfor %}
+                                {% if s['device_overflow'] %}<span class="text-muted small">+{{ s['device_overflow'] }}</span>{% endif %}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-3 text-muted mb-0">해당 보조기기를 사용하는 구직자가 없습니다.</p>
+        {% endif %}
+    </div>
+    {% if seekers %}
+    {% include "common/pagination.html" %}
+    {% endif %}
+</div>
+{% endblock %}

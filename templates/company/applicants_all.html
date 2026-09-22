@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">지원자 관리</h2>
     <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary btn-sm" id="btn-toggle-view" onclick="toggleView()"><i class="fas fa-columns me-1"></i><span id="toggle-label">파이프라인</span></button>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-toggle-view" onclick="toggleView()" aria-label="보기 전환"><i class="fas fa-columns me-1" aria-hidden="true"></i><span id="toggle-label">파이프라인</span></button>
     </div>
 </div>
 
@@ -137,7 +137,7 @@
 <form method="post" action="/company/applicants/bulk-status" id="bulk-form">
     {{ csrf_input }}
     <input type="hidden" name="candidacy_ids" id="bulk-ids">
-    <div id="bulk-bar" class="fixed-bottom bg-white border-top shadow-sm p-3 d-none">
+    <div id="bulk-bar" class="fixed-bottom border-top shadow-sm bulk-bar-bg p-3 d-none">
         <div class="d-flex align-items-center gap-3 flex-wrap">
             <span class="text-muted small"><span id="bulk-count">0</span>명 선택됨</span>
             <select name="status" class="form-select form-select-sm w-auto" required>

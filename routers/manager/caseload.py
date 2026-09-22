@@ -21,7 +21,6 @@ def _parse_json_list(val):
         return val
 
 
-# 보조기기 이름 -> 아이콘 역매핑
 _DEVICE_ICON_MAP = {
     name: icon
     for devices in ASSISTIVE_DEVICES.values()
@@ -122,6 +121,37 @@ async def mgr_seekers(
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
         rows = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
+        dev_rows = conn.execute(
+            "SELECT u.id, u.name, "
+            "dt.name AS disability_name, sp.severity, sp.assistive_tech, "
+            "r.sido AS region_sido, r.sigungu AS region_sigungu "
+            "FROM users u "
+            "JOIN manager_assignments ma ON ma.seeker_user_id = u.id "
+            "LEFT JOIN seeker_profiles sp ON u.id = sp.user_id "
+            "LEFT JOIN disability_types dt ON sp.disability_type_id = dt.id "
+            "LEFT JOIN regions r ON sp.region_id = r.id "
+            "WHERE ma.manager_user_id=? AND sp.consent_sensitive=1 "
+            "AND sp.assistive_tech IS NOT NULL AND sp.assistive_tech != '[]'",
+            (user["id"],),
+        ).fetchall()
+        device_counts = {}
+        device_seekers = {}
+        for r in dev_rows:
+            try:
+                names = json.loads(r["assistive_tech"])
+            except (json.JSONDecodeError, TypeError):
+                continue
+            sd = dict(r)
+            for name in names:
+                device_counts[name] = device_counts.get(name, 0) + 1
+                device_seekers.setdefault(name, []).append(sd)
+        device_summary = []
+        for cat, devices in ASSISTIVE_DEVICES.items():
+            items = [
+                {"name": name, "icon": icon, "count": device_counts.get(name, 0)}
+                for name, icon in devices
+            ]
+            device_summary.append({"category": cat, "items": items})
     finally:
         conn.close()
     seekers = []
@@ -151,6 +181,64 @@ async def mgr_seekers(
             "stage_label": stage_label,
             "disability_icons": DISABILITY_ICONS,
             "pagination": pagination, "base_qs": "&".join(qs_parts),
+            "device_summary": device_summary,
+            "device_seekers": device_seekers,
+        }
+    )
+
+
+@router.get("/seekers/by-device", response_class=HTMLResponse)
+async def mgr_seekers_by_device(
+    request: Request,
+    device: str = Query(""),
+    page: int = Query(1),
+):
+    user = require_role(request, "manager")
+    if not device:
+        raise HTTPException(status_code=400, detail="기기명이 필요합니다.")
+    conn = get_sqlite()
+    try:
+        like_pat = f'%"{device}"%'
+        sql = (
+            "SELECT u.id, u.name, u.username, "
+            "sp.disability_type_id, dt.name AS disability_name, "
+            "sp.severity, sp.assistive_tech, "
+            "r.sido AS region_sido, r.sigungu AS region_sigungu, "
+            "sp.work_pref "
+            "FROM users u "
+            "JOIN manager_assignments ma ON ma.seeker_user_id = u.id "
+            "LEFT JOIN seeker_profiles sp ON u.id = sp.user_id "
+            "LEFT JOIN disability_types dt ON sp.disability_type_id = dt.id "
+            "LEFT JOIN regions r ON sp.region_id = r.id "
+            "WHERE ma.manager_user_id = ? AND sp.consent_sensitive = 1 "
+            "AND sp.assistive_tech LIKE ? "
+            "ORDER BY u.id"
+        )
+        params = [user["id"], like_pat]
+        page = max(1, page)
+        total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
+        sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
+        rows = conn.execute(sql, params).fetchall()
+        pagination = page_info(total, page)
+    finally:
+        conn.close()
+    seekers = []
+    for s in rows:
+        d = dict(s)
+        d["device_icons"], d["device_overflow"] = _device_icons(s["assistive_tech"])
+        seekers.append(d)
+    device_icon = _DEVICE_ICON_MAP.get(device, "fa-circle-dot")
+    return templates.TemplateResponse(
+        request=request, name="manager/seekers_by_device.html", context={
+            "request": request,
+            "page_title": f"보조기기별 구직자 - {device}",
+            "user_name": user["name"], "user_role": "manager",
+            "seekers": seekers,
+            "device": device,
+            "device_icon": device_icon,
+            "disability_icons": DISABILITY_ICONS,
+            "pagination": pagination,
+            "base_qs": f"device={device}",
         }
     )
 
@@ -269,7 +357,6 @@ async def mgr_seeker_detail(request: Request, user_id: int):
             "SELECT * FROM seeker_certifications WHERE user_id=? ORDER BY id",
             (user_id,),
         ).fetchall()
-        # 상담 타임라인
         sessions = conn.execute(
             "SELECT cs.*, u.name AS manager_name "
             "FROM consultation_sessions cs "
@@ -277,14 +364,12 @@ async def mgr_seeker_detail(request: Request, user_id: int):
             "WHERE cs.seeker_user_id=? ORDER BY cs.created_at DESC",
             (user_id,),
         ).fetchall()
-        # 초기 평가
         assessment = conn.execute(
             "SELECT c.*, u.name AS operator_name "
             "FROM consultations c JOIN users u ON c.operator_user_id = u.id "
             "WHERE c.seeker_user_id=? ORDER BY c.created_at DESC LIMIT 1",
             (user_id,),
         ).fetchone()
-        # 지원 현황 (동의한 경우만)
         consent_given = profile and profile["consent_sensitive"]
         candidacies = []
         if consent_given:
@@ -305,7 +390,6 @@ async def mgr_seeker_detail(request: Request, user_id: int):
                 selected_devices = json.loads(profile["assistive_tech"])
             except (json.JSONDecodeError, TypeError):
                 pass
-        # 열람 기록
         conn.execute(
             "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
             (user["id"], user_id, "manager_view"),

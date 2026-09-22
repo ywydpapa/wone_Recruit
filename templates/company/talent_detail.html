@@ -2,97 +2,158 @@
 {% block title %}인재 프로필{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">인재 프로필</h2><a href="/company/talents" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>인재 목록</a></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">인재 프로필</h2>
+    <a href="/company/talents{% if back_qs %}?{{ back_qs }}{% endif %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>인재 목록</a>
+</div>
 
 <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="content-card">
-                    <div class="d-flex align-items-center gap-4 mb-4">
-                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
-                        <div>
-                            {% if disability_hidden %}
-                            <span class="item-badge mb-2 d-inline-block text-muted">장애 정보: 비공개</span>
-                            {% elif profile.disability_name %}
-                            <span class="item-badge mb-2 d-inline-block">{{ profile.disability_name }} &middot; {{ profile.severity }}</span>
-                            {% endif %}
-                            <h3 class="fw-bold mb-1">{{ profile.seeker_name }}</h3>
-                            <p class="text-muted mb-0">{{ profile.desired_job or '미지정' }} &middot; {{ profile.work_pref }}</p>
-                        </div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-light rounded">
-                                <p class="small text-muted mb-1">지역</p>
-                                <p class="fw-bold mb-0"><i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ profile|region }}</p>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-light rounded">
-                                <p class="small text-muted mb-1">근무 형태</p>
-                                <p class="fw-bold mb-0"><i class="fas fa-briefcase me-1 text-primary"></i>{{ profile.work_pref }}</p>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-light rounded">
-                                <p class="small text-muted mb-1">근무시간</p>
-                                <p class="fw-bold mb-0"><i class="fas fa-clock me-1 text-primary"></i>{{ profile.daily_work_hours }}시간 &middot; {{ profile.preferred_time }}</p>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-light rounded">
-                                <p class="small text-muted mb-1">경력</p>
-                                <p class="fw-bold mb-0"><i class="fas fa-history me-1 text-primary"></i>{% if profile.career_years > 0 %}{{ profile.career_years }}년{% else %}신입{% endif %}</p>
-                            </div>
-                        </div>
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="d-flex align-items-center gap-4 mb-4">
+                <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                <div>
+                    {% if disability_hidden %}
+                    <span class="item-badge mb-2 d-inline-block text-muted">장애 정보: 비공개</span>
+                    {% elif profile.disability_name %}
+                    <span class="item-badge mb-2 d-inline-block">{{ profile.disability_name }} &middot; {{ profile.severity }}</span>
+                    {% endif %}
+                    <h3 class="fw-bold mb-1">{{ profile.seeker_name }}</h3>
+                    <p class="text-muted mb-0">{{ profile.desired_job or '미지정' }} &middot; {{ profile.work_pref }}</p>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="p-3 bg-light rounded">
+                        <p class="small text-muted mb-1">지역</p>
+                        <p class="fw-bold mb-0"><i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ profile|region }}</p>
                     </div>
                 </div>
-
-                {% if profile.experience_summary %}
-                <div class="content-card mt-4">
-                    <h6 class="fw-bold text-muted mb-3"><i class="fas fa-file-alt me-2 text-primary"></i>경력 요약</h6>
-                    <div class="text-prewrap">{{ profile.experience_summary }}</div>
-                </div>
-                {% endif %}
-
-                {% if accommodation %}
-                <div class="content-card mt-4">
-                    <h6 class="fw-bold text-muted mb-3"><i class="fas fa-universal-access me-2 text-primary"></i>필요 편의사항</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for a in accommodation %}
-                        <span class="skill-badge">{{ a }}</span>
-                        {% endfor %}
+                <div class="col-sm-6">
+                    <div class="p-3 bg-light rounded">
+                        <p class="small text-muted mb-1">근무 형태</p>
+                        <p class="fw-bold mb-0"><i class="fas fa-briefcase me-1 text-primary"></i>{{ profile.work_pref }}</p>
                     </div>
                 </div>
-                {% endif %}
-
-                {% if certs %}
-                <div class="content-card mt-4">
-                    <h6 class="fw-bold text-muted mb-3"><i class="fas fa-certificate me-2 text-primary"></i>자격증</h6>
-                    {% for cert in certs %}
-                    <div class="border-start border-primary border-3 ps-3 mb-3">
-                        <p class="fw-bold mb-0">{{ cert.cert_name }}</p>
-                        <p class="small text-muted mb-0">{{ cert.issuing_org }} &middot; {{ cert.cert_date }}</p>
+                <div class="col-sm-6">
+                    <div class="p-3 bg-light rounded">
+                        <p class="small text-muted mb-1">근무시간</p>
+                        <p class="fw-bold mb-0"><i class="fas fa-clock me-1 text-primary"></i>{{ profile.daily_work_hours }}시간 &middot; {{ profile.preferred_time }}</p>
                     </div>
-                    {% endfor %}
                 </div>
-                {% endif %}
-
-                <div class="content-card mt-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <p class="text-muted mb-0 small">본 프로필은 구직자 동의 하에 열람됩니다.</p>
-                        {% if offered or request.query_params.get('offered') %}
-                        <button class="btn btn-secondary rounded-pill px-5" disabled>
-                            <i class="fas fa-check me-2"></i>제안 완료
-                        </button>
-                        {% else %}
-                        <button class="btn btn-primary rounded-pill px-5" data-bs-toggle="modal" data-bs-target="#offerModal">
-                            <i class="fas fa-envelope me-2"></i>채용 제안하기
-                        </button>
-                        {% endif %}
+                <div class="col-sm-6">
+                    <div class="p-3 bg-light rounded">
+                        <p class="small text-muted mb-1">경력</p>
+                        <p class="fw-bold mb-0"><i class="fas fa-history me-1 text-primary"></i>{% if profile.career_years > 0 %}{{ profile.career_years }}년{% else %}신입{% endif %}</p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- 학력/경력 -->
+        <div class="content-card mt-4">
+            <h6 class="fw-bold text-muted mb-3"><i class="fas fa-graduation-cap me-2 text-primary"></i>학력 / 경력</h6>
+            <div class="row g-2">
+                {% if profile.education_level %}
+                <div class="col-sm-6">
+                    <div class="d-flex gap-2">
+                        <span class="text-muted small label-col">학력</span>
+                        <span class="small">{{ profile.education_level }}{% if profile.school_name %} ({{ profile.school_name }}){% endif %}{% if profile.major %} {{ profile.major }}{% endif %}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% if profile.recent_company or profile.recent_job_title %}
+                <div class="col-sm-6">
+                    <div class="d-flex gap-2">
+                        <span class="text-muted small label-col">최근 직장</span>
+                        <span class="small">{{ profile.recent_company or '' }}{% if profile.recent_company and profile.recent_job_title %} / {% endif %}{{ profile.recent_job_title or '' }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if profile.experience_summary %}
+        <div class="content-card mt-4">
+            <h6 class="fw-bold text-muted mb-3"><i class="fas fa-file-alt me-2 text-primary"></i>경력 요약</h6>
+            <div class="text-prewrap">{{ profile.experience_summary }}</div>
+        </div>
+        {% endif %}
+
+        <!-- 근무 환경 -->
+        {% if profile.mobility_type or comm_pref or assistive or profile.rest_frequency != '불필요' %}
+        <div class="content-card mt-4">
+            <h6 class="fw-bold text-muted mb-3"><i class="fas fa-universal-access me-2 text-primary"></i>근무 환경</h6>
+            {% if profile.mobility_type %}
+            <div class="mb-2">
+                <span class="text-muted small me-2">이동 수단</span>
+                <span class="small">{{ profile.mobility_type }}{% if profile.commute_max_minutes %} (최대 {{ profile.commute_max_minutes }}분){% endif %}</span>
+            </div>
+            {% endif %}
+            {% if profile.rest_frequency and profile.rest_frequency != '불필요' %}
+            <div class="mb-2">
+                <span class="text-muted small me-2">휴식 빈도</span>
+                <span class="small">{{ profile.rest_frequency }}</span>
+            </div>
+            {% endif %}
+            {% if comm_pref %}
+            <div class="mb-2">
+                <span class="text-muted small me-2">소통 방식</span>
+                <span class="d-inline-flex flex-wrap gap-1">
+                    {% for c in comm_pref %}<span class="skill-badge">{{ c }}</span>{% endfor %}
+                </span>
+            </div>
+            {% endif %}
+            {% if assistive %}
+            <div class="mb-2">
+                <span class="text-muted small me-2">보조기기</span>
+                <span class="d-inline-flex flex-wrap gap-1">
+                    {% for a in assistive %}<span class="skill-badge">{{ a }}</span>{% endfor %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if accommodation %}
+        <div class="content-card mt-4">
+            <h6 class="fw-bold text-muted mb-3"><i class="fas fa-hands-helping me-2 text-primary"></i>필요 편의사항</h6>
+            <div class="d-flex flex-wrap gap-2">
+                {% for a in accommodation %}
+                <span class="skill-badge">{{ a }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if certs %}
+        <div class="content-card mt-4">
+            <h6 class="fw-bold text-muted mb-3"><i class="fas fa-certificate me-2 text-primary"></i>자격증</h6>
+            {% for cert in certs %}
+            <div class="border-start border-primary border-3 ps-3 mb-3">
+                <p class="fw-bold mb-0">{{ cert.cert_name }}</p>
+                <p class="small text-muted mb-0">{{ cert.issuing_org }} &middot; {{ cert.cert_date }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="content-card mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <p class="text-muted mb-0 small">본 프로필은 구직자 동의 하에 열람됩니다.</p>
+                {% if offered or request.query_params.get('offered') %}
+                <button class="btn btn-secondary rounded-pill px-5" disabled>
+                    <i class="fas fa-check me-2"></i>제안 완료
+                </button>
+                {% else %}
+                <button class="btn btn-primary rounded-pill px-5" data-bs-toggle="modal" data-bs-target="#offerModal">
+                    <i class="fas fa-envelope me-2"></i>채용 제안하기
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="offerModal" tabindex="-1" aria-labelledby="offerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

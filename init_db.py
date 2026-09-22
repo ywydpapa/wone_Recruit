@@ -742,7 +742,7 @@ def init():
          "사무보조", "재택",
          "대중교통", 60,
          json.dumps(["문자"], ensure_ascii=False),
-         json.dumps(["스크린리더"], ensure_ascii=False),
+         json.dumps(["화면낭독기"], ensure_ascii=False),
          6, "오전", "2시간마다",
          json.dumps(["점자자료", "재택근무", "보조기기지원"], ensure_ascii=False)),
         (uid["seeker2"], dt["지체"], "경증", "남", 1998, "1998-07-22",

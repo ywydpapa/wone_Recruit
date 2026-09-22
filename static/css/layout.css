@@ -2,7 +2,7 @@
 .navbar {
     padding: 12px 0;
     box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    background: #fff;
+    background: var(--bg-card);
 }
 .navbar-brand {
     font-weight: 700;
@@ -67,7 +67,7 @@
 
 /* 푸터 */
 .footer {
-    background-color: #2a2a2a;
+    background-color: #1a1a1a;
     color: #fff;
     padding: 40px 0 16px;
     text-align: center;
@@ -92,8 +92,8 @@
 :root {
     --sidebar-w: 240px;
     --topbar-h: 48px;
-    --border-color: #e5e5e5;
-    --muted-text: #767676;
+    --border-color: var(--border);
+    --muted-text: var(--text-muted);
     --focus-color: var(--primary);
 }
 
@@ -266,8 +266,8 @@
     top: 0;
     z-index: 900;
     height: var(--topbar-h);
-    background: #fff;
-    border-bottom: 1px solid #E5E8EB;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     padding: 0 20px;
@@ -420,3 +420,8 @@ button.topbar-icon { background: none; border: none; padding: 0; }
         font-size: 1.1rem;
     }
 }
+
+/* 다크모드 사이드바 */
+[data-theme="dark"] .sidebar { background: #0D1117; }
+[data-theme="dark"] .sidebar-link:hover { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .sidebar-link.active { background: rgba(255,255,255,0.08); }

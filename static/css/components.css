@@ -2,6 +2,9 @@
 .section-toggle .toggle-icon { transition: transform 0.2s; }
 .section-toggle:not(.collapsed) .toggle-icon { transform: rotate(180deg); }
 
+/* 라벨 */
+.label-col { min-width: 60px; }
+
 /* 폼 */
 .gpa-scale-select { max-width: 100px; }
 .form-label {
@@ -32,7 +35,7 @@
     padding: 24px;
     margin-bottom: 16px;
     border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow-sm);
 }
 .card-title {
     font-weight: 700;
@@ -51,11 +54,11 @@
     background: var(--bg-card);
     margin-bottom: 16px;
     border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow-sm);
     transition: box-shadow 0.15s;
 }
 .stat-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-md);
 }
 .stat-icon {
     display: none;
@@ -100,23 +103,23 @@ a.stat-card-link:hover .stat-card {
 }
 .status-badge.status-open { background-color: #e3f2fd; color: #1565c0; }
 .status-badge.status-closed,
-.status-badge.status-withdrawn { background-color: #f5f5f5; color: #888; }
+.status-badge.status-withdrawn { background-color: var(--bg-subtle); color: var(--text-muted); }
 .status-badge.status-pending,
 .status-badge.status-reviewing,
 .status-badge.status-shortlisted,
 .status-badge.status-interview,
 .status-badge.status-reviewed,
-.status-badge.status-offer { background-color: #f5f5f5; color: #555; }
+.status-badge.status-offer { background-color: var(--bg-subtle); color: var(--text-secondary); }
 .status-badge.status-hired,
 .status-badge.status-accepted { background-color: #e8f5e9; color: #2e7d32; }
 .status-badge.status-rejected { background-color: #fce4e4; color: #b71c1c; }
 .status-badge.status-scheduled { background-color: #e3f2fd; color: #1565c0; }
 .status-badge.status-completed { background-color: #e8f5e9; color: #2e7d32; }
-.status-badge.status-cancelled { background-color: #f5f5f5; color: #888; }
+.status-badge.status-cancelled { background-color: var(--bg-subtle); color: var(--text-muted); }
 .status-badge.status-no_show { background-color: #fce4e4; color: #b71c1c; }
 .status-badge.stage-proposed,
 .status-badge.stage-seeker_confirmed,
-.status-badge.stage-submitted { background-color: #f5f5f5; color: #555; }
+.status-badge.stage-submitted { background-color: var(--bg-subtle); color: var(--text-secondary); }
 
 .truncate-cell { max-width: 160px; }
 
@@ -124,9 +127,16 @@ a.stat-card-link:hover .stat-card {
 .table-custom { margin-bottom: 0; }
 .table-custom th { font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); padding: 0.6rem 0.5rem; }
 .table-custom td { vertical-align: middle; font-size: 0.9rem; padding: 0.6rem 0.5rem; }
-.table > :not(caption) > * > * { border-bottom-color: #F2F4F6; }
-.table-hover > tbody > tr:hover > * { background-color: #F7F8FA; }
+.table > :not(caption) > * > * { border-bottom-color: var(--border); }
+.table-hover > tbody > tr:hover > * { background-color: var(--bg-hover); }
 
+/* 뱃지 공통 */
+.badge {
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    letter-spacing: -0.01em;
+}
 .badge .badge-icon {
     margin-right: 0.25rem;
 }
@@ -146,7 +156,7 @@ a.stat-card-link:hover .stat-card {
     background: var(--bg-card);
     border-radius: 12px;
     border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -154,11 +164,11 @@ a.stat-card-link:hover .stat-card {
     transition: box-shadow 0.15s;
 }
 .job-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-md);
 }
 .job-card-header {
     padding: 16px 20px 10px;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--border);
     position: relative;
 }
 .job-card-header h3 {
@@ -210,18 +220,18 @@ a.stat-card-link:hover .stat-card {
     border-radius: 4px;
     font-size: 0.78rem;
     font-weight: 500;
-    background-color: #f5f5f5;
+    background-color: var(--bg-subtle);
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
 .accommodation-tag {
-    background-color: #f5f5f5;
+    background-color: var(--bg-subtle);
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
 .job-card-footer {
     padding: 10px 20px;
-    border-top: 1px solid #f5f5f5;
+    border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -243,8 +253,8 @@ a.stat-card-link:hover .stat-card {
     color: #e65100;
 }
 .d-day-closed {
-    background-color: #f5f5f5;
-    color: #999;
+    background-color: var(--bg-subtle);
+    color: var(--text-muted);
 }
 .job-card-salary {
     font-weight: 600;
@@ -262,7 +272,7 @@ a.stat-card-link:hover .stat-card {
     background: var(--bg-card);
     border-radius: 12px;
     border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 16px;
     overflow: hidden;
     display: flex;
@@ -295,7 +305,7 @@ a.stat-card-link:hover .stat-card {
 .profile-field {
     display: flex;
     padding: 6px 0;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--border);
 }
 .profile-field:last-child {
     border-bottom: none;
@@ -318,14 +328,14 @@ a.stat-card-link:hover .stat-card {
     font-size: 0.8rem;
     font-weight: 500;
     margin: 2px 3px 2px 0;
-    background: #f5f5f5;
+    background: var(--bg-subtle);
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
 .profile-tag-blue,
 .profile-tag-green,
 .profile-tag-purple {
-    background: #f5f5f5;
+    background: var(--bg-subtle);
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
@@ -350,11 +360,11 @@ a.stat-card-link:hover .stat-card {
     padding: 20px;
     height: 100%;
     border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow-sm);
     transition: box-shadow 0.15s;
 }
 .item-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-md);
 }
 .item-title {
     font-size: 1.1rem;
@@ -377,24 +387,24 @@ a.stat-card-link:hover .stat-card {
     color: var(--text-muted);
 }
 .item-badge {
-    background-color: #f5f5f5;
+    background-color: var(--bg-subtle);
     color: var(--text-secondary);
-    padding: 3px 10px;
-    border-radius: 4px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    margin-right: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-right: 5px;
     margin-bottom: 8px;
     display: inline-block;
-    border: 1px solid var(--border);
+    border: none;
+    letter-spacing: -0.01em;
 }
 .item-badge.badge-green {
-    background-color: #f5f5f5;
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
+    background-color: #e8f5e9;
+    color: #2e7d32;
 }
 .item-badge.badge-closed {
-    background-color: #f5f5f5;
+    background-color: var(--bg-subtle);
     color: var(--text-muted);
 }
 .item-card .btn-sm.rounded-pill {
@@ -438,7 +448,7 @@ a.stat-card-link:hover .stat-card {
 /* 스킬 뱃지 */
 .skill-badge {
     display: inline-block;
-    background-color: #f5f5f5;
+    background-color: var(--bg-subtle);
     color: var(--text-secondary);
     border: 1px solid var(--border);
     padding: 0.3rem 0.65rem;
@@ -476,7 +486,7 @@ a.stat-card-link:hover .stat-card {
     left: 50%;
     width: 100%;
     height: 2px;
-    background: #dee2e6;
+    background: var(--border);
     z-index: 0;
 }
 .timeline-step:last-child::after {
@@ -489,7 +499,7 @@ a.stat-card-link:hover .stat-card {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #dee2e6;
+    background: var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -531,7 +541,7 @@ a.stat-card-link:hover .stat-card {
 }
 .timeline-date {
     font-size: 0.62rem;
-    color: #bbb;
+    color: var(--text-muted);
     margin-top: 2px;
 }
 @media (max-width: 767.98px) {
@@ -565,7 +575,7 @@ a.stat-card-link:hover .stat-card {
     background: var(--bg-card);
     border-radius: 12px;
     border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 20px;
 }
 .form-section legend {
@@ -614,6 +624,8 @@ a.stat-card-link:hover .stat-card {
 .modal-content {
     border-radius: 8px;
     border: none;
+    background: var(--bg-card);
+    color: var(--text);
 }
 .modal-header {
     border-bottom: none;
@@ -637,12 +649,12 @@ a.stat-card-link:hover .stat-card {
 .resume-photo-preview {
     width: 120px;
     height: 160px;
-    border: 2px dashed #ddd;
+    border: 2px dashed var(--border);
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fafafa;
+    background: var(--bg-subtle);
     overflow: hidden;
     color: #ccc;
     font-size: 2.5rem;
@@ -711,8 +723,8 @@ a.stat-card-link:hover .stat-card {
 .crop-ratio-btn {
     padding: 4px 12px;
     border-radius: 4px;
-    border: 1px solid #ddd;
-    background: #fff;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
     cursor: pointer;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -736,8 +748,8 @@ a.stat-card-link:hover .stat-card {
 .crop-ctrl-btn {
     padding: 6px 12px;
     border-radius: 4px;
-    border: 1px solid #ddd;
-    background: #fff;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
     cursor: pointer;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -793,6 +805,9 @@ a.stat-card-link:hover .stat-card {
     background: var(--border);
     margin: 0 4px;
 }
+
+/* 일괄 처리 바 */
+.bulk-bar-bg { background: var(--bg-card); }
 
 /* 반응형 컴포넌트 */
 @media (max-width: 767.98px) {
@@ -855,4 +870,193 @@ a.stat-card-link:hover .stat-card {
     .job-card-footer {
         padding: 8px 14px;
     }
+}
+
+/* 음성 입력 */
+.voice-mic-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color 0.2s, border-color 0.2s;
+}
+.voice-mic-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+.voice-mic-btn.recording {
+    color: #fff;
+    background: var(--danger);
+    border-color: var(--danger);
+    animation: voice-pulse 1.2s infinite;
+}
+@keyframes voice-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+}
+.voice-field-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ===== 다크모드 ===== */
+
+/* 상태 뱃지 */
+[data-theme="dark"] .status-badge.status-open,
+[data-theme="dark"] .status-badge.status-scheduled { background: rgba(74, 158, 255, 0.15); color: var(--primary); }
+[data-theme="dark"] .status-badge.status-hired,
+[data-theme="dark"] .status-badge.status-accepted,
+[data-theme="dark"] .status-badge.status-completed { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+[data-theme="dark"] .status-badge.status-rejected,
+[data-theme="dark"] .status-badge.status-no_show { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+
+/* 공고 D-day */
+[data-theme="dark"] .d-day-active { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+[data-theme="dark"] .d-day-urgent { background: rgba(210, 153, 34, 0.15); color: var(--warning); }
+[data-theme="dark"] .item-badge.badge-green { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+
+/* 도구 버튼 */
+[data-theme="dark"] .tool-btn:hover { border-color: var(--text-muted); }
+
+/* 타임라인 */
+[data-theme="dark"] .timeline-step.withdrawn .timeline-dot { background: var(--text-muted); }
+
+/* 매칭 파이프라인 */
+[data-theme="dark"] .pipeline-arrow { color: var(--text-muted); }
+
+/* 이력서 사진 */
+[data-theme="dark"] .resume-photo-preview { color: var(--text-muted); }
+
+/* 사진 크롭 */
+[data-theme="dark"] .crop-zoom-icon { color: var(--text-muted); }
+
+/* 음성 명령 FAB */
+.voice-fab {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    z-index: 1040;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.2s;
+}
+.voice-fab:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+.voice-fab.recording {
+    background: var(--danger);
+    animation: voice-pulse 1.2s infinite;
+}
+
+/* 음성 명령 팔레트 */
+.voice-palette-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1050;
+    display: none;
+}
+.voice-palette-backdrop.show { display: block; }
+.voice-palette {
+    position: fixed;
+    bottom: 140px;
+    right: 24px;
+    width: 280px;
+    max-height: 400px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    z-index: 1051;
+    overflow: hidden;
+    display: none;
+}
+.voice-palette.show { display: block; }
+.voice-palette-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+.voice-palette-close {
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+.voice-palette-body {
+    padding: 8px 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.voice-cmd-item {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+.voice-cmd-item i {
+    color: var(--text-muted);
+    width: 20px;
+    text-align: center;
+}
+.voice-cmd-item .voice-cmd-label {
+    font-weight: 500;
+}
+.voice-palette-status {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+.voice-palette-status.listening {
+    color: var(--danger);
+}
+
+/* 음성 상태 메시지 (시각) */
+.voice-status-toast {
+    position: fixed;
+    bottom: 140px;
+    right: 90px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+    z-index: 1040;
+    display: none;
+}
+.voice-status-toast.show { display: block; }
+
+/* 딕테이션 중간결과 */
+.voice-interim {
+    color: var(--text-muted);
+    font-style: italic;
 }

@@ -53,9 +53,13 @@
 
                     <div class="mb-3">
                         <label for="biz_no" class="form-label fw-semibold">사업자등록번호</label>
-                        <input type="text" class="form-control" id="biz_no" name="biz_no"
-                            value="{{ company.biz_no if company else '' }}"
-                            placeholder="예: 123-45-67890">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="biz_no" name="biz_no"
+                                value="{{ company.biz_no if company else '' }}"
+                                placeholder="예: 123-45-67890">
+                            <button type="button" class="btn btn-outline-secondary" id="btnBiznoCheck">확인</button>
+                        </div>
+                        <div id="biznoResult" class="small mt-1"></div>
                     </div>
 
                     <div class="mb-3">
@@ -364,6 +368,31 @@ document.addEventListener('DOMContentLoaded', function(){
     {% if selected_sido %}
     loadSigungu({{ selected_sido|tojson }}, 'region_id', {{ (company.region_id if company else '')|tojson }});
     {% endif %}
+
+    var btnBizno = document.getElementById('btnBiznoCheck');
+    if (btnBizno) {
+        btnBizno.addEventListener('click', function() {
+            var val = document.getElementById('biz_no').value.trim();
+            var result = document.getElementById('biznoResult');
+            if (!val) { result.textContent = ''; return; }
+            result.textContent = '확인 중...';
+            result.className = 'small mt-1 text-muted';
+            fetch('/api/bizno/check?biz_no=' + encodeURIComponent(val))
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (d.valid === true) {
+                        result.textContent = '유효한 사업자등록번호입니다';
+                        result.className = 'small mt-1 text-success';
+                    } else if (d.valid === false) {
+                        result.textContent = '유효하지 않은 사업자등록번호입니다';
+                        result.className = 'small mt-1 text-danger';
+                    } else {
+                        result.textContent = '확인할 수 없습니다 (API 키 미설정)';
+                        result.className = 'small mt-1 text-warning';
+                    }
+                });
+        });
+    }
 });
 </script>
 {% endblock %}

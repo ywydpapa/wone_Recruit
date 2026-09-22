@@ -1,4 +1,5 @@
 import json
+import secrets
 import sqlite3
 
 from fastapi import APIRouter, Form, Request
@@ -48,6 +49,48 @@ async def login_check(request: Request, username: str = Form(...), password: str
         request.session["role"] = row["role"]
         return RedirectResponse(url="/", status_code=303)
     return RedirectResponse(url="/login?error=1", status_code=303)
+
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request, error: str = ""):
+    if check_login(request):
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse(
+        request=request, name="login/forgot_password.html", context={
+            "request": request, "page_title": "비밀번호 찾기",
+            "error": error, "temp_pw": "",
+        }
+    )
+
+
+@router.post("/forgot-password")
+async def forgot_password_submit(
+    request: Request,
+    username: str = Form(...),
+    name: str = Form(...),
+    phone: str = Form(...),
+):
+    conn = get_sqlite()
+    try:
+        row = conn.execute(
+            "SELECT id, is_deleted FROM users WHERE username=? AND name=? AND phone=?",
+            (username, name, phone),
+        ).fetchone()
+        if not row:
+            return RedirectResponse(url="/forgot-password?error=not_found", status_code=303)
+        if row["is_deleted"]:
+            return RedirectResponse(url="/forgot-password?error=deleted", status_code=303)
+        temp_pw = secrets.token_urlsafe(8)
+        conn.execute("UPDATE users SET password=? WHERE id=?", (hash_password(temp_pw), row["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return templates.TemplateResponse(
+        request=request, name="login/forgot_password.html", context={
+            "request": request, "page_title": "비밀번호 찾기",
+            "error": "", "temp_pw": temp_pw,
+        }
+    )
 
 
 @router.get("/logout")

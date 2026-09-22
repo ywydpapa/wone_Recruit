@@ -262,7 +262,7 @@
                 {% endif %}
             </div>
             {% endfor %}
-            {% if consult_count > 3 %}
+            {% if consult_count >= 3 %}
             <div class="border-top pt-2 mt-2">
                 <a href="/op/consultations?seeker_id={{ seeker['id'] }}" class="text-decoration-none">전체 {{ consult_count }}건 보기 <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i></a>
             </div>

@@ -1,13 +1,55 @@
 import json
+import time
 from typing import Optional
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.notifications import create_notification
+from core.security import verify_password
 
 router = APIRouter(prefix="/company")
 api_router = APIRouter()
+
+TALENTS_AUTH_TTL = 1800  # 30분
+
+
+def _talents_authed(request):
+    ts = request.session.get("talents_authed_at")
+    return ts and (time.time() - ts) < TALENTS_AUTH_TTL
+
+
+@router.get("/talents/auth", response_class=HTMLResponse)
+async def talents_auth_page(request: Request, next: Optional[str] = Query(None), error: str = ""):
+    user = require_role(request, "company")
+    return templates.TemplateResponse(
+        request=request,
+        name="company/talents_auth.html",
+        context={
+            "request": request, "page_title": "본인 확인",
+            "user_name": user["name"], "user_role": "company",
+            "error": error, "next_url": next or "",
+        },
+    )
+
+
+@router.post("/talents/auth")
+async def talents_auth_submit(
+    request: Request,
+    password: str = Form(...),
+    next: str = Form(""),
+):
+    user = require_role(request, "company")
+    conn = get_sqlite()
+    try:
+        row = conn.execute("SELECT password FROM users WHERE id=?", (user["id"],)).fetchone()
+    finally:
+        conn.close()
+    if row and verify_password(password, row["password"]):
+        request.session["talents_authed_at"] = time.time()
+        redirect_to = next if next and next.startswith("/company/talent") else "/company/talents"
+        return RedirectResponse(url=redirect_to, status_code=303)
+    return RedirectResponse(url="/company/talents/auth?error=wrong", status_code=303)
 
 
 @router.get("/talents", response_class=HTMLResponse)
@@ -18,9 +60,15 @@ async def talent_search(
     region_id: Optional[int] = Query(None),
     sido: Optional[str] = Query(None),
     work_pref: Optional[str] = Query(None),
+    edu: Optional[str] = Query(None),
+    career_min: Optional[int] = Query(None),
+    career_max: Optional[int] = Query(None),
+    sort: Optional[str] = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "company")
+    if not _talents_authed(request):
+        return RedirectResponse(url="/company/talents/auth", status_code=303)
     conn = get_sqlite()
     try:
         company = conn.execute(
@@ -62,8 +110,22 @@ async def talent_search(
         if work_pref:
             sql += " AND sp.work_pref=?"
             params.append(work_pref)
+        if edu:
+            sql += " AND sp.education_level=?"
+            params.append(edu)
+        if career_min is not None:
+            sql += " AND sp.career_years>=?"
+            params.append(career_min)
+        if career_max is not None:
+            sql += " AND sp.career_years<=?"
+            params.append(career_max)
 
-        sql += " ORDER BY sp.updated_at DESC"
+        sort_map = {
+            "career_desc": "sp.career_years DESC",
+            "career_asc": "sp.career_years ASC",
+        }
+        order = sort_map.get(sort, "sp.updated_at DESC")
+        sql += f" ORDER BY {order}"
         page = max(1, page)
         from core.pagination import page_info, PER_PAGE
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
@@ -86,7 +148,6 @@ async def talent_search(
     finally:
         conn.close()
 
-    # 장애정보 마스킹
     filtered = []
     for t in talents:
         t = dict(t)
@@ -101,6 +162,10 @@ async def talent_search(
     if sido: qs_parts.append(f"sido={sido}")
     if disability_type: qs_parts.append(f"disability_type={disability_type}")
     if work_pref: qs_parts.append(f"work_pref={work_pref}")
+    if edu: qs_parts.append(f"edu={edu}")
+    if career_min is not None: qs_parts.append(f"career_min={career_min}")
+    if career_max is not None: qs_parts.append(f"career_max={career_max}")
+    if sort: qs_parts.append(f"sort={sort}")
     base_qs = "&".join(qs_parts)
 
     return templates.TemplateResponse(
@@ -114,14 +179,23 @@ async def talent_search(
             "q": q or "", "selected_sido": sido or "",
             "selected_disability": disability_type or "",
             "selected_work_pref": work_pref or "",
+            "selected_edu": edu or "",
+            "selected_career_min": career_min if career_min is not None else "",
+            "selected_career_max": career_max if career_max is not None else "",
+            "selected_sort": sort or "",
             "pagination": pagination, "base_qs": base_qs,
         },
     )
 
 
 @router.get("/talent/{seeker_user_id}", response_class=HTMLResponse)
-async def talent_detail(request: Request, seeker_user_id: int):
+async def talent_detail(request: Request, seeker_user_id: int, back: Optional[str] = Query(None)):
     user = require_role(request, "company")
+    if not _talents_authed(request):
+        return RedirectResponse(
+            url=f"/company/talents/auth?next=/company/talent/{seeker_user_id}",
+            status_code=303,
+        )
     conn = get_sqlite()
     try:
         company_check = conn.execute(
@@ -170,7 +244,6 @@ async def talent_detail(request: Request, seeker_user_id: int):
     finally:
         conn.close()
 
-    # 장애정보 마스킹
     disability_hidden = profile["disability_visibility"] != "public"
     if disability_hidden:
         profile = dict(profile)
@@ -205,6 +278,7 @@ async def talent_detail(request: Request, seeker_user_id: int):
             "company_name": company["company_name"] if company else "",
             "comm_pref": comm_pref, "assistive": assistive,
             "accommodation": accommodation,
+            "back_qs": back or "",
         },
     )
 

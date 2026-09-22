@@ -9,7 +9,7 @@
         <form action="/company/talents" method="GET">
             <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색 필터</legend>
             <div class="row g-3">
-                <div class="col-md-3">
+                <div class="col-md-3 col-sm-6">
                     <label for="disability_type" class="visually-hidden">장애 유형</label>
                     <select id="disability_type" name="disability_type" class="form-select">
                         <option value="">장애 유형 (전체)</option>
@@ -18,13 +18,13 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 col-sm-6">
                     <label for="sido" class="visually-hidden">지역</label>
                     <select id="sido" name="sido" class="form-select">
                         <option value="">지역 (전체)</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 col-sm-6">
                     <label for="work_pref" class="visually-hidden">근무 형태</label>
                     <select id="work_pref" name="work_pref" class="form-select">
                         <option value="">근무형태 (전체)</option>
@@ -34,62 +34,89 @@
                         <option value="무관" {% if selected_work_pref == '무관' %}selected{% endif %}>무관</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2 col-sm-6">
+                    <label for="edu" class="visually-hidden">학력</label>
+                    <select id="edu" name="edu" class="form-select">
+                        <option value="">학력 (전체)</option>
+                        {% for lv in ['고졸','전문대졸','대졸','석사','박사'] %}
+                        <option value="{{ lv }}" {% if selected_edu == lv %}selected{% endif %}>{{ lv }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 col-sm-6">
                     <label for="talent-q" class="visually-hidden">검색어</label>
                     <input type="text" id="talent-q" class="form-control" name="q" value="{{ q }}" placeholder="이름, 희망직무 검색">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 col-sm-6">
+                    <div class="d-flex gap-2">
+                        <input type="number" class="form-control" name="career_min" value="{{ selected_career_min }}" placeholder="경력(최소)" min="0" aria-label="최소 경력">
+                        <input type="number" class="form-control" name="career_max" value="{{ selected_career_max }}" placeholder="경력(최대)" min="0" aria-label="최대 경력">
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-6">
                     <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
                 </div>
             </div>
+            <input type="hidden" name="sort" value="{{ selected_sort }}">
             </fieldset>
         </form>
     </div>
 </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0">인재 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
-        </div>
-        {% if talents %}
-        <div class="row g-4">
-            {% for t in talents %}
-            <div class="col-lg-4 col-md-6">
-                <div class="item-card text-center">
-                    <div class="mb-3">
-                        <div class="profile-avatar mx-auto"><i class="fas fa-user"></i></div>
-                    </div>
-                    <h5 class="fw-bold mt-2">{{ t.seeker_name }}</h5>
-                    <p class="text-muted small mb-3">{{ t.desired_job or '미지정' }}</p>
-                    <div class="text-start item-meta small">
-                        {% if t.disability_name %}
-                        <div><i class="fas fa-id-card"></i> {{ t.disability_name }} &middot; {{ t.severity }}</div>
-                        {% else %}
-                        <div><i class="fas fa-id-card"></i> <span class="text-muted">장애 정보: 비공개</span></div>
-                        {% endif %}
-                        <div><i class="fas fa-map-marker-alt"></i> {{ t|region }}</div>
-                        <div><i class="fas fa-briefcase"></i> {{ t.work_pref }}</div>
-                        <div><i class="fas fa-clock"></i> {{ t.daily_work_hours }}시간 &middot; {{ t.preferred_time }}</div>
-                        {% if t.career_years > 0 %}
-                        <div><i class="fas fa-history"></i> 경력 {{ t.career_years }}년</div>
-                        {% endif %}
-                    </div>
-                    {% if t.user_id in offered_ids %}
-                    <button class="btn btn-secondary w-100 mt-3 rounded-pill" disabled><i class="fas fa-check me-1"></i>제안 완료</button>
-                    {% else %}
-                    <button type="button" class="btn btn-outline-primary w-100 mt-3 rounded-pill btn-view-profile"
-                            data-href="/company/talent/{{ t.user_id }}"
-                            data-name="{{ t.seeker_name }}">프로필 보기</button>
-                    {% endif %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0">인재 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
+    <div class="d-flex align-items-center gap-2">
+        <label for="sortSelect" class="visually-hidden">정렬</label>
+        <select id="sortSelect" class="form-select form-select-sm talent-sort-select">
+            <option value="" {% if not selected_sort %}selected{% endif %}>최근 업데이트순</option>
+            <option value="career_desc" {% if selected_sort == 'career_desc' %}selected{% endif %}>경력 높은순</option>
+            <option value="career_asc" {% if selected_sort == 'career_asc' %}selected{% endif %}>경력 낮은순</option>
+        </select>
+    </div>
+</div>
+{% if talents %}
+<div class="row g-4">
+    {% for t in talents %}
+    <div class="col-lg-4 col-md-6">
+        <div class="item-card">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="profile-avatar talent-avatar"><i class="fas fa-user"></i></div>
+                <div>
+                    <h5 class="fw-bold mb-1">{{ t.seeker_name }}</h5>
+                    <p class="text-muted small mb-0">{{ t.desired_job or '미지정' }}</p>
                 </div>
             </div>
-            {% endfor %}
+            <div class="item-meta small">
+                {% if t.disability_name %}
+                <div><i class="fas fa-id-card"></i> {{ t.disability_name }} &middot; {{ t.severity }}</div>
+                {% else %}
+                <div><i class="fas fa-id-card"></i> <span class="text-muted">장애 정보: 비공개</span></div>
+                {% endif %}
+                <div><i class="fas fa-map-marker-alt"></i> {{ t|region }}</div>
+                <div><i class="fas fa-briefcase"></i> {{ t.work_pref }}{% if t.recent_job_title %} &middot; {{ t.recent_job_title }}{% endif %}</div>
+                <div><i class="fas fa-graduation-cap"></i> {{ t.education_level or '미지정' }}{% if t.career_years > 0 %} &middot; 경력 {{ t.career_years }}년{% else %} &middot; 신입{% endif %}</div>
+                <div><i class="fas fa-clock"></i> {{ t.daily_work_hours }}시간 &middot; {{ t.preferred_time }}</div>
+            </div>
+            {% if t.user_id in offered_ids %}
+            <button class="btn btn-secondary w-100 mt-3 rounded-pill" disabled><i class="fas fa-check me-1"></i>제안 완료</button>
+            {% else %}
+            <button type="button" class="btn btn-outline-primary w-100 mt-3 rounded-pill btn-view-profile"
+                    data-href="/company/talent/{{ t.user_id }}{% if base_qs %}?back={{ base_qs|urlencode }}{% endif %}"
+                    data-name="{{ t.seeker_name }}">프로필 보기</button>
+            {% endif %}
         </div>
-        {% include "common/pagination.html" %}
-        {% else %}
-        <div class="content-card">
-            <p class="text-muted text-center py-4">조건에 맞는 인재가 없습니다.</p>
-        </div>
-        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% include "common/pagination.html" %}
+{% else %}
+<div class="content-card text-center py-5">
+    <div class="mb-3"><i class="fas fa-users fa-2x text-muted"></i></div>
+    <p class="text-muted mb-2">조건에 맞는 인재가 없습니다.</p>
+    <p class="text-muted small">검색 조건을 변경하거나 필터를 초기화해 보세요.</p>
+    <a href="/company/talents" class="btn btn-outline-secondary btn-sm mt-2">필터 초기화</a>
+</div>
+{% endif %}
 
 
 <div class="modal fade" id="viewProfileModal" tabindex="-1" aria-labelledby="viewProfileModalLabel" aria-hidden="true">
@@ -129,6 +156,13 @@ document.addEventListener('DOMContentLoaded', function(){
             document.getElementById('viewProfileConfirm').href = this.dataset.href;
             modal.show();
         });
+    });
+
+    /* 정렬 변경 */
+    document.getElementById('sortSelect').addEventListener('change', function(){
+        var form = document.querySelector('.filter-card form');
+        form.querySelector('input[name="sort"]').value = this.value;
+        form.submit();
     });
 });
 </script>

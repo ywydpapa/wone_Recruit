@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from core.bizno import check_bizno
 from core.db import get_sqlite
 from core.deps import check_login, require_role, templates
 from core.notifications import get_unread_count
@@ -24,6 +25,14 @@ async def api_regions(sido: str = Query("")):
             return JSONResponse([r["sido"] for r in rows])
     finally:
         conn.close()
+
+
+@router.get("/api/bizno/check")
+async def api_bizno_check(biz_no: str = Query("")):
+    if not biz_no:
+        return JSONResponse({"valid": None})
+    result = await check_bizno(biz_no)
+    return JSONResponse({"valid": result})
 
 
 @router.get("/privacy", response_class=HTMLResponse)

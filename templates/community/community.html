@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}커뮤니티 - WONE Recruit{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">커뮤니티</h2><form class="input-group community-search-form" action="/community" method="get"><input type="text" class="form-control rounded-start-pill ps-3" name="q" placeholder="관심있는 주제 검색..." value="{{ q }}"><button class="btn btn-light rounded-end-pill px-3 text-primary" type="submit"><i class="fas fa-search"></i></button></form></div>
+<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">커뮤니티</h2><form class="input-group community-search-form" action="/community" method="get"><input type="text" class="form-control rounded-start-pill ps-3" name="q" placeholder="관심있는 주제 검색..." value="{{ q }}"><button class="btn btn-light rounded-end-pill px-3 text-primary" type="submit" aria-label="검색"><i class="fas fa-search" aria-hidden="true"></i></button></form></div>
 <div class="container pb-5">
     <div class="row mt-2">
         <div class="col-lg-8">
@@ -19,7 +19,7 @@
                 <div class="post-list">
                     {% for p in posts %}
                     {% set meta = categories.get(p.category, ('자유', 'secondary')) %}
-                    <div class="p-3 mb-3 border rounded bg-white post-item shadow-sm">
+                    <div class="p-3 mb-3 border rounded post-item shadow-sm">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="badge bg-{{ meta[1] }} bg-opacity-10 text-{{ meta[1] }} border border-{{ meta[1] }} px-2 py-1">{{ meta[0] }}</span>
                             <span class="small text-muted"><i class="far fa-clock me-1"></i>{{ p.created_at }}</span>

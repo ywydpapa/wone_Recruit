@@ -4,13 +4,41 @@
     --primary-hover: #004494;
     --text: #191F28;
     --text-secondary: #6B7684;
-    --text-muted: #8B95A1;
+    --text-muted: #6B7684;
     --border: #E5E8EB;
     --bg: #F2F4F6;
     --bg-card: #fff;
+    --bg-subtle: #f5f5f5;
+    --bg-hover: #F7F8FA;
     --danger: #dc3545;
     --success: #28a745;
     --warning: #f0ad4e;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 다크모드 */
+[data-theme="dark"] {
+    --primary: #4a9eff;
+    --primary-hover: #3a8ae6;
+    --text: #D1D5DB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --border: #2D333B;
+    --bg: #161B22;
+    --bg-card: #1C2128;
+    --bg-subtle: #272D36;
+    --bg-hover: #272D36;
+    --danger: #f85149;
+    --success: #3fb950;
+    --warning: #d29922;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
+    color-scheme: dark;
+    --bs-body-color: #D1D5DB;
+    --bs-body-bg: #161B22;
+    --bs-border-color: #2D333B;
+    --bs-table-color: #D1D5DB;
 }
 
 body {
@@ -70,14 +98,14 @@ body {
 .clickable-card { cursor: pointer; position: relative; }
 .bookmark-heart { font-size: 1.3rem; }
 .bookmark-heart.active { color: var(--danger); }
-.bookmark-heart:not(.active) { color: #ccc; }
+.bookmark-heart:not(.active) { color: var(--text-muted); }
 .img-logo-sm { width: 60px; height: 60px; object-fit: contain; border-radius: 6px; border: 1px solid var(--border); }
 .img-logo-md { width: 72px; height: 72px; border-radius: 8px; }
 .input-time { width: 120px; }
 .input-number-sm { width: 100px; }
 .input-select-sm { width: 90px; }
 .flex-fill-clamp { flex: 1; min-width: 0; }
-.post-body { line-height: 1.8; color: #444; white-space: pre-wrap; }
+.post-body { line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap; }
 .fs-095 { font-size: 0.95rem; }
 .fs-075 { font-size: 0.75rem; }
 .icon-dot { font-size: 0.5rem; vertical-align: middle; }
@@ -87,3 +115,93 @@ body {
 .section-title { color: var(--text); }
 .tile-icon { color: var(--text-muted); }
 .tile-label { color: var(--text); }
+
+/* 다크모드 부트스트랩 오버라이드 */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: var(--bg);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .form-control::placeholder { color: var(--text-muted); }
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] .form-select:disabled {
+    background-color: var(--bg-subtle);
+    color: var(--text-muted);
+}
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .dropdown-item { color: var(--text); }
+[data-theme="dark"] .dropdown-item:hover { background-color: var(--bg-subtle); }
+[data-theme="dark"] .dropdown-item-text { color: var(--text-muted) !important; }
+[data-theme="dark"] .dropdown-divider { border-color: var(--border); }
+[data-theme="dark"] .card { background-color: var(--bg-card); border-color: var(--border); color: var(--text); }
+[data-theme="dark"] .btn-outline-secondary {
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: var(--bg-subtle);
+    border-color: var(--text-muted);
+    color: var(--text);
+}
+[data-theme="dark"] .btn-light {
+    background-color: var(--bg-subtle);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .btn-light:hover {
+    background-color: var(--bg-hover);
+}
+[data-theme="dark"] .table {
+    color: var(--text);
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: var(--bg-hover);
+    --bs-table-striped-bg: var(--bg-subtle);
+    --bs-table-border-color: var(--border);
+}
+[data-theme="dark"] .table th { color: var(--text); }
+[data-theme="dark"] .table > :not(caption) > * > * {
+    border-bottom-color: var(--border);
+    box-shadow: none;
+}
+[data-theme="dark"] .progress { background-color: var(--bg-subtle); }
+[data-theme="dark"] .alert { border-color: var(--border); }
+[data-theme="dark"] .list-group-item {
+    background-color: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .list-group-item a.text-dark { color: var(--text) !important; }
+[data-theme="dark"] .nav-tabs { border-color: var(--border); }
+[data-theme="dark"] .nav-tabs .nav-link { color: var(--text-secondary); }
+[data-theme="dark"] .nav-tabs .nav-link.active {
+    background-color: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .badge.bg-light { background-color: var(--bg-subtle) !important; color: var(--text) !important; }
+[data-theme="dark"] .text-dark { color: var(--text) !important; }
+[data-theme="dark"] .bg-white { background-color: var(--bg-card) !important; }
+[data-theme="dark"] .bg-light { background-color: var(--bg-subtle) !important; }
+[data-theme="dark"] .border { border-color: var(--border) !important; }
+[data-theme="dark"] .border-bottom { border-color: var(--border) !important; }
+[data-theme="dark"] .shadow-sm { box-shadow: var(--shadow-sm) !important; }
+[data-theme="dark"] .table-light { background-color: var(--bg-subtle) !important; }
+[data-theme="dark"] .table-light th,
+[data-theme="dark"] .table-light td { background-color: var(--bg-subtle) !important; color: var(--text) !important; }
+[data-theme="dark"] .table-bordered { border-color: var(--border); }
+[data-theme="dark"] .table-bordered > :not(caption) > * > * { border-color: var(--border); }
+[data-theme="dark"] .table-sm { color: var(--text); }
+[data-theme="dark"] .card-body { background-color: var(--bg-card); color: var(--text); }
+[data-theme="dark"] .border-bottom { border-color: var(--border) !important; }
+[data-theme="dark"] .border-top { border-color: var(--border) !important; }
+[data-theme="dark"] .border-start { border-color: var(--border) !important; }
+[data-theme="dark"] .border-end { border-color: var(--border) !important; }
+[data-theme="dark"] .rounded { border-color: var(--border); }
+[data-theme="dark"] .text-body { color: var(--text) !important; }
+[data-theme="dark"] code { color: #f0883e; }
+[data-theme="dark"] .form-check-input { background-color: var(--bg); border-color: var(--border); }
+[data-theme="dark"] .form-check-input:checked { background-color: var(--primary); border-color: var(--primary); }

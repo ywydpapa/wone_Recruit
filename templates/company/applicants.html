@@ -23,7 +23,7 @@
         <option value="newest" {% if sort == 'newest' %}selected{% endif %}>최신순</option>
         <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>오래된순</option>
     </select>
-    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="fas fa-search"></i></button>
+    <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="검색"><i class="fas fa-search" aria-hidden="true"></i></button>
 </form>
 
 <div id="pipeline-view" class="content-card d-none">
@@ -123,7 +123,7 @@
 <form method="post" action="/company/jobs/{{ job['id'] }}/applicants/bulk-status" id="bulk-form">
     {{ csrf_input }}
     <input type="hidden" name="candidacy_ids" id="bulk-ids">
-    <div id="bulk-bar" class="fixed-bottom bg-white border-top shadow-sm p-3 d-none">
+    <div id="bulk-bar" class="fixed-bottom border-top shadow-sm bulk-bar-bg p-3 d-none">
         <div class="d-flex align-items-center gap-3 flex-wrap">
             <span class="text-muted small"><span id="bulk-count">0</span>명 선택됨</span>
             <select name="status" class="form-select form-select-sm w-auto" required>
