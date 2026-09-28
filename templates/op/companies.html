@@ -112,6 +112,8 @@
                             <span class="badge bg-success">승인</span>
                             {% elif c['approval_status'] == 'rejected' %}
                             <span class="badge bg-danger">반려</span>
+                            {% elif c['reverify'] %}
+                            <span class="badge bg-danger">재심사</span>
                             {% else %}
                             <span class="badge bg-warning text-dark">대기</span>
                             {% endif %}

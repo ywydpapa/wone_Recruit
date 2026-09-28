@@ -101,7 +101,7 @@
                         </div>
                         <div class="profile-field">
                             <span class="profile-field-label">의사소통 선호</span>
-                            <span class="profile-field-value">{{ communication_pref_display }}</span>
+                            <span class="profile-field-value">{{ comm_pref }}</span>
                         </div>
                         <div class="profile-field">
                             <span class="profile-field-label">보조기기</span>
@@ -182,8 +182,8 @@
                         <div class="profile-field">
                             <span class="profile-field-label">필요 편의제공</span>
                             <span class="profile-field-value">
-                                {% if accommodation_needs_display and accommodation_needs_display != '-' %}
-                                    {% for item in accommodation_needs_display.split(', ') %}
+                                {% if accomm_needs and accomm_needs != '-' %}
+                                    {% for item in accomm_needs.split(', ') %}
                                     <span class="profile-tag profile-tag-green">{{ item }}</span>
                                     {% endfor %}
                                 {% else %}-{% endif %}

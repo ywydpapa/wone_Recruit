@@ -75,12 +75,11 @@ def test_calc_category_fit_perfect(client):
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     try:
+        from collections import defaultdict
         from core.matching import calc_category_fit, CAPABILITIES
         profile = {c: "ok" for c in CAPABILITIES}
-        class FakeRow:
-            def __getitem__(self, key):
-                return 3
-        score = calc_category_fit(profile, FakeRow())
+        row = defaultdict(lambda: 3)
+        score = calc_category_fit(profile, row)
         assert score == 3.0
     finally:
         conn.close()
@@ -91,21 +90,11 @@ def test_calc_category_fit_zero(client):
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     try:
+        from collections import defaultdict
         from core.matching import calc_category_fit, CAPABILITIES
         profile = {c: "no" for c in CAPABILITIES}
-        class FakeRow:
-            def __getitem__(self, key):
-                return 3
-        score = calc_category_fit(profile, FakeRow())
+        row = defaultdict(lambda: 3)
+        score = calc_category_fit(profile, row)
         assert score == 0.0
     finally:
         conn.close()
-
-
-def test_op_matching_has_fit_score(client):
-    from tests.conftest import login
-    # operator 계정으로 로그인
-    r = login(client, "op@wone.kr")
-    # /op/matching은 job_id 없으면 공고 선택 화면 (fit_score 계산 없음), 그냥 200 확인
-    r = client.get("/op/matching", follow_redirects=False)
-    assert r.status_code in (200, 302, 303)

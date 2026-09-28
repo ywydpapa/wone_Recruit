@@ -16,6 +16,8 @@ async def applicants_list(request: Request, job_id: int, q: str = "", sort: str 
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
+        if company["approval_status"] != "approved":
+            return RedirectResponse(url="/company/jobs?error=not_approved", status_code=303)
         job = conn.execute(
             "SELECT * FROM job_postings WHERE id=? AND company_id=?",
             (job_id, company["id"]),
@@ -73,6 +75,8 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
+        if company["approval_status"] != "approved":
+            return RedirectResponse(url="/company/jobs?error=not_approved", status_code=303)
         job = conn.execute(
             "SELECT * FROM job_postings WHERE id=? AND company_id=?",
             (job_id, company["id"]),
@@ -116,15 +120,22 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
                ORDER BY sh.created_at ASC""",
             (candidacy_id,),
         ).fetchall()
-        conn.execute(
-            "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+        dup = conn.execute(
+            """SELECT 1 FROM access_log
+               WHERE viewer_id=? AND seeker_user_id=? AND purpose=?
+                 AND created_at > datetime('now', '-1 hour')""",
             (user["id"], cand["seeker_user_id"], "applicant_review"),
-        )
-        create_notification(
-            conn, cand["seeker_user_id"],
-            f"{company['company_name']}에서 프로필을 열람했습니다.",
-            "/profile/views",
-        )
+        ).fetchone()
+        if not dup:
+            conn.execute(
+                "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+                (user["id"], cand["seeker_user_id"], "applicant_review"),
+            )
+            create_notification(
+                conn, cand["seeker_user_id"],
+                f"{company['company_name']}에서 프로필을 열람했습니다.",
+                "/profile/views",
+            )
         conn.commit()
         current_status = cand["status"]
         next_statuses = get_next_statuses(conn, company["id"], current_status)
@@ -198,6 +209,8 @@ async def applicants_bulk_status(
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
+        if company["approval_status"] != "approved":
+            return RedirectResponse(url="/company/jobs?error=not_approved", status_code=303)
         job = conn.execute(
             "SELECT id FROM job_postings WHERE id=? AND company_id=?",
             (job_id, company["id"]),
@@ -225,6 +238,8 @@ async def applicant_status_change(
         company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
         if not company:
             return RedirectResponse(url="/company/profile", status_code=303)
+        if company["approval_status"] != "approved":
+            return RedirectResponse(url="/company/jobs?error=not_approved", status_code=303)
         job = conn.execute(
             "SELECT id FROM job_postings WHERE id=? AND company_id=?",
             (job_id, company["id"]),

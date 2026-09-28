@@ -209,7 +209,6 @@ async def mgr_candidacies(
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
         candidacies = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
-        # 필터 드롭다운용 담당 구직자 목록
         seekers = conn.execute(
             "SELECT u.id, u.name FROM users u "
             "JOIN manager_assignments ma ON ma.seeker_user_id = u.id "

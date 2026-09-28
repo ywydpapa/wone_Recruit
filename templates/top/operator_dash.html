@@ -4,43 +4,70 @@
 <div class="page-header"><h2>대시보드</h2></div>
 
 <div class="container">
-    <!-- 숫자 카드 -->
+
+    <!-- 처리 필요 -->
+    {% if pending_companies > 0 or pending_reviews > 0 or unassigned_seekers > 0 or open_inquiries > 0 %}
     <div class="row g-3 mb-4">
+        {% if pending_companies > 0 %}
         <div class="col-6 col-lg-4">
-            <a href="/op/jobs" class="dash-metric-card">
-                <div class="dash-metric-label"><i class="fas fa-briefcase me-1" aria-hidden="true"></i>열린 공고</div>
-                <div class="dash-metric-value">{{ open_jobs }}<span class="unit">개</span></div>
+            <a href="/op/companies?approval=pending" class="dash-metric-card metric-danger">
+                <div class="dash-metric-label"><i class="fas fa-building me-1" aria-hidden="true"></i>승인대기 기업</div>
+                <div class="dash-metric-value">{{ pending_companies }}<span class="unit">개</span></div>
             </a>
         </div>
+        {% endif %}
+        {% if pending_reviews > 0 %}
         <div class="col-6 col-lg-4">
+            <a href="/op/jobs?status=pending_review" class="dash-metric-card metric-danger">
+                <div class="dash-metric-label"><i class="fas fa-clock me-1" aria-hidden="true"></i>검토대기 공고</div>
+                <div class="dash-metric-value">{{ pending_reviews }}<span class="unit">건</span></div>
+            </a>
+        </div>
+        {% endif %}
+        {% if unassigned_seekers > 0 %}
+        <div class="col-6 col-lg-4">
+            <a href="/op/seekers" class="dash-metric-card metric-danger">
+                <div class="dash-metric-label"><i class="fas fa-user-plus me-1" aria-hidden="true"></i>미배정 구직자</div>
+                <div class="dash-metric-value">{{ unassigned_seekers }}<span class="unit">명</span></div>
+            </a>
+        </div>
+        {% endif %}
+        {% if open_inquiries > 0 %}
+        <div class="col-6 col-lg-4">
+            <a href="/op/inquiries?status=open" class="dash-metric-card metric-danger">
+                <div class="dash-metric-label"><i class="fas fa-headset me-1" aria-hidden="true"></i>미답변 문의</div>
+                <div class="dash-metric-value">{{ open_inquiries }}<span class="unit">건</span></div>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- 플랫폼 현황 -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
             <a href="/op/seekers" class="dash-metric-card">
                 <div class="dash-metric-label"><i class="fas fa-users me-1" aria-hidden="true"></i>구직자</div>
                 <div class="dash-metric-value">{{ seeker_count }}<span class="unit">명{% if weekly_registrations.seekers > 0 %} <small>+{{ weekly_registrations.seekers }}</small>{% endif %}</span></div>
             </a>
         </div>
-        <div class="col-6 col-lg-4">
-            <a href="/op/matching" class="dash-metric-card">
-                <div class="dash-metric-label"><i class="fas fa-handshake me-1" aria-hidden="true"></i>진행중 매칭</div>
-                <div class="dash-metric-value">{{ active_matching }}<span class="unit">건</span></div>
+        <div class="col-6 col-lg-3">
+            <a href="/op/companies" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-building me-1" aria-hidden="true"></i>기업</div>
+                <div class="dash-metric-value">{{ company_count }}<span class="unit">개{% if weekly_registrations.companies > 0 %} <small>+{{ weekly_registrations.companies }}</small>{% endif %}</span></div>
             </a>
         </div>
-        <div class="col-6 col-lg-4">
-            <a href="/op/jobs?status=pending_review" class="dash-metric-card {% if pending_reviews > 0 %}metric-danger{% endif %}">
-                <div class="dash-metric-label"><i class="fas fa-clock me-1" aria-hidden="true"></i>검토대기 공고</div>
-                <div class="dash-metric-value">{{ pending_reviews }}<span class="unit">건</span></div>
+        <div class="col-6 col-lg-3">
+            <a href="/op/jobs" class="dash-metric-card">
+                <div class="dash-metric-label"><i class="fas fa-briefcase me-1" aria-hidden="true"></i>열린 공고</div>
+                <div class="dash-metric-value">{{ open_jobs }}<span class="unit">건</span></div>
             </a>
         </div>
-        <div class="col-6 col-lg-4">
-            <a href="/op/companies?approval=pending" class="dash-metric-card {% if pending_companies > 0 %}metric-danger{% endif %}">
-                <div class="dash-metric-label"><i class="fas fa-building me-1" aria-hidden="true"></i>승인대기 기업</div>
-                <div class="dash-metric-value">{{ pending_companies }}<span class="unit">개</span></div>
-            </a>
-        </div>
-        <div class="col-6 col-lg-4">
-            <a href="/op/placements" class="dash-metric-card">
+        <div class="col-6 col-lg-3">
+            <div class="dash-metric-card">
                 <div class="dash-metric-label"><i class="fas fa-calendar-check me-1" aria-hidden="true"></i>활성 배치</div>
                 <div class="dash-metric-value">{{ placement_count }}<span class="unit">건</span></div>
-            </a>
+            </div>
         </div>
     </div>
 
@@ -50,55 +77,20 @@
             <h3 class="dash-section-title">매칭 파이프라인</h3>
         </div>
         <div class="dash-pipeline">
-            {% set rejected = pipeline.get('rejected', 0) + pipeline.get('withdrawn', 0) %}
             {% for key in ['pending', 'reviewing', 'shortlisted', 'interview', 'offer', 'hired'] %}
-            <a href="/op/candidacies?status={{ key }}" class="dash-pipeline-step">
+            <div class="dash-pipeline-step">
                 <div class="dash-pipeline-count">{{ pipeline.get(key, 0) }}</div>
                 <div class="dash-pipeline-label">{{ status_labels.get(key, key) }}</div>
-            </a>
+            </div>
             {% if not loop.last %}
             <i class="fas fa-chevron-right dash-pipeline-arrow" aria-hidden="true"></i>
             {% endif %}
             {% endfor %}
             <div class="dash-pipeline-step">
-                <div class="dash-pipeline-count">{{ rejected }}</div>
+                <div class="dash-pipeline-count">{{ pipeline.get('dropped', 0) }}</div>
                 <div class="dash-pipeline-label">탈락/취소</div>
             </div>
         </div>
-    </div>
-
-    <!-- 최근 지원 활동 -->
-    <div class="content-card mb-4">
-        <div class="dash-section-header">
-            <h3 class="dash-section-title">최근 지원 활동</h3>
-            <a href="/op/candidacies" class="btn btn-outline-secondary btn-sm">전체 보기</a>
-        </div>
-        {% if recent_candidacies %}
-            {% for c in recent_candidacies %}
-            <a href="/op/seekers/{{ c['seeker_user_id'] }}" class="dash-session-item">
-                <div class="dash-session-avatar">{{ c['initial'] }}</div>
-                <div class="dash-session-info">
-                    <div class="dash-session-name">{{ c['seeker_name'] }}</div>
-                    <div class="dash-session-type">{{ c['job_title'] }} &middot; {{ c['company_name'] }}</div>
-                </div>
-                <div class="dash-session-time">
-                    {% set s = c['status'] %}
-                    {% if s == 'pending' %}<span class="badge bg-secondary">접수</span>
-                    {% elif s == 'reviewing' %}<span class="badge bg-primary">검토중</span>
-                    {% elif s == 'shortlisted' %}<span class="badge bg-info text-dark">서류합격</span>
-                    {% elif s == 'interview' %}<span class="badge bg-warning text-dark">면접</span>
-                    {% elif s == 'offer' %}<span class="badge bg-success">제의</span>
-                    {% elif s == 'hired' %}<span class="badge bg-success">채용</span>
-                    {% elif s == 'rejected' %}<span class="badge bg-danger">불합격</span>
-                    {% elif s == 'withdrawn' %}<span class="badge bg-light text-dark border">취소</span>
-                    {% else %}<span class="badge bg-secondary">{{ s }}</span>
-                    {% endif %}
-                </div>
-            </a>
-            {% endfor %}
-        {% else %}
-        <p class="text-center py-4 mb-0 dash-empty">지원 내역이 없습니다.</p>
-        {% endif %}
     </div>
 
     <!-- 바로가기 -->
@@ -107,17 +99,17 @@
             <h3 class="dash-section-title">바로가기</h3>
         </div>
         <div class="d-grid gap-2">
-            <a href="/op/seekers" class="btn btn-outline-primary">
-                <i class="fas fa-users me-1" aria-hidden="true"></i>구직자 관리
+            <a href="/op/inquiries" class="btn btn-outline-primary">
+                <i class="fas fa-headset me-1" aria-hidden="true"></i>문의 관리
             </a>
-            <a href="/op/companies" class="btn btn-outline-primary">
-                <i class="fas fa-building me-1" aria-hidden="true"></i>기업 관리
+            <a href="/op/managers" class="btn btn-outline-primary">
+                <i class="fas fa-user-tie me-1" aria-hidden="true"></i>상담사 관리
             </a>
-            <a href="/op/matching" class="btn btn-outline-primary">
-                <i class="fas fa-handshake me-1" aria-hidden="true"></i>매칭{% if active_matching > 0 %}<span class="badge bg-primary ms-1">{{ active_matching }}</span>{% endif %}
+            <a href="/op/jobs" class="btn btn-outline-primary">
+                <i class="fas fa-clipboard-list me-1" aria-hidden="true"></i>공고 관리
             </a>
-            <a href="/op/candidacies" class="btn btn-outline-primary">
-                <i class="fas fa-list me-1" aria-hidden="true"></i>전체 지원
+            <a href="/op/access-log" class="btn btn-outline-primary">
+                <i class="fas fa-eye me-1" aria-hidden="true"></i>열람 기록
             </a>
         </div>
     </div>

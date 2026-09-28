@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.constants import COMPANY_SIZES, INDUSTRY_TYPES, ACCOMMODATION_OPTIONS
+from core.notifications import create_notification
 from core.upload import save_upload
 
 router = APIRouter(prefix="/company")
@@ -120,7 +121,10 @@ async def company_profile_save(
 
     conn = get_sqlite()
     try:
-        existing = conn.execute("SELECT id, logo_path, biz_doc_path FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+        existing = conn.execute(
+            "SELECT id, logo_path, biz_doc_path, company_name, biz_no, approval_status FROM companies WHERE user_id=?",
+            (user["id"],),
+        ).fetchone()
         if not logo_path and existing:
             logo_path = existing["logo_path"] or ""
         if not biz_doc_path and existing:
@@ -148,6 +152,27 @@ async def company_profile_save(
                  tagline, description,
                  user["id"]))
             company_id = existing["id"]
+
+            # 핵심 정보 변경 시 인증 재심사
+            if existing["approval_status"] == "approved":
+                changed = (
+                    existing["company_name"] != company_name
+                    or existing["biz_no"] != biz_no
+                )
+                if changed:
+                    conn.execute(
+                        "UPDATE companies SET approval_status='pending', reverify=1 WHERE id=?",
+                        (company_id,),
+                    )
+                    ops = conn.execute(
+                        "SELECT id FROM users WHERE role='operator' AND is_deleted=0"
+                    ).fetchall()
+                    for op in ops:
+                        create_notification(
+                            conn, op["id"],
+                            f"[{company_name}] 기업 핵심정보가 수정되어 재심사가 필요합니다.",
+                            f"/op/companies/{company_id}",
+                        )
         else:
             cur = conn.execute("""INSERT INTO companies
                 (user_id, company_name, biz_no, industry, employee_count, disabled_count,

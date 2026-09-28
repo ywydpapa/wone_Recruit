@@ -15,10 +15,10 @@
     if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
     document.documentElement.setAttribute('data-theme',t);})();
     </script>
-    <link rel="stylesheet" href="/static/css/base.css">
-    <link rel="stylesheet" href="/static/css/layout.css">
-    <link rel="stylesheet" href="/static/css/components.css">
-    <link rel="stylesheet" href="/static/css/pages.css">
+    <link rel="stylesheet" href="/static/css/base.css?v=2">
+    <link rel="stylesheet" href="/static/css/layout.css?v=2">
+    <link rel="stylesheet" href="/static/css/components.css?v=2">
+    <link rel="stylesheet" href="/static/css/pages.css?v=2">
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -45,7 +45,7 @@
             <i class="fas fa-users"></i><span>지원자 관리</span>
         </a>
         <a href="/company/calendar" class="sidebar-link{% if '/company/calendar' in request.url.path %} active" aria-current="page{% endif %}">
-            <i class="fas fa-calendar-alt"></i><span>면접 캘린더</span>
+            <i class="fas fa-calendar-alt"></i><span>내 일정</span>
         </a>
         <div class="sidebar-section">인재</div>
         <a href="/company/talents" class="sidebar-link{% if '/company/talents' in request.url.path %} active" aria-current="page{% endif %}">
@@ -58,6 +58,11 @@
         <div class="sidebar-section">채용 계획</div>
         <a href="/company/levy" class="sidebar-link{% if '/company/levy' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-calculator"></i><span>의무고용 현황</span>
+        </a>
+
+        <div class="sidebar-section">고객지원</div>
+        <a href="/inquiries" class="sidebar-link{% if '/inquiries' in request.url.path %} active" aria-current="page{% endif %}">
+            <i class="fas fa-question-circle"></i><span>문의하기</span>
         </a>
 
         <div class="sidebar-section">설정</div>
@@ -99,6 +104,16 @@
         <div class="sidebar-section">제안</div>
         <a href="/proposals" class="sidebar-link{% if request.url.path == '/proposals' %} active" aria-current="page{% endif %}">
             <i class="fas fa-handshake"></i><span>매칭 제안</span>
+        </a>
+
+        <div class="sidebar-section">일정</div>
+        <a href="/schedule" class="sidebar-link{% if request.url.path == '/schedule' %} active" aria-current="page{% endif %}">
+            <i class="fas fa-calendar"></i><span>내 일정</span>
+        </a>
+
+        <div class="sidebar-section">고객지원</div>
+        <a href="/inquiries" class="sidebar-link{% if '/inquiries' in request.url.path %} active" aria-current="page{% endif %}">
+            <i class="fas fa-question-circle"></i><span>문의하기</span>
         </a>
 
         <div class="sidebar-section">설정</div>
@@ -157,21 +172,16 @@
         <a href="/op/companies" class="sidebar-link{% if '/op/companies' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-building"></i><span>기업</span>
         </a>
+        <a href="/op/managers" class="sidebar-link{% if '/op/managers' in request.url.path %} active" aria-current="page{% endif %}">
+            <i class="fas fa-user-tie"></i><span>상담사</span>
+        </a>
         <a href="/op/jobs" class="sidebar-link{% if '/op/jobs' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-clipboard-list"></i><span>공고</span>
         </a>
 
-        <div class="sidebar-section">매칭</div>
-        <a href="/op/matching" class="sidebar-link{% if '/op/matching' in request.url.path %} active" aria-current="page{% endif %}">
-            <i class="fas fa-link"></i><span>매칭</span>
-        </a>
-        <a href="/op/candidacies" class="sidebar-link{% if '/op/candidacies' in request.url.path %} active" aria-current="page{% endif %}">
-            <i class="fas fa-tasks"></i><span>지원 현황</span>
-        </a>
-
-        <div class="sidebar-section">배치</div>
-        <a href="/op/placements" class="sidebar-link{% if '/op/placements' in request.url.path %} active" aria-current="page{% endif %}">
-            <i class="fas fa-user-tie"></i><span>배치 관리</span>
+        <div class="sidebar-section">고객지원</div>
+        <a href="/op/inquiries" class="sidebar-link{% if '/op/inquiries' in request.url.path %} active" aria-current="page{% endif %}">
+            <i class="fas fa-headset"></i><span>문의 관리</span>
         </a>
 
         <div class="sidebar-section">보고서</div>

@@ -177,7 +177,6 @@
                     }
                 }
 
-                /* 미리보기 클릭 시 편집 모달 */
                 photoPreview.addEventListener('click', function(){
                     if (!lastSrcUrl) return;
                     document.getElementById('cropImg').src = lastSrcUrl;
@@ -185,7 +184,6 @@
                     cropModal.show();
                 });
 
-                /* 모달 열릴 때 Cropper 초기화 */
                 document.getElementById('photoCropModal').addEventListener('shown.bs.modal', function(){
                     var img = document.getElementById('cropImg');
                     if (cropper) cropper.destroy();
@@ -214,7 +212,6 @@
                     });
                 });
 
-                /* 모달 닫힐 때 정리 */
                 document.getElementById('photoCropModal').addEventListener('hidden.bs.modal', function(){
                     if (cropper) { cropper.destroy(); cropper = null; }
                     if (!photoPreview.querySelector('img')) photoInput.value = '';
@@ -243,7 +240,6 @@
                     updateSizeInfo();
                 });
 
-                /* 비율 프리셋 */
                 document.querySelectorAll('.crop-ratio-btn').forEach(function(btn){
                     btn.addEventListener('click', function(){
                         if (!cropper) return;
@@ -783,7 +779,6 @@
         });
     });
 
-    /* 행 삭제 */
     document.addEventListener('click', function (e) {
         if (e.target.classList.contains('delete-row')) {
             e.target.closest('[class$="-row"]') && e.target.closest('[class$="-row"]').remove();
@@ -796,7 +791,6 @@
         }
     });
 
-    /* 경력 재직중 체크박스 */
     document.addEventListener('change', function (e) {
         if (e.target.classList.contains('car-current-cb')) {
             var wrap = e.target.closest('.career-row').querySelector('.car-end-wrap input');
@@ -831,7 +825,6 @@
 
     document.querySelectorAll('.intro-textarea').forEach(updateCounter);
 
-    /* 자기소개서 프리셋 칩 */
     document.querySelectorAll('.preset-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
             addIntroRow(chip.dataset.title, chip.dataset.desc);

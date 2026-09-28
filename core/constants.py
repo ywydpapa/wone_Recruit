@@ -105,6 +105,7 @@ PURPOSE_LABELS = {
     "applicant_review": "지원자 검토",
     "talent_search": "인재 검색",
     "operator_view": "운영자 조회",
+    "manager_view": "매니저 조회",
 }
 
 COMMUNITY_CATEGORIES = [

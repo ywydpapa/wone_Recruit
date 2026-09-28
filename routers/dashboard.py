@@ -42,13 +42,6 @@ async def dashboard(request: Request):
             data = get_operator_dashboard(conn)
             ctx.update(data)
             ctx["status_labels"] = STATUS_LABELS
-            # 진행중 매칭 합산
-            p = data["pipeline"]
-            ctx["active_matching"] = sum(p.get(k, 0) for k in ['pending', 'reviewing', 'shortlisted', 'interview', 'offer'])
-            # 지원 목록 initial 추가
-            ctx["recent_candidacies"] = [
-                {**dict(c), "initial": c["seeker_name"][:1]} for c in data.get("recent_candidacies", [])
-            ]
             tpl = "top/operator_dash.html"
         else:
             tpl = "top/seeker_dash.html"

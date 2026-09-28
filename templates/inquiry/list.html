@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}내 문의 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>내 문의</h2></div>
+
+<div class="container">
+    <!-- 문의 작성 -->
+    <div class="content-card mb-4">
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">새 문의</h3>
+        </div>
+        <form method="post" action="/inquiries" class="p-3">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="category" class="form-label">분류</label>
+                    <select id="category" name="category" class="form-select">
+                        <option value="">선택</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label for="subject" class="form-label">제목</label>
+                    <input type="text" id="subject" name="subject" class="form-control" required maxlength="100">
+                </div>
+                <div class="col-12">
+                    <label for="content" class="form-label">내용</label>
+                    <textarea id="content" name="content" class="form-control" rows="4" required maxlength="2000"></textarea>
+                </div>
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary">문의 등록</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 문의 목록 -->
+    <div class="content-card">
+        <div class="dash-section-header">
+            <h3 class="dash-section-title">문의 내역</h3>
+            <span class="text-muted">{{ pagination.total }}건</span>
+        </div>
+        {% if inquiries %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <caption class="visually-hidden">문의 내역</caption>
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">분류</th>
+                        <th scope="col">제목</th>
+                        <th scope="col">상태</th>
+                        <th scope="col">등록일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for inq in inquiries %}
+                <tr>
+                    <td>{{ inq['category'] or '-' }}</td>
+                    <td><a href="/inquiries/{{ inq['id'] }}" class="link-plain">{{ inq['subject'] }}</a></td>
+                    <td>
+                        {% if inq['status'] == 'open' %}
+                        <span class="badge bg-warning text-dark">미답변</span>
+                        {% elif inq['status'] == 'answered' %}
+                        <span class="badge bg-success">답변완료</span>
+                        {% else %}
+                        <span class="badge bg-secondary">종료</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ inq['created_at']|fdate }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include "common/pagination.html" %}
+        {% else %}
+        <p class="text-muted text-center py-4 mb-0">문의 내역이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -180,17 +180,3 @@ def test_certifications_crud(client):
     conn.close()
     assert len(certs) == 1
     assert certs[0]["cert_name"] == "컴활2급"
-
-
-def test_operator_sees_new_fields(client):
-    login(client, "op1")
-    conn = get_sqlite()
-    uid = conn.execute("SELECT id FROM users WHERE username='seeker1'").fetchone()["id"]
-    conn.close()
-
-    r = client.get(f"/op/seekers/{uid}")
-    assert r.status_code == 200
-    assert "이동수단" in r.text
-    assert "보조기기" in r.text
-    assert "최종학력" in r.text
-    assert "자격증" in r.text

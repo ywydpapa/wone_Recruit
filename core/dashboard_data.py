@@ -219,6 +219,50 @@ def get_seeker_dashboard(conn, uid):
         (f"/op/seekers/{uid}?from=consult_request",),
     ).fetchone())
 
+    # 다가오는 일정
+    _stype = {
+        'initial_assessment': '초기 평가', 'career_counseling': '진로 상담',
+        'interview_prep': '면접 준비', 'followup_call': '후속 통화',
+        'company_visit': '기업 방문', 'other': '기타',
+    }
+    _smethod = {'in_person': '대면', 'phone': '전화', 'video': '화상'}
+    upcoming = []
+    for r in conn.execute(
+        """SELECT s.interview_date, s.interview_time, s.interview_type,
+                  jp.title AS job_title, co.company_name
+           FROM interview_schedules s
+           JOIN candidacies c ON s.candidacy_id = c.id
+           JOIN job_postings jp ON c.job_id = jp.id
+           JOIN companies co ON jp.company_id = co.id
+           WHERE c.seeker_user_id = ? AND s.interview_date >= date('now','localtime')
+           ORDER BY s.interview_date, s.interview_time LIMIT 5""",
+        (uid,),
+    ).fetchall():
+        upcoming.append({
+            "sort_key": r["interview_date"] + " " + (r["interview_time"] or ""),
+            "date_display": r["interview_date"][5:] if r["interview_date"] else "",
+            "time_display": (r["interview_time"] or "")[:5],
+            "title": r["company_name"], "subtitle": r["job_title"], "icon": "fa-building",
+        })
+    for r in conn.execute(
+        """SELECT cs.scheduled_at, cs.session_type, cs.method, u.name AS manager_name
+           FROM consultation_sessions cs
+           JOIN users u ON cs.manager_user_id = u.id
+           WHERE cs.seeker_user_id = ? AND cs.status = 'scheduled'
+             AND date(replace(cs.scheduled_at, 'T', ' ')) >= date('now','localtime')
+           ORDER BY cs.scheduled_at LIMIT 5""",
+        (uid,),
+    ).fetchall():
+        norm = (r["scheduled_at"] or "").replace("T", " ")
+        upcoming.append({
+            "sort_key": norm,
+            "date_display": norm[5:10], "time_display": norm[11:16],
+            "title": f"{r['manager_name']} {_stype.get(r['session_type'], '')}",
+            "subtitle": _smethod.get(r["method"], ""), "icon": "fa-comments",
+        })
+    upcoming.sort(key=lambda x: x["sort_key"])
+    upcoming = upcoming[:5]
+
     return dict(apps=apps, app_count=app_count, proposals=proposals,
                 open_jobs=open_jobs, has_profile=profile is not None,
                 bookmark_count=bookmark_count, profile_completeness=completeness,
@@ -227,7 +271,8 @@ def get_seeker_dashboard(conn, uid):
                 app_status_dist=app_status_dist, status_summary=status_summary,
                 profile_view_count=profile_view_count,
                 recent_views_count=recent_views_count,
-                manager=manager, consult_requested=consult_requested)
+                manager=manager, consult_requested=consult_requested,
+                upcoming_schedule=upcoming)
 
 
 def get_company_dashboard(conn, uid):
@@ -383,28 +428,10 @@ def get_operator_dashboard(conn):
     pending_reviews = conn.execute(
         "SELECT COUNT(*) FROM job_postings WHERE status='pending_review'"
     ).fetchone()[0]
-    total_candidacies = conn.execute(
-        "SELECT COUNT(*) FROM candidacies"
-    ).fetchone()[0]
-    pending_matches = conn.execute(
-        "SELECT COUNT(*) FROM candidacies WHERE source='operator_matched' AND match_stage='proposed'"
-    ).fetchone()[0]
-    hired = conn.execute(
-        "SELECT COUNT(*) FROM candidacies WHERE status='hired'"
-    ).fetchone()[0]
-    recent_candidacies = conn.execute("""
-        SELECT c.*, jp.title as job_title, u.name as seeker_name, co.company_name
-        FROM candidacies c
-        JOIN job_postings jp ON c.job_id=jp.id
-        JOIN users u ON c.seeker_user_id=u.id
-        JOIN companies co ON jp.company_id=co.id
-        ORDER BY c.updated_at DESC LIMIT 5
-    """).fetchall()
 
-    # 매칭 파이프라인
-    pipeline_rows = conn.execute("""
-        SELECT status, COUNT(*) AS cnt FROM candidacies GROUP BY status
-    """).fetchall()
+    pipeline_rows = conn.execute(
+        "SELECT status, COUNT(*) AS cnt FROM candidacies GROUP BY status"
+    ).fetchall()
     pipeline = {r['status']: r['cnt'] for r in pipeline_rows}
 
     pending_companies = conn.execute(
@@ -423,17 +450,21 @@ def get_operator_dashboard(conn):
         "SELECT COUNT(*) FROM placements WHERE end_date IS NULL OR end_date=''"
     ).fetchone()[0]
 
-    this_month_hired = conn.execute(
-        "SELECT COUNT(*) FROM candidacies WHERE status='hired'"
-        "  AND updated_at >= datetime('now','localtime','start of month')"
+    unassigned_seekers = conn.execute(
+        "SELECT COUNT(*) FROM users WHERE role='seeker' AND is_deleted=0"
+        " AND id NOT IN (SELECT seeker_user_id FROM manager_assignments)"
     ).fetchone()[0]
+
+    open_inquiries = conn.execute(
+        "SELECT COUNT(*) FROM inquiries WHERE status='open'"
+    ).fetchone()[0]
+
+    pipeline['dropped'] = pipeline.get('rejected', 0) + pipeline.get('withdrawn', 0)
 
     return dict(seeker_count=seeker_count, company_count=company_count,
                 open_jobs=open_jobs, pending_reviews=pending_reviews,
-                total_candidacies=total_candidacies,
-                pending_matches=pending_matches, hired=hired,
-                recent_candidacies=recent_candidacies, pipeline=pipeline,
-                pending_companies=pending_companies,
+                pipeline=pipeline, pending_companies=pending_companies,
                 weekly_registrations=weekly_registrations,
                 placement_count=placement_count,
-                this_month_hired=this_month_hired)
+                unassigned_seekers=unassigned_seekers,
+                open_inquiries=open_inquiries)

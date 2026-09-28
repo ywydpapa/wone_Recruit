@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from core.csrf import csrf_input_html
+from core.masking import mask_name, mask_phone, mask_email
 
 templates = Jinja2Templates(directory="templates")
 
@@ -70,6 +71,10 @@ def _fmt_minutes(v):
 
 templates.env.filters["split_steps"] = _split_steps
 templates.env.filters["fmt_minutes"] = _fmt_minutes
+
+templates.env.filters["mask_name"] = mask_name
+templates.env.filters["mask_phone"] = mask_phone
+templates.env.filters["mask_email"] = mask_email
 
 _orig_response = templates.TemplateResponse
 

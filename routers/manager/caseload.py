@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -57,11 +56,11 @@ STAGE_LABELS = {
 @router.get("/seekers", response_class=HTMLResponse)
 async def mgr_seekers(
     request: Request,
-    q: Optional[str] = Query(None),
-    disability_type_id: Optional[int] = Query(None),
-    severity: Optional[str] = Query(None),
-    sido: Optional[str] = Query(None),
-    stage: Optional[str] = Query(None),
+    q: str = Query(None),
+    disability_type_id: int = Query(None),
+    severity: str = Query(None),
+    sido: str = Query(None),
+    stage: str = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "manager")
@@ -246,10 +245,10 @@ async def mgr_seekers_by_device(
 @router.get("/seekers/unassigned", response_class=HTMLResponse)
 async def mgr_seekers_unassigned(
     request: Request,
-    q: Optional[str] = Query(None),
-    disability_type_id: Optional[int] = Query(None),
-    severity: Optional[str] = Query(None),
-    sido: Optional[str] = Query(None),
+    q: str = Query(None),
+    disability_type_id: int = Query(None),
+    severity: str = Query(None),
+    sido: str = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "manager")
@@ -390,11 +389,18 @@ async def mgr_seeker_detail(request: Request, user_id: int):
                 selected_devices = json.loads(profile["assistive_tech"])
             except (json.JSONDecodeError, TypeError):
                 pass
-        conn.execute(
-            "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+        dup = conn.execute(
+            """SELECT 1 FROM access_log
+               WHERE viewer_id=? AND seeker_user_id=? AND purpose=?
+                 AND created_at > datetime('now', '-1 hour')""",
             (user["id"], user_id, "manager_view"),
-        )
-        conn.commit()
+        ).fetchone()
+        if not dup:
+            conn.execute(
+                "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+                (user["id"], user_id, "manager_view"),
+            )
+            conn.commit()
     finally:
         conn.close()
     return templates.TemplateResponse(
@@ -417,8 +423,8 @@ async def mgr_seeker_detail(request: Request, user_id: int):
             "status_labels": STATUS_LABELS,
             "stage_labels": MATCH_STAGE_LABELS,
             "consent_given": consent_given,
-            "communication_pref_display": _parse_json_list(profile["communication_pref"]) if profile else '-',
-            "accommodation_needs_display": _parse_json_list(profile["accommodation_needs"]) if profile else '-',
+            "comm_pref": _parse_json_list(profile["communication_pref"]) if profile else '-',
+            "accomm_needs": _parse_json_list(profile["accommodation_needs"]) if profile else '-',
         }
     )
 

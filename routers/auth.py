@@ -47,6 +47,9 @@ async def login_check(request: Request, username: str = Form(...), password: str
         request.session["username"] = row["username"]
         request.session["name"] = row["name"]
         request.session["role"] = row["role"]
+        if row["must_change_password"]:
+            request.session["must_change_password"] = True
+            return RedirectResponse(url="/change-password", status_code=303)
         return RedirectResponse(url="/", status_code=303)
     return RedirectResponse(url="/login?error=1", status_code=303)
 
@@ -73,13 +76,15 @@ async def forgot_password_submit(
     conn = get_sqlite()
     try:
         row = conn.execute(
-            "SELECT id, is_deleted FROM users WHERE username=? AND name=? AND phone=?",
+            "SELECT id, is_deleted, role FROM users WHERE username=? AND name=? AND phone=?",
             (username, name, phone),
         ).fetchone()
         if not row:
             return RedirectResponse(url="/forgot-password?error=not_found", status_code=303)
         if row["is_deleted"]:
             return RedirectResponse(url="/forgot-password?error=deleted", status_code=303)
+        if row["role"] == "manager":
+            return RedirectResponse(url="/forgot-password?error=manager", status_code=303)
         temp_pw = secrets.token_urlsafe(8)
         conn.execute("UPDATE users SET password=? WHERE id=?", (hash_password(temp_pw), row["id"]))
         conn.commit()
@@ -91,6 +96,44 @@ async def forgot_password_submit(
             "error": "", "temp_pw": temp_pw,
         }
     )
+
+
+@router.get("/change-password", response_class=HTMLResponse)
+async def change_password_page(request: Request, error: str = ""):
+    if not check_login(request) or not request.session.get("must_change_password"):
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(
+        request=request, name="login/change_password.html", context={
+            "request": request, "page_title": "비밀번호 변경",
+            "error": error,
+        }
+    )
+
+
+@router.post("/change-password")
+async def change_password_submit(
+    request: Request,
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+):
+    if not check_login(request) or not request.session.get("must_change_password"):
+        return RedirectResponse(url="/login", status_code=303)
+    if new_password != confirm_password:
+        return RedirectResponse(url="/change-password?error=mismatch", status_code=303)
+    if len(new_password) < MIN_PASSWORD_LENGTH:
+        return RedirectResponse(url="/change-password?error=short", status_code=303)
+    uid = request.session["id"]
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "UPDATE users SET password=?, must_change_password=0 WHERE id=?",
+            (hash_password(new_password), uid),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    request.session.pop("must_change_password", None)
+    return RedirectResponse(url="/", status_code=303)
 
 
 @router.get("/logout")
@@ -255,7 +298,7 @@ async def consent_page(request: Request, error: str = "", success: str = ""):
 
 
 @router.post("/account/consent/sensitive")
-async def withdraw_sensitive_consent(
+async def withdraw_consent(
     request: Request,
     current_password: str = Form(...),
 ):
@@ -286,7 +329,7 @@ async def withdraw_sensitive_consent(
 
 
 @router.post("/account/consent/sensitive/restore")
-async def restore_sensitive_consent(request: Request):
+async def restore_consent(request: Request):
     from datetime import datetime
     user = require_role(request, "seeker")
     conn = get_sqlite()
@@ -374,7 +417,7 @@ async def data_download(request: Request):
 
 
 @router.post("/account/consent/marketing")
-async def toggle_marketing_consent(request: Request):
+async def toggle_marketing(request: Request):
     from datetime import datetime
     user = require_role(request, "seeker", "company", "operator", "manager")
     conn = get_sqlite()

@@ -1,5 +1,7 @@
+import calendar
 import json
-from datetime import date
+from collections import OrderedDict
+from datetime import date, datetime, timedelta
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Form, HTTPException, Query, Request
@@ -159,7 +161,6 @@ async def profile_save(request: Request):
                  disability_visibility, consent_sensitive))
         conn.commit()
 
-        # 지원 항목 저장
         support_item_ids = [int(x) for x in form.getlist("support_item_ids") if x.isdigit()]
         conn.execute("DELETE FROM seeker_support_items WHERE user_id=?", (uid,))
         for sid in support_item_ids:
@@ -251,22 +252,22 @@ async def job_search(
             params.append(severity)
 
         cap_profile = build_capability_profile(conn, user["id"])
-        job_categories_map = {
+        cat_by_id = {
             r["id"]: r
             for r in conn.execute("SELECT * FROM job_categories").fetchall()
         }
 
-        seeker_profile = conn.execute(
+        profile = conn.execute(
             "SELECT accommodation_needs FROM seeker_profiles WHERE user_id=?",
             (user["id"],),
         ).fetchone()
-        seeker_needs = []
-        if seeker_profile and seeker_profile["accommodation_needs"]:
+        needs = []
+        if profile and profile["accommodation_needs"]:
             try:
-                seeker_needs = json.loads(seeker_profile["accommodation_needs"])
+                needs = json.loads(profile["accommodation_needs"])
             except (json.JSONDecodeError, TypeError):
                 pass
-        seeker_needs_set = set(seeker_needs)
+        needs_set = set(needs)
 
         page = max(1, page)
         if sort == "fit":
@@ -275,7 +276,7 @@ async def job_search(
             jobs_with_fit = []
             for row in jobs_raw:
                 job = dict(row)
-                cat = job_categories_map.get(job.get("category_id"))
+                cat = cat_by_id.get(job.get("category_id"))
                 fit = calc_category_fit(cap_profile, cat) if cat else 3.0
                 if fit >= 2:
                     fit_label = "추천"
@@ -289,7 +290,7 @@ async def job_search(
                     provided = json.loads(job.get("accommodations_provided") or "[]")
                 except (json.JSONDecodeError, TypeError):
                     provided = []
-                job["accommodation_match_count"] = len(seeker_needs_set & set(provided))
+                job["accommodation_match_count"] = len(needs_set & set(provided))
                 jobs_with_fit.append(job)
             jobs_with_fit.sort(key=lambda j: j["fit_score"], reverse=True)
             start = (page - 1) * PER_PAGE
@@ -302,7 +303,7 @@ async def job_search(
             jobs = []
             for row in jobs_raw:
                 job = dict(row)
-                cat = job_categories_map.get(job.get("category_id"))
+                cat = cat_by_id.get(job.get("category_id"))
                 fit = calc_category_fit(cap_profile, cat) if cat else 3.0
                 if fit >= 2:
                     fit_label = "추천"
@@ -316,7 +317,7 @@ async def job_search(
                     provided = json.loads(job.get("accommodations_provided") or "[]")
                 except (json.JSONDecodeError, TypeError):
                     provided = []
-                job["accommodation_match_count"] = len(seeker_needs_set & set(provided))
+                job["accommodation_match_count"] = len(needs_set & set(provided))
                 jobs.append(job)
         pagination = page_info(total, page)
         bookmarked_ids = set()
@@ -346,7 +347,7 @@ async def job_search(
             "user_name": user["name"], "user_role": "seeker",
             "jobs": jobs,
             "bookmarked_ids": bookmarked_ids,
-            "seeker_needs": seeker_needs,
+            "seeker_needs": needs,
             "employment_types": EMPLOYMENT_TYPES,
             "categories": categories,
             "q": q or "",
@@ -912,7 +913,7 @@ async def job_detail(request: Request, job_id: int):
             "SELECT accommodation_needs FROM seeker_profiles WHERE user_id=?",
             (user["id"],),
         ).fetchone()
-        seeker_needs = json.loads(profile["accommodation_needs"]) if profile and profile["accommodation_needs"] else []
+        needs = json.loads(profile["accommodation_needs"]) if profile and profile["accommodation_needs"] else []
         accommodations_provided = json.loads(job["accommodations_provided"]) if job and job["accommodations_provided"] else []
         preferred_disability = json.loads(job["preferred_disability"]) if job and job["preferred_disability"] else []
         is_bookmarked = conn.execute(
@@ -976,7 +977,7 @@ async def job_detail(request: Request, job_id: int):
             "job": job,
             "accommodations_provided": accommodations_provided,
             "preferred_disability": preferred_disability,
-            "seeker_needs": seeker_needs,
+            "seeker_needs": needs,
             "is_bookmarked": is_bookmarked,
             "similar_jobs": similar_jobs,
             "d_day": d_day,
@@ -987,7 +988,7 @@ async def job_detail(request: Request, job_id: int):
     )
 
 
-# --- 검색 알림 ---
+# 검색 알림
 
 _SEARCH_FILTER_KEYS = [
     'q', 'sido', 'region_id', 'employment_type', 'remote',
@@ -1194,3 +1195,125 @@ async def request_consultation(request: Request):
     finally:
         conn.close()
     return RedirectResponse(url="/", status_code=303)
+
+
+# 일정 뷰
+_SCHED_TYPE = {
+    'initial_assessment': '초기 평가', 'career_counseling': '진로 상담',
+    'interview_prep': '면접 준비', 'followup_call': '후속 통화',
+    'company_visit': '기업 방문', 'other': '기타',
+}
+_SCHED_METHOD = {'in_person': '대면', 'phone': '전화', 'video': '화상'}
+_IV_TYPE = {'onsite': '대면', 'video': '화상', 'phone': '전화'}
+_CS_STATUS = {'scheduled': '예정', 'completed': '완료', 'cancelled': '취소', 'no_show': '노쇼'}
+_DOW = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def _date_label(ds, today_str, tomorrow_str):
+    try:
+        d = date.fromisoformat(ds)
+        if ds == today_str:
+            return "오늘"
+        if ds == tomorrow_str:
+            return "내일"
+        return f"{d.month}/{d.day} ({_DOW[d.weekday()]})"
+    except ValueError:
+        return ds
+
+
+@router.get("/schedule", response_class=HTMLResponse)
+async def schedule_view(request: Request, year: int = Query(None), month: int = Query(None)):
+    user = require_role(request, "seeker")
+    today = date.today()
+    cal_year = year or today.year
+    cal_month = month or today.month
+
+    conn = get_sqlite()
+    try:
+        iv_rows = conn.execute(
+            """SELECT s.id, s.interview_date, s.interview_time, s.interview_type,
+                      s.location, s.memo, jp.title AS job_title,
+                      co.company_name, c.job_id, s.candidacy_id
+               FROM interview_schedules s
+               JOIN candidacies c ON s.candidacy_id = c.id
+               JOIN job_postings jp ON c.job_id = jp.id
+               JOIN companies co ON jp.company_id = co.id
+               WHERE c.seeker_user_id = ?
+               ORDER BY s.interview_date, s.interview_time""",
+            (user["id"],),
+        ).fetchall()
+
+        cs_rows = conn.execute(
+            """SELECT cs.id, cs.scheduled_at, cs.session_type, cs.method,
+                      cs.location, cs.status, cs.notes, u.name AS manager_name
+               FROM consultation_sessions cs
+               JOIN users u ON cs.manager_user_id = u.id
+               WHERE cs.seeker_user_id = ? AND cs.scheduled_at IS NOT NULL
+               ORDER BY cs.scheduled_at""",
+            (user["id"],),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    events = []
+    for r in iv_rows:
+        events.append({
+            "type": "interview", "date_str": (r["interview_date"] or "")[:10],
+            "time_str": (r["interview_time"] or "")[:5],
+            "title": r["company_name"], "subtitle": r["job_title"],
+            "location": r["location"] or "", "status": None,
+            "icon": "fa-building",
+            "iv_type": _IV_TYPE.get(r["interview_type"], ""),
+        })
+    for r in cs_rows:
+        norm = (r["scheduled_at"] or "").replace("T", " ")
+        events.append({
+            "type": "consultation", "date_str": norm[:10], "time_str": norm[11:16],
+            "title": f"{r['manager_name']} {_SCHED_TYPE.get(r['session_type'], '')}",
+            "subtitle": _SCHED_METHOD.get(r["method"], ""),
+            "location": r["location"] or "", "status": r["status"],
+            "icon": "fa-comments", "iv_type": "",
+        })
+    events.sort(key=lambda e: (e["date_str"], e["time_str"]))
+
+    event_dates = {e["date_str"] for e in events}
+    today_str = today.isoformat()
+    tomorrow_str = (today + timedelta(days=1)).isoformat()
+
+    grouped = OrderedDict()
+    for ev in events:
+        grouped.setdefault(ev["date_str"], []).append(ev)
+    date_groups = [
+        {"label": _date_label(ds, today_str, tomorrow_str),
+         "is_today": ds == today_str, "events": evs}
+        for ds, evs in grouped.items()
+    ]
+
+    cal_obj = calendar.Calendar(firstweekday=6)
+    weeks = []
+    for wk in cal_obj.monthdatescalendar(cal_year, cal_month):
+        weeks.append([{
+            "date": d, "in_month": d.month == cal_month,
+            "is_today": d == today, "has_event": d.isoformat() in event_dates,
+        } for d in wk])
+
+    if cal_month == 1:
+        prev_y, prev_m = cal_year - 1, 12
+    else:
+        prev_y, prev_m = cal_year, cal_month - 1
+    if cal_month == 12:
+        next_y, next_m = cal_year + 1, 1
+    else:
+        next_y, next_m = cal_year, cal_month + 1
+
+    return templates.TemplateResponse(
+        request=request, name="seeker/schedule.html", context={
+            "request": request, "page_title": "내 일정",
+            "user_name": user["name"], "user_role": "seeker",
+            "date_groups": date_groups,
+            "cal_year": cal_year, "cal_month": cal_month, "weeks": weeks,
+            "prev_year": prev_y, "prev_month": prev_m,
+            "next_year": next_y, "next_month": next_m,
+            "status_labels": _CS_STATUS, "iv_type_labels": _IV_TYPE,
+        }
+    )

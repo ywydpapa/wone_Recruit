@@ -5,12 +5,9 @@
 
 <div class="schedule-full-cal content-card" id="fullCal">
     <div class="cal-nav">
-        <a href="/company/calendar?year={{ prev_year }}&month={{ prev_month }}&view=full" class="cal-nav-btn" aria-label="이전 달">&laquo;</a>
+        <a href="/schedule?year={{ prev_year }}&month={{ prev_month }}&view=full" class="cal-nav-btn" aria-label="이전 달">&laquo;</a>
         <span class="cal-month-title">{{ cal_year }}년 {{ cal_month }}월</span>
-        <a href="/company/calendar?year={{ next_year }}&month={{ next_month }}&view=full" class="cal-nav-btn" aria-label="다음 달">&raquo;</a>
-        {% if cal_year != today_year or cal_month != today_month %}
-        <a href="/company/calendar?view=full" class="small">오늘</a>
-        {% endif %}
+        <a href="/schedule?year={{ next_year }}&month={{ next_month }}&view=full" class="cal-nav-btn" aria-label="다음 달">&raquo;</a>
         <button type="button" class="schedule-cal-toggle ms-auto" id="calToggle">미니보기</button>
     </div>
     <div class="schedule-full-grid">
@@ -29,13 +26,10 @@
 <div class="schedule-wrap" id="scheduleWrap">
     <div class="schedule-mini-cal content-card">
         <div class="cal-nav">
-            <a href="/company/calendar?year={{ prev_year }}&month={{ prev_month }}" class="cal-nav-btn" aria-label="이전 달">&laquo;</a>
+            <a href="/schedule?year={{ prev_year }}&month={{ prev_month }}" class="cal-nav-btn" aria-label="이전 달">&laquo;</a>
             <span class="cal-month-title">{{ cal_year }}년 {{ cal_month }}월</span>
-            <a href="/company/calendar?year={{ next_year }}&month={{ next_month }}" class="cal-nav-btn" aria-label="다음 달">&raquo;</a>
-            {% if cal_year != today_year or cal_month != today_month %}
-            <a href="/company/calendar" class="small">오늘</a>
-            {% endif %}
-            <button type="button" class="schedule-cal-toggle ms-auto" id="calToggleMini">전체보기</button>
+            <a href="/schedule?year={{ next_year }}&month={{ next_month }}" class="cal-nav-btn" aria-label="다음 달">&raquo;</a>
+            <button type="button" class="schedule-cal-toggle" id="calToggleMini">전체보기</button>
         </div>
         <div class="schedule-mini-grid">
             <div class="dow">일</div><div class="dow">월</div><div class="dow">화</div>
@@ -43,7 +37,7 @@
             {% for week in weeks %}
             {% for d in week %}
             <div class="day{% if not d.in_month %} out{% endif %}{% if d.is_today %} today{% endif %}{% if d.has_event %} has-event{% endif %}"
-                 data-date="{{ d.date.isoformat() }}"{% if not d.in_month %} data-month-url="/company/calendar?year={{ d.date.year }}&month={{ d.date.month }}"{% endif %}>
+                 data-date="{{ d.date.isoformat() }}"{% if not d.in_month %} data-month-url="/schedule?year={{ d.date.year }}&month={{ d.date.month }}"{% endif %}>
                 {{ d.date.day }}
             </div>
             {% endfor %}
@@ -54,22 +48,25 @@
     <div class="schedule-agenda">
         {% if date_groups %}
         {% for g in date_groups %}
-        <div class="schedule-date-group" data-date="{{ g.events[0].interview_date }}">
+        <div class="schedule-date-group" data-date="{{ g.events[0].date_str }}">
             <div class="schedule-date-header{% if g.is_today %} today{% endif %}">{{ g.label }}</div>
             {% for ev in g.events %}
             <div class="schedule-event">
-                <div class="schedule-event-time">{{ ev.interview_time[:5] }}</div>
+                <div class="schedule-event-time">{{ ev.time_str }}</div>
                 <div class="schedule-event-body">
                     <div class="schedule-event-title">
-                        <a href="/company/jobs/{{ ev.job_id }}/applicants/{{ ev.candidacy_id }}">{{ ev.seeker_name }}</a>
+                        <i class="fas {{ ev.icon }}" aria-hidden="true"></i>
+                        {{ ev.title }}
                     </div>
                     <div class="schedule-event-meta">
-                        <span>{{ ev.job_title }}</span>
-                        <span>{{ type_labels.get(ev.interview_type, '') }}</span>
+                        {% if ev.subtitle %}<span>{{ ev.subtitle }}</span>{% endif %}
+                        {% if ev.iv_type %}<span>{{ ev.iv_type }}</span>{% endif %}
                         {% if ev.location %}<span><i class="fas fa-map-marker-alt" aria-hidden="true"></i> {{ ev.location }}</span>{% endif %}
-                        {% if ev.memo %}<span><i class="fas fa-sticky-note" aria-hidden="true"></i> {{ ev.memo }}</span>{% endif %}
                     </div>
                 </div>
+                {% if ev.status %}
+                <span class="schedule-badge schedule-badge-{{ ev.status }}">{{ status_labels.get(ev.status, ev.status) }}</span>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -77,7 +74,7 @@
         {% else %}
         <div class="schedule-empty">
             <i class="fas fa-calendar" aria-hidden="true"></i>
-            예정된 면접 일정이 없습니다.
+            예정된 일정이 없습니다.
         </div>
         {% endif %}
     </div>
@@ -109,7 +106,8 @@
         var day = e.target.closest('.day');
         if (!day) return;
         if (day.classList.contains('out') && day.dataset.monthUrl) { location.href = day.dataset.monthUrl; return; }
-        document.querySelectorAll('.day.selected').forEach(function(el) { el.classList.remove('selected'); });
+        var grids = document.querySelectorAll('.day.selected');
+        grids.forEach(function(el) { el.classList.remove('selected'); });
         day.classList.add('selected');
         var target = document.querySelector('.schedule-date-group[data-date="' + day.dataset.date + '"]');
         if (target) {

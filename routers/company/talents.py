@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Optional
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
@@ -20,7 +19,7 @@ def _talents_authed(request):
 
 
 @router.get("/talents/auth", response_class=HTMLResponse)
-async def talents_auth_page(request: Request, next: Optional[str] = Query(None), error: str = ""):
+async def talents_auth_page(request: Request, next: str = Query(None), error: str = ""):
     user = require_role(request, "company")
     return templates.TemplateResponse(
         request=request,
@@ -55,15 +54,15 @@ async def talents_auth_submit(
 @router.get("/talents", response_class=HTMLResponse)
 async def talent_search(
     request: Request,
-    q: Optional[str] = Query(None),
-    disability_type: Optional[str] = Query(None),
-    region_id: Optional[int] = Query(None),
-    sido: Optional[str] = Query(None),
-    work_pref: Optional[str] = Query(None),
-    edu: Optional[str] = Query(None),
-    career_min: Optional[int] = Query(None),
-    career_max: Optional[int] = Query(None),
-    sort: Optional[str] = Query(None),
+    q: str = Query(None),
+    disability_type: str = Query(None),
+    region_id: int = Query(None),
+    sido: str = Query(None),
+    work_pref: str = Query(None),
+    edu: str = Query(None),
+    career_min: int = Query(None),
+    career_max: int = Query(None),
+    sort: str = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "company")
@@ -189,7 +188,7 @@ async def talent_search(
 
 
 @router.get("/talent/{seeker_user_id}", response_class=HTMLResponse)
-async def talent_detail(request: Request, seeker_user_id: int, back: Optional[str] = Query(None)):
+async def talent_detail(request: Request, seeker_user_id: int, back: str = Query(None)):
     user = require_role(request, "company")
     if not _talents_authed(request):
         return RedirectResponse(
@@ -198,10 +197,10 @@ async def talent_detail(request: Request, seeker_user_id: int, back: Optional[st
         )
     conn = get_sqlite()
     try:
-        company_check = conn.execute(
+        co = conn.execute(
             "SELECT approval_status FROM companies WHERE user_id=?", (user["id"],)
         ).fetchone()
-        if not company_check or company_check["approval_status"] != "approved":
+        if not co or co["approval_status"] != "approved":
             return RedirectResponse(url="/company/talents", status_code=303)
 
         profile = conn.execute(
@@ -231,15 +230,22 @@ async def talent_detail(request: Request, seeker_user_id: int, back: Optional[st
             "SELECT company_name FROM companies WHERE user_id=?", (user["id"],)
         ).fetchone()
 
-        conn.execute(
-            "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+        dup = conn.execute(
+            """SELECT 1 FROM access_log
+               WHERE viewer_id=? AND seeker_user_id=? AND purpose=?
+                 AND created_at > datetime('now', '-1 hour')""",
             (user["id"], seeker_user_id, "talent_search"),
-        )
-        create_notification(
-            conn, seeker_user_id,
-            f"{company['company_name']}에서 프로필을 열람했습니다.",
-            "/profile/views",
-        )
+        ).fetchone()
+        if not dup:
+            conn.execute(
+                "INSERT INTO access_log (viewer_id, seeker_user_id, purpose) VALUES (?,?,?)",
+                (user["id"], seeker_user_id, "talent_search"),
+            )
+            create_notification(
+                conn, seeker_user_id,
+                f"{company['company_name']}에서 프로필을 열람했습니다.",
+                "/profile/views",
+            )
         conn.commit()
     finally:
         conn.close()

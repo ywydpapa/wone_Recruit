@@ -37,7 +37,9 @@ def init():
         agreed_marketing_at TEXT,
         created_at TEXT DEFAULT (datetime('now','localtime')),
         is_deleted INTEGER NOT NULL DEFAULT 0,
-        deleted_at TEXT
+        deleted_at TEXT,
+        accessibility_settings TEXT NOT NULL DEFAULT '{}',
+        must_change_password INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS disability_types (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -300,6 +302,7 @@ def init():
         approval_status TEXT NOT NULL DEFAULT 'pending',
         biz_doc_path TEXT NOT NULL DEFAULT '',
         rejection_reason TEXT NOT NULL DEFAULT '',
+        reverify INTEGER NOT NULL DEFAULT 0,
         tagline TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '',
         updated_at TEXT DEFAULT (datetime('now','localtime'))
@@ -474,6 +477,20 @@ def init():
         sort_order INTEGER NOT NULL,
         UNIQUE(company_id, stage_key)
     );
+    CREATE TABLE IF NOT EXISTS inquiries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        category TEXT NOT NULL DEFAULT '',
+        subject TEXT NOT NULL,
+        content TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        answer TEXT NOT NULL DEFAULT '',
+        answered_by INTEGER,
+        answered_at TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_inquiries_user ON inquiries(user_id);
+    CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
     """)
 
     for name in DISABILITY_TYPES:

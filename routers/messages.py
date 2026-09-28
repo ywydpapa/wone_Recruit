@@ -61,7 +61,6 @@ async def inbox(request: Request):
                 conv_user_ids.add(info["user_id"])
             convs.append(info)
 
-        # 역할별 추천 연락처 조회
         contacts = []
         role = user["role"]
 

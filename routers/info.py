@@ -1,8 +1,10 @@
+import json
+
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from core.bizno import check_bizno
 from core.db import get_sqlite
-from core.deps import check_login, require_role, templates
+from core.deps import check_login, get_current_user, require_role, templates
 from core.notifications import get_unread_count
 
 router = APIRouter()
@@ -61,6 +63,39 @@ async def notification_count(request: Request):
         return {"count": 0}
     user_id = request.session.get("id")
     return {"count": get_unread_count(user_id)}
+
+
+@router.get("/api/accessibility")
+async def get_a11y(request: Request):
+    if not check_login(request):
+        return JSONResponse({})
+    user = get_current_user(request)
+    conn = get_sqlite()
+    try:
+        row = conn.execute("SELECT accessibility_settings FROM users WHERE id=?", (user["id"],)).fetchone()
+        if not row or not row["accessibility_settings"]:
+            return JSONResponse({})
+        return JSONResponse(json.loads(row["accessibility_settings"]))
+    finally:
+        conn.close()
+
+
+@router.post("/api/accessibility")
+async def save_a11y(request: Request):
+    if not check_login(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    user = get_current_user(request)
+    body = await request.json()
+    conn = get_sqlite()
+    try:
+        conn.execute(
+            "UPDATE users SET accessibility_settings=? WHERE id=?",
+            (json.dumps(body, ensure_ascii=False), user["id"]),
+        )
+        conn.commit()
+        return JSONResponse({"ok": True})
+    finally:
+        conn.close()
 
 
 @router.get("/notifications", response_class=HTMLResponse)

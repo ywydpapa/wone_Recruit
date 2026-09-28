@@ -1,7 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -598,6 +598,33 @@ def _ensure_db():
                 (25, 'work_continuity',   'limit'),
                 (25, 'sitting_endurance', 'limit');
         """,
+        "manager_reassignment_log": """
+            CREATE TABLE IF NOT EXISTS manager_reassignment_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seeker_user_id INTEGER NOT NULL,
+                from_manager_id INTEGER,
+                to_manager_id INTEGER,
+                reason TEXT NOT NULL DEFAULT '',
+                reassigned_by INTEGER NOT NULL,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+        """,
+        "inquiries": """
+            CREATE TABLE IF NOT EXISTS inquiries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                category TEXT NOT NULL DEFAULT '',
+                subject TEXT NOT NULL,
+                content TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open',
+                answer TEXT NOT NULL DEFAULT '',
+                answered_by INTEGER,
+                answered_at TEXT,
+                created_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_inquiries_user ON inquiries(user_id);
+            CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
+        """,
     }
     existing_tables = {
         row[0] for row in conn.execute(
@@ -647,6 +674,9 @@ def _ensure_db():
         ("consultation_sessions", "method", "ALTER TABLE consultation_sessions ADD COLUMN method TEXT NOT NULL DEFAULT 'in_person'"),
         ("consultation_sessions", "location", "ALTER TABLE consultation_sessions ADD COLUMN location TEXT NOT NULL DEFAULT ''"),
         ("consultation_sessions", "status", "ALTER TABLE consultation_sessions ADD COLUMN status TEXT NOT NULL DEFAULT 'completed'"),
+        ("users", "accessibility_settings", "ALTER TABLE users ADD COLUMN accessibility_settings TEXT NOT NULL DEFAULT '{}'"),
+        ("users", "must_change_password", "ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0"),
+        ("companies", "reverify", "ALTER TABLE companies ADD COLUMN reverify INTEGER NOT NULL DEFAULT 0"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:
@@ -708,7 +738,7 @@ app = FastAPI(lifespan=lifespan, dependencies=[Depends(verify_csrf)])
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+async def on_http_err(request: Request, exc: StarletteHTTPException):
     status = exc.status_code
     if status == 403:
         tpl = "errors/403.html"
@@ -719,12 +749,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     else:
         tpl = "errors/500.html"
         title = "서버 오류"
-    try:
-        user_name = request.session.get("name", "")
-        user_role = request.session.get("role", "")
-    except Exception:
-        user_name = ""
-        user_role = ""
+    user_name = request.session.get("name", "")
+    user_role = request.session.get("role", "")
     return templates.TemplateResponse(
         request=request, name=tpl,
         status_code=status,
@@ -738,14 +764,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 @app.exception_handler(Exception)
-async def generic_exception_handler(request: Request, exc: Exception):
+async def on_err(request: Request, exc: Exception):
     log.exception("500 에러: %s %s", request.method, request.url.path)
-    try:
-        user_name = request.session.get("name", "")
-        user_role = request.session.get("role", "")
-    except Exception:
-        user_name = ""
-        user_role = ""
+    user_name = request.session.get("name", "")
+    user_role = request.session.get("role", "")
     return templates.TemplateResponse(
         request=request, name="errors/500.html",
         status_code=500,
@@ -768,6 +790,18 @@ class CSRFTokenMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
+    _ALLOWED = ("/change-password", "/logout", "/static")
+
+    async def dispatch(self, request: Request, call_next):
+        if request.session.get("must_change_password"):
+            path = request.url.path
+            if not any(path.startswith(p) for p in self._ALLOWED):
+                return RedirectResponse(url="/change-password", status_code=303)
+        return await call_next(request)
+
+
+app.add_middleware(ForcePasswordChangeMiddleware)
 app.add_middleware(CSRFTokenMiddleware)
 app.add_middleware(
     SessionMiddleware,
@@ -779,7 +813,7 @@ app.add_middleware(
 os.makedirs("static/css", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages
+from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages, inquiry
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(company.router)
@@ -791,3 +825,4 @@ app.include_router(operator.router)
 app.include_router(community.router)
 app.include_router(messages.router)
 app.include_router(manager.router)
+app.include_router(inquiry.router)
