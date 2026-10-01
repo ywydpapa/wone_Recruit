@@ -5,13 +5,13 @@
 <div class="narrow-form-lg">
 
     <!-- 기업 스냅샷 -->
-    <div class="content-card mb-3">
+    <section class="mb-4">
         <div class="d-flex align-items-center gap-3 mb-3">
             {% if company['logo_path'] %}
             <img src="{{ company['logo_path'] }}" alt="{{ company['company_name'] }} 로고" class="img-logo-md">
             {% else %}
             <div class="img-logo-md d-flex align-items-center justify-content-center bg-light">
-                <i class="fas fa-building fa-2x"></i>
+                <i class="fas fa-building fa-2x" aria-hidden="true"></i>
             </div>
             {% endif %}
             <div>
@@ -81,28 +81,26 @@
                 <tr>
                     <th>홈페이지</th>
                     <td colspan="3">
-                        <a href="{{ company['website'] }}" target="_blank" rel="noopener">
-                            {{ company['website'] }}<i class="fas fa-external-link-alt ms-1 small"></i>
-                        </a>
+                        <a href="{{ company['website'] }}" target="_blank" rel="noopener">{{ company['website'] }}</a>
                     </td>
                 </tr>
                 {% endif %}
             </tbody>
         </table>
-    </div>
+    </section>
 
     <!-- 기업 소개 -->
     {% if company['intro'] %}
-    <div class="content-card mb-3">
-        <h6 class="fw-bold mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>기업 소개</h6>
+    <section class="mb-4">
+        <h5 class="job-section-title">기업 소개</h5>
         <p class="mb-0 company-intro-text">{{ company['intro'] }}</p>
-    </div>
+    </section>
     {% endif %}
 
     <!-- 복리후생 -->
     {% if company['benefits'] %}
-    <div class="content-card mb-3">
-        <h6 class="fw-bold mb-3"><i class="fas fa-gift me-2 text-primary"></i>복리후생</h6>
+    <section class="mb-4">
+        <h5 class="job-section-title">복리후생</h5>
         <div>
             {% for item in company['benefits'].split(',') %}
             {% set item = item.strip() %}
@@ -111,13 +109,13 @@
             {% endif %}
             {% endfor %}
         </div>
-    </div>
+    </section>
     {% endif %}
 
     <!-- 접근성 시설 -->
     {% if accessibility_facilities or company['accessibility_note'] %}
-    <div class="content-card mb-3">
-        <h6 class="fw-bold mb-3"><i class="fas fa-wheelchair me-2 text-primary"></i>접근성 시설</h6>
+    <section class="mb-4">
+        <h5 class="job-section-title">접근성 시설</h5>
         {% if accessibility_facilities %}
         <div class="mb-2">
             {% for item in accessibility_facilities %}
@@ -128,13 +126,13 @@
         {% if company['accessibility_note'] %}
         <p class="small text-muted mb-0">{{ company['accessibility_note'] }}</p>
         {% endif %}
-    </div>
+    </section>
     {% endif %}
 
     <!-- 장애인 고용 이력 -->
     {% if company['hiring_experience'] or company['retention_note'] %}
-    <div class="content-card mb-3">
-        <h6 class="fw-bold mb-3"><i class="fas fa-users me-2 text-primary"></i>장애인 고용 이력</h6>
+    <section class="mb-4">
+        <h5 class="job-section-title">장애인 고용 이력</h5>
         {% if company['hiring_experience'] %}
         <div class="mb-2">
             <span class="badge bg-success me-1">채용 경험 있음</span>
@@ -143,19 +141,53 @@
         {% if company['retention_note'] %}
         <p class="small text-muted mb-0">{{ company['retention_note'] }}</p>
         {% endif %}
-    </div>
+    </section>
+    {% endif %}
+
+    <!-- 근무환경 -->
+    {% if env_badges or company['work_env_note'] %}
+    <section class="mb-4">
+        <h5 class="job-section-title">근무환경</h5>
+        {% if env_badges %}
+        <div class="mb-2">
+            {% for badge in env_badges %}
+            <span class="badge bg-info text-dark me-1 mb-1">{{ badge }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if company['work_env_note'] %}
+        <p class="small text-muted mb-0">{{ company['work_env_note'] }}</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- ESG / 사회공헌 -->
+    {% if esg_badges or company['esg_note'] %}
+    <section class="mb-4">
+        <h5 class="job-section-title">ESG / 사회공헌</h5>
+        {% if esg_badges %}
+        <div class="mb-2">
+            {% for badge in esg_badges %}
+            <span class="badge bg-secondary me-1 mb-1">{{ badge }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if company['esg_note'] %}
+        <p class="small text-muted mb-0">{{ company['esg_note'] }}</p>
+        {% endif %}
+    </section>
     {% endif %}
 
     <!-- 기업리뷰 -->
-    <div class="content-card mb-3">
-        <h6 class="fw-bold mb-3">기업리뷰</h6>
+    <section class="mb-4">
+        <h5 class="job-section-title">기업리뷰</h5>
         {% if reviews %}
         <div class="review-summary mb-3">
             <div class="review-summary-score">
                 <span class="review-score-num">{{ avg_rating }}</span>
                 <div>
                     {% for i in range(1, 6) %}
-                    {% if avg_rating >= i %}<i class="fas fa-star review-star filled"></i>{% elif avg_rating >= i - 0.5 %}<i class="fas fa-star-half-alt review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
+                    {% if avg_rating >= i %}<i class="fas fa-star review-star filled" aria-hidden="true"></i>{% elif avg_rating >= i - 0.5 %}<i class="fas fa-star-half-alt review-star filled" aria-hidden="true"></i>{% else %}<i class="far fa-star review-star" aria-hidden="true"></i>{% endif %}
                     {% endfor %}
                     <span class="text-muted small ms-1">{{ reviews|length }}건</span>
                 </div>
@@ -167,7 +199,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
                         {% for i in range(1, 6) %}
-                        {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled"></i>{% else %}<i class="far fa-star review-star"></i>{% endif %}
+                        {% if i <= rv['rating'] %}<i class="fas fa-star review-star filled" aria-hidden="true"></i>{% else %}<i class="far fa-star review-star" aria-hidden="true"></i>{% endif %}
                         {% endfor %}
                     </div>
                     <span class="text-muted small">{{ rv['created_at']|fdate }}</span>
@@ -223,53 +255,39 @@
         {% elif can_review and my_review %}
         <p class="text-muted small mt-2 mb-0">이미 리뷰를 작성하셨습니다.</p>
         {% endif %}
-    </div>
+    </section>
 
     <!-- 채용 중인 공고 -->
-    <div class="content-card mb-3">
-        <h6 class="fw-bold mb-3">
-            <i class="fas fa-briefcase me-2 text-primary"></i>채용 중인 공고
+    <section class="mb-4">
+        <h5 class="job-section-title">
+            채용 중인 공고
             <span class="badge bg-primary rounded-pill ms-1">{{ open_jobs|length }}</span>
-        </h6>
+        </h5>
         {% if open_jobs %}
-        <div class="row g-3">
+        <div class="home-jobs">
             {% for job in open_jobs %}
-            <div class="col-md-6">
-                <div class="item-card">
-                    <div>
-                        <span class="item-badge">{{ job['employment_type'] }}</span>
-                        {% if job['remote_available'] %}
-                        <span class="item-badge badge-green">재택 가능</span>
-                        {% endif %}
-                        <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
-                        <div class="item-meta">
-                            <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
-                        </div>
-                    </div>
-                    <hr class="text-muted">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small">
-                            <i class="far fa-clock me-1"></i>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}
-                        </span>
-                        <div class="d-flex align-items-center gap-2">
-                            {% if job['salary'] %}
-                            <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
-                            {% endif %}
-                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <article class="home-job item-card">
+                <p class="home-job-meta">
+                    <span class="item-badge">{{ job['employment_type'] }}</span>
+                    {% if job['remote_available'] %}<span class="item-badge badge-green">재택 가능</span>{% endif %}
+                </p>
+                <h3><a href="/jobs/{{ job['id'] }}">{{ job['title'] }}</a></h3>
+                <p class="home-job-meta">
+                    <span>{{ job|region('전국') }}</span>
+                </p>
+                <p class="home-job-foot">
+                    <span>{{ job['salary'] or '협의' }}</span>
+                    <span>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
+                </p>
+            </article>
             {% endfor %}
         </div>
         {% else %}
         <p class="text-muted text-center py-3 mb-0">현재 채용 중인 공고가 없습니다.</p>
         {% endif %}
-    </div>
+    </section>
 
-    <div class="content-card">
-        <a href="/jobs" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-1"></i>공고 목록으로</a>
-    </div>
+    <a href="/jobs" class="btn btn-outline-primary">공고 목록으로</a>
 
 </div>
 {% endblock %}

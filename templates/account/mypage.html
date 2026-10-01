@@ -1,152 +1,24 @@
 {% extends "base.html" %}
 {% block title %}마이페이지 - WONE Recruit{% endblock %}
 {% block content %}
-<div class="page-header"><h2>마이페이지</h2></div>
-<div class="container">
-        {% if user_role == 'seeker' %}
-        <h5 class="mb-3 fw-bold section-title">구직 활동</h5>
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/profile" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-user-circle fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">내 프로필</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/jobs" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-search fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">공고 검색</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/applications" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-paper-plane fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">지원 현황</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/bookmarks" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-bookmark fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">저장 공고</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/proposals" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-handshake fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">매칭 제안</div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        {% elif user_role == 'company' %}
-        <h5 class="mb-3 fw-bold section-title">기업 관리</h5>
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/company/profile" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-building fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">기업 정보</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/company/jobs" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-clipboard-list fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">공고 관리</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/company/talents" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-users fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">인재 검색</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/company/levy" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-calculator fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">부담금</div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        {% elif user_role in ['operator', 'manager'] %}
-        <h5 class="mb-3 fw-bold section-title">운영 관리</h5>
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/op/seekers" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-user-friends fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">구직자</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/op/companies" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-building fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">기업</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/op/jobs" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-briefcase fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">공고</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/op/matching" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-link fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">매칭</div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        {% endif %}
+<div class="page-header"><h2>계정 정보</h2></div>
 
-        <h5 class="mb-3 fw-bold section-title">계정 설정</h5>
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/account/password" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-key fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">비밀번호 변경</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/account/consent" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-shield-alt fa-2x mb-2 tile-icon"></i>
-                        <div class="fw-semibold tile-label">개인정보 관리</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <a href="/account/withdraw" class="text-decoration-none">
-                    <div class="content-card text-center p-4 h-100">
-                        <i class="fas fa-user-times fa-2x mb-2 text-muted"></i>
-                        <div class="fw-semibold text-muted">회원탈퇴</div>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
+<table class="table">
+    <tbody>
+        <tr><th scope="row">이름</th><td>{{ account['name'] if account else user_name }}</td></tr>
+        <tr><th scope="row">아이디</th><td>{{ account['username'] if account else '-' }}</td></tr>
+        {% if account and account['email'] %}
+        <tr><th scope="row">이메일</th><td>{{ account['email'] }}</td></tr>
+        {% endif %}
+        {% if account and account['phone'] %}
+        <tr><th scope="row">연락처</th><td>{{ account['phone'] }}</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<p class="mt-3">
+    <a href="/account/password">비밀번호 변경</a>
+    &middot;
+    <a href="/account/withdraw" class="text-muted">회원탈퇴</a>
+</p>
 {% endblock %}

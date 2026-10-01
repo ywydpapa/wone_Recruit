@@ -12,7 +12,6 @@ def mask_name(name):
 def mask_phone(phone):
     if not phone:
         return "-"
-    # 010-1234-5678 -> 010-****-5678
     parts = phone.replace(" ", "").split("-")
     if len(parts) == 3:
         return f"{parts[0]}-****-{parts[2]}"

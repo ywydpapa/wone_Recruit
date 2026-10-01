@@ -1,0 +1,9 @@
+<nav aria-label="상담 메뉴">
+    <ul class="nav nav-tabs mb-3">
+        {% for href, label in [('/consult', '상담 내역'), ('/consult/new', '상담 신청')] %}
+        <li class="nav-item">
+            <a href="{{ href }}" class="nav-link{% if request.url.path == href %} active{% endif %}"{% if request.url.path == href %} aria-current="page"{% endif %}>{{ label }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>

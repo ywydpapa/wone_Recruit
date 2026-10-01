@@ -35,7 +35,7 @@
                     <input type="text" id="q" name="q" class="form-control form-control" placeholder="공고명, 기업명, 직무 검색" value="{{ q }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             <div class="row g-2 mt-2">
@@ -86,102 +86,69 @@
     </div>
 </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0">채용 공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
-            <div class="d-flex gap-2 align-items-center">
-                {% if base_qs %}
-                <form method="post" action="/saved-searches" class="d-inline">
+<div class="d-flex justify-content-end gap-3 mb-2 small">
+    {% if base_qs %}
+    <form method="post" action="/saved-searches" class="d-inline">
+        {{ csrf_input }}
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if selected_sido %}<input type="hidden" name="sido" value="{{ selected_sido }}">{% endif %}
+        {% if selected_type %}<input type="hidden" name="employment_type" value="{{ selected_type }}">{% endif %}
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        {% if remote_checked %}<input type="hidden" name="remote" value="1">{% endif %}
+        {% if selected_max_hours %}<input type="hidden" name="max_hours" value="{{ selected_max_hours }}">{% endif %}
+        {% if selected_accommodation %}<input type="hidden" name="accommodation" value="{{ selected_accommodation }}">{% endif %}
+        {% if selected_disability_type %}<input type="hidden" name="disability_type" value="{{ selected_disability_type }}">{% endif %}
+        {% if selected_severity %}<input type="hidden" name="severity" value="{{ selected_severity }}">{% endif %}
+        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none">검색 알림 저장</button>
+    </form>
+    {% endif %}
+    <a href="/saved-searches" class="text-decoration-none">내 알림</a>
+</div>
+
+<div class="jobs-toolbar">
+    <p class="jobs-count">전체 <strong>{{ pagination.total }}</strong>건</p>
+    <nav class="jobs-sort" aria-label="정렬">
+        <a href="/jobs?{{ base_qs }}" class="{% if not sort or sort != 'fit' %}active{% endif %}">최신순</a>
+        <a href="/jobs?{{ base_qs }}&sort=fit" class="{% if sort == 'fit' %}active{% endif %}">내 지원 항목 추천순</a>
+    </nav>
+</div>
+
+{% if jobs %}
+<div class="home-jobs">
+    {% for job in jobs %}
+    <article class="home-job item-card">
+        <p class="home-job-company">{{ job['company_name'] }}</p>
+        <h3><a href="/jobs/{{ job['id'] }}">{{ job['title'] }}</a></h3>
+        <p class="home-job-meta">
+            <span>{{ job|region('전국') }}</span>
+            <span class="item-badge">{{ job['employment_type'] }}</span>
+            {% if job['remote_available'] %}<span class="item-badge badge-green">재택 가능</span>{% endif %}
+            {% if job.get('fit_label') %}<span class="badge {{ job['fit_badge'] }}">{{ job['fit_label'] }}</span>{% endif %}
+        </p>
+        <p class="home-job-foot">
+            <span>{{ job['salary'] or '급여 협의' }}</span>
+            <span>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
+        </p>
+        <div class="home-job-actions">
+            <span class="text-muted small">{% if job['applicant_count'] %}{{ job['applicant_count'] }}명 지원{% else %}아직 지원자 없음{% endif %}</span>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/jobs/{{ job['id'] }}" class="small">상세보기</a>
+                <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline">
                     {{ csrf_input }}
-                    {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
-                    {% if selected_sido %}<input type="hidden" name="sido" value="{{ selected_sido }}">{% endif %}
-                    {% if selected_type %}<input type="hidden" name="employment_type" value="{{ selected_type }}">{% endif %}
-                    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
-                    {% if remote_checked %}<input type="hidden" name="remote" value="1">{% endif %}
-                    {% if selected_max_hours %}<input type="hidden" name="max_hours" value="{{ selected_max_hours }}">{% endif %}
-                    {% if selected_accommodation %}<input type="hidden" name="accommodation" value="{{ selected_accommodation }}">{% endif %}
-                    {% if selected_disability_type %}<input type="hidden" name="disability_type" value="{{ selected_disability_type }}">{% endif %}
-                    {% if selected_severity %}<input type="hidden" name="severity" value="{{ selected_severity }}">{% endif %}
-                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-bell me-1"></i>검색 알림 저장
+                    <button type="submit" class="btn btn-link p-0 border-0 bookmark-heart{% if job['id'] in bookmarked_ids %} active{% endif %}"
+                            aria-label="{% if job['id'] in bookmarked_ids %}저장 취소{% else %}공고 저장{% endif %}">
+                        <i class="{% if job['id'] in bookmarked_ids %}fas{% else %}far{% endif %} fa-heart" aria-hidden="true"></i>
                     </button>
                 </form>
-                {% endif %}
-                <a href="/saved-searches" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-bell me-1"></i>내 알림
-                </a>
             </div>
         </div>
-
-        <div class="d-flex gap-2 mb-3 align-items-center">
-            <span class="text-muted small">정렬:</span>
-            <a href="/jobs?{{ base_qs }}" class="btn btn-sm {% if not sort or sort != 'fit' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">최신순</a>
-            <a href="/jobs?{{ base_qs }}&sort=fit" class="btn btn-sm {% if sort == 'fit' %}btn-primary{% else %}btn-outline-primary{% endif %}">내 지원 항목 추천순</a>
-        </div>
-
-        {% if jobs %}
-        <div class="row g-4">
-            {% for job in jobs %}
-            <div class="col-lg-6">
-                <div class="item-card">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-fill-clamp">
-                            <span class="item-badge">{{ job['employment_type'] }}</span>
-                            {% if job['remote_available'] %}
-                            <span class="item-badge badge-green">재택 가능</span>
-                            {% endif %}
-                            {% if job['experience_level'] and job['experience_level'] != '무관' %}
-                            <span class="item-badge">{{ job['experience_level'] }}</span>
-                            {% endif %}
-                            {% if job['education'] %}
-                            <small class="text-muted">{{ job['education'] }}</small>
-                            {% endif %}
-                            <a href="/jobs/{{ job['id'] }}" class="item-title">{{ job['title'] }}</a>
-                            {% if job.get('fit_label') == '추천' %}
-                            <span class="badge bg-success ms-1">{{ job['fit_label'] }}</span>
-                            {% elif job.get('fit_label') == '조건부' %}
-                            <span class="badge bg-warning text-dark ms-1">{{ job['fit_label'] }}</span>
-                            {% endif %}
-                            <div class="item-meta">
-                                <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
-                                <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
-                                {% if job['category_name'] %}
-                                <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" aria-label="공고 저장">
-                            {{ csrf_input }}
-                            <button type="submit" class="btn btn-link p-0 border-0 bookmark-heart{% if job['id'] in bookmarked_ids %} active{% endif %}"
-                                    aria-label="{% if job['id'] in bookmarked_ids %}저장 취소{% else %}공고 저장{% endif %}">
-                                <i class="{% if job['id'] in bookmarked_ids %}fas{% else %}far{% endif %} fa-heart"></i>
-                            </button>
-                        </form>
-                    </div>
-                    <hr class="text-muted">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small"><i class="far fa-clock me-1"></i>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
-                            <span class="text-muted small"><i class="fas fa-user me-1"></i>{% if job['applicant_count'] %}{{ job['applicant_count'] }}명 지원{% else %}아직 지원자 없음{% endif %}</span>
-                        <div class="d-flex align-items-center gap-2">
-                            {% if job['salary'] %}
-                            <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
-                            {% endif %}
-                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% include "common/pagination.html" %}
-        {% else %}
-        <div class="content-card">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-search"></i></div>
-                <p class="empty-state-text">조건에 맞는 공고가 없습니다.</p>
-                <a href="/jobs" class="btn btn-primary btn-sm">전체 공고 보기</a>
-            </div>
-        </div>
-        {% endif %}
+    </article>
+    {% endfor %}
+</div>
+{% include "common/pagination.html" %}
+{% else %}
+<p class="home-empty">조건에 맞는 공고가 없습니다. <a href="/jobs">전체 공고 보기</a></p>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>

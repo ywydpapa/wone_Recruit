@@ -1,21 +1,15 @@
 {% extends "base.html" %}
 {% block title %}보조기기별 구직자 - WONE Recruit{% endblock %}
 {% block content %}
-<div class="page-header">
-    <h2><i class="fas {{ device_icon }} me-2" aria-hidden="true"></i>{{ device }} 사용 구직자</h2>
-</div>
+<div class="page-header"><h2>{{ device }} 사용 구직자</h2></div>
 
 <div class="container">
-    <div class="mb-3">
-        <a href="/mgr/" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i>대시보드로 돌아가기
-        </a>
-    </div>
+    <p class="mb-3"><a href="/mgr/">대시보드로 돌아가기</a></p>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">{{ device }} <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
-    </div>
-    <div class="content-card">
+    <section class="home-section" aria-labelledby="deviceTitle">
+        <div class="home-section-head">
+            <h2 id="deviceTitle">{{ device }} <span class="text-muted">({{ pagination.total }}명)</span></h2>
+        </div>
         {% if seekers %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -33,27 +27,15 @@
                     {% for s in seekers %}
                     <tr onclick="location.href='/mgr/seekers/{{ s['id'] }}'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/mgr/seekers/{{ s['id'] }}'}" class="row-link" tabindex="0" role="link" aria-label="{{ s['name'] }} 상세보기">
                         <td class="fw-semibold">{{ s['name'] }}</td>
+                        <td>{{ s['disability_name'] or '-' }}</td>
                         <td>
-                            {% if s['disability_name'] %}
-                            <i class="fas {{ disability_icons.get(s['disability_name'], 'fa-user') }}" title="{{ s['disability_name'] }}"></i>
-                            <span class="ms-1">{{ s['disability_name'] }}</span>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td>
-                            {% if s['severity'] == '중증' %}
-                            <span class="badge bg-danger">중증</span>
-                            {% elif s['severity'] %}
-                            <span class="badge bg-success">{{ s['severity'] }}</span>
-                            {% else %}-{% endif %}
+                            {% if s['severity'] %}<span class="badge {{ s['severity_class'] }}">{{ s['severity'] }}</span>{% else %}-{% endif %}
                         </td>
                         <td>{{ s|region('-') }}</td>
                         <td>{{ s['work_pref'] or '-' }}</td>
                         <td>
                             {% if s['device_icons'] %}
-                            <span class="device-icon-row">
-                                {% for d in s['device_icons'] %}<i class="fas {{ d['icon'] }} me-1" title="{{ d['name'] }}"></i>{% endfor %}
-                                {% if s['device_overflow'] %}<span class="text-muted small">+{{ s['device_overflow'] }}</span>{% endif %}
-                            </span>
+                            {% for d in s['device_icons'] %}{{ d['name'] }}{% if not loop.last %}, {% endif %}{% endfor %}{% if s['device_overflow'] %} 외 {{ s['device_overflow'] }}{% endif %}
                             {% else %}-{% endif %}
                         </td>
                     </tr>
@@ -62,9 +44,9 @@
             </table>
         </div>
         {% else %}
-        <p class="text-center py-3 text-muted mb-0">해당 보조기기를 사용하는 구직자가 없습니다.</p>
+        <p class="home-empty">해당 보조기기를 사용하는 구직자가 없습니다.</p>
         {% endif %}
-    </div>
+    </section>
     {% if seekers %}
     {% include "common/pagination.html" %}
     {% endif %}

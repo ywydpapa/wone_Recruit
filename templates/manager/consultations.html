@@ -94,7 +94,7 @@
                         <div class="schedule-event-meta">
                             <span>{{ type_labels.get(ev.session_type, ev.session_type) }}</span>
                             <span>{{ method_labels.get(ev.method, ev.method) }}</span>
-                            {% if ev.location %}<span><i class="fas fa-map-marker-alt" aria-hidden="true"></i> {{ ev.location }}</span>{% endif %}
+                            {% if ev.location %}<span>{{ ev.location }}</span>{% endif %}
                         </div>
                     </div>
                     <span class="schedule-badge schedule-badge-{{ ev.status }}">{{ status_labels.get(ev.status, ev.status) }}</span>
@@ -120,10 +120,7 @@
             </div>
             {% endfor %}
             {% else %}
-            <div class="schedule-empty">
-                <i class="fas fa-calendar-check" aria-hidden="true"></i>
-                상담 내역이 없습니다.
-            </div>
+            <div class="schedule-empty">상담 내역이 없습니다.</div>
             {% endif %}
         </div>
     </div>

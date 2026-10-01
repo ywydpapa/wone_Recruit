@@ -13,7 +13,7 @@
                     <input type="text" id="q" name="q" class="form-control" placeholder="이름, 아이디 검색" value="{{ q }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -26,9 +26,8 @@
     <div class="alert alert-danger" role="alert">이미 사용 중인 아이디입니다.</div>
     {% elif request.query_params.get('error') == 'dup_email' %}
     <div class="alert alert-danger" role="alert">이미 사용 중인 이메일입니다.</div>
-    {% elif request.query_params.get('error') == 'short_pw' %}
-    <div class="alert alert-danger" role="alert">비밀번호는 8자 이상이어야 합니다.</div>
     {% endif %}
+    {% with error = request.query_params.get('error') %}{% include "common/pw_error.html" %}{% endwith %}
 
     {% if request.query_params.get('msg') == 'created' and request.query_params.get('new_user') %}
     <div class="alert alert-success" role="alert">
@@ -43,9 +42,7 @@
                 <strong>임시 비밀번호:</strong> <code id="createdPw">{{ request.query_params.get('new_pw') }}</code>
             </div>
             <div class="col-auto">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyCredentials()">
-                    <i class="fas fa-copy me-1" aria-hidden="true"></i>복사
-                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyCredentials()">복사</button>
             </div>
         </div>
     </div>
@@ -62,9 +59,7 @@
                 <strong>임시 비밀번호:</strong> <code id="resetPw">{{ request.query_params.get('temp_pw') }}</code>
             </div>
             <div class="col-auto">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyText('resetPw')">
-                    <i class="fas fa-copy me-1" aria-hidden="true"></i>복사
-                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyText('resetPw')">복사</button>
             </div>
         </div>
     </div>
@@ -72,9 +67,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold m-0">상담사 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
-        <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#createForm" aria-expanded="false" aria-controls="createForm">
-            <i class="fas fa-plus me-1" aria-hidden="true"></i>상담사 추가
-        </button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#createForm" aria-expanded="false" aria-controls="createForm">상담사 추가</button>
     </div>
 
     <div class="collapse mb-4" id="createForm">
@@ -104,9 +97,10 @@
                     <div class="col-md-4">
                         <label for="new_password" class="form-label">임시 비밀번호 <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" id="new_password" name="password" class="form-control" minlength="8" required>
+                            <input type="text" id="new_password" name="password" class="form-control" aria-describedby="newPwHint" minlength="12" required>
                             <button type="button" class="btn btn-outline-secondary" onclick="genPassword()">자동 생성</button>
                         </div>
+                        <div id="newPwHint" class="form-text">영문, 숫자, 특수문자 중 2종류 이상 12자 이상</div>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-success" id="createBtn">생성</button>
@@ -116,59 +110,55 @@
         </div>
     </div>
 
-    <div class="content-card">
-        {% if managers %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <caption class="visually-hidden">상담사 목록</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">이름</th>
-                        <th scope="col">아이디</th>
-                        <th scope="col">연락처</th>
-                        <th scope="col">담당</th>
-                        <th scope="col">등록일</th>
-                        <th scope="col">상태</th>
-                        <th scope="col">관리</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for m in managers %}
-                <tr{% if m['is_deleted'] %} class="text-muted"{% endif %}>
-                    <td class="fw-semibold">{{ m['name'] }}</td>
-                    <td>{{ m['username'] }}</td>
-                    <td>{{ m['phone'] or '-' }}</td>
-                    <td>{{ m['assigned_count'] }}명</td>
-                    <td>{{ m['created_at']|fdate }}</td>
-                    <td>
-                        {% if m['is_deleted'] %}
-                        <form method="post" action="/op/managers/{{ m['id'] }}/toggle" class="d-inline">
-                            {{ csrf_input }}
-                            <button type="submit" class="btn btn-sm btn-link text-success p-0">활성화</button>
-                        </form>
-                        {% else %}
-                        <button type="button" class="btn btn-sm btn-link text-muted p-0"
-                                onclick="checkDeactivate({{ m['id'] }}, '{{ m['name'] }}')">비활성화</button>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if not m['is_deleted'] %}
-                        <button type="button" class="btn btn-sm btn-outline-warning"
-                                onclick="showResetModal({{ m['id'] }}, '{{ m['name'] }}')">
-                            <i class="fas fa-key me-1" aria-hidden="true"></i>비밀번호 초기화
-                        </button>
-                        {% endif %}
-                    </td>
+    {% if managers %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <caption class="visually-hidden">상담사 목록</caption>
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">이름</th>
+                    <th scope="col">아이디</th>
+                    <th scope="col">연락처</th>
+                    <th scope="col">담당</th>
+                    <th scope="col">등록일</th>
+                    <th scope="col">상태</th>
+                    <th scope="col">관리</th>
                 </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% include "common/pagination.html" %}
-        {% else %}
-        <p class="text-muted text-center py-4">등록된 상담사가 없습니다.</p>
-        {% endif %}
+            </thead>
+            <tbody>
+            {% for m in managers %}
+            <tr{% if m['is_deleted'] %} class="text-muted"{% endif %}>
+                <td class="fw-semibold">{{ m['name'] }}</td>
+                <td>{{ m['username'] }}</td>
+                <td>{{ m['phone'] or '-' }}</td>
+                <td>{{ m['assigned_count'] }}명</td>
+                <td>{{ m['created_at']|fdate }}</td>
+                <td>
+                    {% if m['is_deleted'] %}
+                    <form method="post" action="/op/managers/{{ m['id'] }}/toggle" class="d-inline">
+                        {{ csrf_input }}
+                        <button type="submit" class="btn btn-sm btn-link text-success p-0">활성화</button>
+                    </form>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-link text-muted p-0"
+                            onclick="checkDeactivate({{ m['id'] }}, '{{ m['name'] }}')">비활성화</button>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not m['is_deleted'] %}
+                    <button type="button" class="btn btn-sm btn-outline-warning"
+                            onclick="showResetModal({{ m['id'] }}, '{{ m['name'] }}')">비밀번호 초기화</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
+    {% include "common/pagination.html" %}
+    {% else %}
+    <p class="home-empty">등록된 상담사가 없습니다.</p>
+    {% endif %}
 </div>
 
 <!-- 비활성화 확인 모달 -->
@@ -183,7 +173,6 @@
                 <p><strong id="deactTargetName"></strong>님을 비활성화하시겠습니까?</p>
                 <div id="transferSection" class="d-none">
                     <div class="alert alert-warning py-2">
-                        <i class="fas fa-exclamation-triangle me-1" aria-hidden="true"></i>
                         담당 구직자 <strong id="assignedCount"></strong>명이 배정되어 있습니다.
                     </div>
                     <div class="mb-3">
@@ -263,7 +252,9 @@ function checkDeactivate(id, name) {
 function genPassword() {
     var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
     var pw = '';
-    for (var i = 0; i < 12; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (var i = 0; i < 11; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+    // 비밀번호 정책상 2종류 이상이 필요하므로 숫자를 1개 이상 포함함
+    pw += '23456789'.charAt(Math.floor(Math.random() * 8));
     document.getElementById('new_password').value = pw;
 }
 

@@ -13,7 +13,7 @@
                     <input type="text" id="q" name="q" class="form-control" placeholder="이름, 아이디 검색" value="{{ q }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -22,46 +22,44 @@
 </div>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold m-0">구직자 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
     </div>
-    <div class="content-card">
-        {% if seekers %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <caption class="visually-hidden">구직자 목록</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">이름</th>
-                        <th scope="col">아이디</th>
-                        <th scope="col">가입일</th>
-                        <th scope="col">담당 상담사</th>
-                        <th scope="col">상태</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for s in seekers %}
-                <tr{% if s['is_deleted'] %} class="text-muted"{% endif %}>
-                    <td class="fw-semibold">{{ s['name']|mask_name }}</td>
-                    <td>{{ s['username'] }}</td>
-                    <td>{{ s['created_at']|fdate }}</td>
-                    <td>{{ s['manager_name'] or '미배정' }}</td>
-                    <td>
-                        {% if s['is_deleted'] %}
-                        <span class="badge bg-secondary">비활성</span>
-                        {% else %}
-                        <span class="badge bg-success">활성</span>
-                        {% endif %}
-                    </td>
+    {% if seekers %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <caption class="visually-hidden">구직자 목록</caption>
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">이름</th>
+                    <th scope="col">아이디</th>
+                    <th scope="col">가입일</th>
+                    <th scope="col">담당 상담사</th>
+                    <th scope="col">상태</th>
                 </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% include "common/pagination.html" %}
-        {% else %}
-        <p class="text-muted text-center py-4">등록된 구직자가 없습니다.</p>
-        {% endif %}
+            </thead>
+            <tbody>
+            {% for s in seekers %}
+            <tr{% if s['is_deleted'] %} class="text-muted"{% endif %}>
+                <td class="fw-semibold">{{ s['name']|mask_name }}</td>
+                <td>{{ s['username'] }}</td>
+                <td>{{ s['created_at']|fdate }}</td>
+                <td>{{ s['manager_name'] or '미배정' }}</td>
+                <td>
+                    {% if s['is_deleted'] %}
+                    <span class="badge bg-secondary">비활성</span>
+                    {% else %}
+                    <span class="badge bg-success">활성</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
+    {% include "common/pagination.html" %}
+    {% else %}
+    <p class="home-empty">등록된 구직자가 없습니다.</p>
+    {% endif %}
 </div>
 {% endblock %}

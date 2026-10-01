@@ -10,6 +10,9 @@ router = APIRouter()
 
 FOLLOWUP_LABELS = {'1w': '1주차', '1m': '1개월차', '3m': '3개월차', '6m': '6개월차'}
 PLACEMENT_STATUS = {'active': '적응중', 'settled': '정착', 'departed': '이탈'}
+PLACEMENT_STATUS_BADGE = {'active': 'bg-primary', 'settled': 'bg-success', 'departed': 'bg-danger'}
+FOLLOWUP_STATUS_LABELS = {'pending': '예정', 'completed': '완료', 'overdue': '지연'}
+FOLLOWUP_STATUS_BADGE = {'pending': 'bg-warning text-dark', 'completed': 'bg-success', 'overdue': 'bg-danger'}
 
 
 @router.get("/placements", response_class=HTMLResponse)
@@ -34,7 +37,12 @@ async def mgr_placements(request: Request, company: Optional[int] = Query(None))
             sql += " AND p.company_id = ?"
             params.append(company)
         sql += " ORDER BY p.created_at DESC"
-        placements = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
+        placements = []
+        for p in rows:
+            st = p["status"] or "active"
+            placements.append({**dict(p), "status": st, "status_label": PLACEMENT_STATUS.get(st, st),
+                                "status_badge": PLACEMENT_STATUS_BADGE.get(st, "bg-secondary")})
         # 사후관리 요약
         followup_summary = {}
         for p in placements:
@@ -77,18 +85,25 @@ async def mgr_placement_detail(request: Request, placement_id: int):
         ).fetchone()
         if not placement:
             raise HTTPException(status_code=404)
-        # 지연 follow-up 자동 갱신
+        # 기한이 지난 follow-up은 지연 상태로 자동 갱신함
         conn.execute(
             "UPDATE placement_followups SET status='overdue' WHERE placement_id=? AND status='pending' AND due_date < date('now','localtime')",
             (placement_id,),
         )
         conn.commit()
-        followups = conn.execute(
+        followup_rows = conn.execute(
             "SELECT * FROM placement_followups WHERE placement_id=? ORDER BY due_date",
             (placement_id,),
         ).fetchall()
     finally:
         conn.close()
+    st = placement["status"] or "active"
+    placement = {**dict(placement), "status": st, "status_label": PLACEMENT_STATUS.get(st, st)}
+    followups = [
+        {**dict(f), "status_label": FOLLOWUP_STATUS_LABELS.get(f["status"], f["status"]),
+         "status_badge": FOLLOWUP_STATUS_BADGE.get(f["status"], "bg-secondary")}
+        for f in followup_rows
+    ]
     return templates.TemplateResponse(
         request=request, name="manager/placement_detail.html", context={
             "request": request, "page_title": f"배치 상세 - {placement['seeker_name']}",
@@ -97,6 +112,7 @@ async def mgr_placement_detail(request: Request, placement_id: int):
             "followups": followups,
             "followup_labels": FOLLOWUP_LABELS,
             "placement_status": PLACEMENT_STATUS,
+            "placement_status_badge": PLACEMENT_STATUS_BADGE,
         }
     )
 

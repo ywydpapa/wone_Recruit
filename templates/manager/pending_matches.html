@@ -4,11 +4,11 @@
 <div class="page-header"><h2>대기중 매칭</h2></div>
 
 <div class="container">
-    <div class="dash-section-header mb-3">
-        <h4 class="dash-section-title">제안 후 구직자 확인 대기 <span class="dash-count-sub">({{ rows|length }}건)</span></h4>
-        <a href="/mgr/candidacies" class="btn btn-outline-secondary btn-sm">전체 지원 현황</a>
-    </div>
-    <div class="content-card">
+    <section class="home-section" aria-labelledby="pendingTitle">
+        <div class="home-section-head">
+            <h2 id="pendingTitle">제안 후 구직자 확인 대기 ({{ rows|length }}건)</h2>
+            <a href="/mgr/candidacies">전체 지원 현황</a>
+        </div>
         {% if rows %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -33,8 +33,8 @@
             </table>
         </div>
         {% else %}
-        <p class="text-center py-4 mb-0 dash-empty">대기중인 매칭 제안이 없습니다.</p>
+        <p class="home-empty">대기중인 매칭 제안이 없습니다.</p>
         {% endif %}
-    </div>
+    </section>
 </div>
 {% endblock %}

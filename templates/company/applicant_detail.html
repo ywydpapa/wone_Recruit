@@ -2,11 +2,14 @@
 {% block title %}지원자 상세{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">지원자 상세</h2><a href="/company/jobs/{{ job['id'] }}/applicants" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>지원자 목록</a></div>
+<div class="page-header">
+    <h2>지원자 상세</h2>
+    <a href="/company/jobs/{{ job['id'] }}/applicants" class="btn btn-outline-secondary">지원자 목록</a>
+</div>
 <div class="row g-4">
             <div class="col-lg-6">
-                <div class="content-card h-100">
-                    <h5 class="fw-bold mb-3">지원자 정보</h5>
+                <section class="home-section h-100">
+                    <div class="home-section-head"><h2 class="dash-section-title mb-0">지원자 정보</h2></div>
                     <dl class="row mb-0">
                         <dt class="col-sm-4">이름</dt>
                         <dd class="col-sm-8">{{ cand['seeker_name'] }}</dd>
@@ -53,34 +56,30 @@
                         {% endif %}
                         {% endif %}
                     </dl>
-                </div>
+                </section>
             </div>
 
             <div class="col-lg-6">
-                <div class="content-card h-100">
-                    <h5 class="fw-bold mb-3">지원 동기</h5>
+                <section class="home-section h-100">
+                    <div class="home-section-head"><h2 class="dash-section-title mb-0">지원 동기</h2></div>
                     {% if cand['cover_letter'] %}
                     <div class="text-prewrap">{{ cand['cover_letter'] }}</div>
                     {% else %}
-                    <p class="text-muted">작성된 내용이 없습니다.</p>
+                    <p class="home-empty">작성된 내용이 없습니다.</p>
                     {% endif %}
-                </div>
+                </section>
             </div>
 
             {% if profile and profile['resume_path'] %}
             <div class="col-12">
-                <div class="content-card">
-                    <a href="/static/uploads/{{ profile['resume_path'] }}" class="btn btn-outline-primary btn-sm" download>
-                        <i class="fas fa-download me-1"></i>이력서 파일 다운로드
-                    </a>
-                </div>
+                <p class="mb-0"><a href="/static/uploads/{{ profile['resume_path'] }}" class="btn btn-outline-primary btn-sm" download>이력서 파일 다운로드</a></p>
             </div>
             {% endif %}
 
             {% if educations %}
             <div class="col-12">
                 <div class="profile-card">
-                    <div class="resume-section-title"><i class="fas fa-graduation-cap"></i>학력</div>
+                    <div class="resume-section-title">학력</div>
                     <div class="resume-section-body">
                         {% for edu in educations %}
                         <div class="resume-item">
@@ -103,7 +102,7 @@
             {% if careers %}
             <div class="col-12">
                 <div class="profile-card">
-                    <div class="resume-section-title"><i class="fas fa-briefcase"></i>경력</div>
+                    <div class="resume-section-title">경력</div>
                     <div class="resume-section-body">
                         {% for c in careers %}
                         <div class="resume-item">
@@ -128,7 +127,7 @@
             {% if certifications %}
             <div class="col-12">
                 <div class="profile-card">
-                    <div class="resume-section-title"><i class="fas fa-certificate"></i>자격증</div>
+                    <div class="resume-section-title">자격증</div>
                     <div class="resume-section-body">
                         {% for cert in certifications %}
                         <div class="resume-item">
@@ -144,7 +143,7 @@
             {% if languages %}
             <div class="col-12">
                 <div class="profile-card">
-                    <div class="resume-section-title"><i class="fas fa-language"></i>어학</div>
+                    <div class="resume-section-title">어학</div>
                     <div class="resume-section-body">
                         {% for lang in languages %}
                         <div class="resume-item">
@@ -158,8 +157,8 @@
             {% endif %}
 
             <div class="col-12">
-                <div class="content-card">
-                    <h5 class="fw-bold mb-3">진행 이력</h5>
+                <section class="home-section">
+                    <div class="home-section-head"><h2 class="dash-section-title mb-0">진행 이력</h2></div>
                     {% if history %}
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0">
@@ -177,7 +176,7 @@
                             {% for h in history %}
                             <tr>
                                 <td>{{ status_labels.get(h['from_status'], h['from_status']) if h['from_status'] else '-' }}</td>
-                                <td><i class="fas fa-arrow-right text-muted"></i></td>
+                                <td>&rarr;</td>
                                 <td>{{ status_labels.get(h['to_status'], h['to_status']) }}</td>
                                 <td>{{ h['actor_name'] or '-' }}</td>
                                 <td>{{ h['comment'] or '-' }}</td>
@@ -188,9 +187,9 @@
                         </table>
                     </div>
                     {% else %}
-                    <p class="text-muted">이력이 없습니다.</p>
+                    <p class="home-empty">이력이 없습니다.</p>
                     {% endif %}
-                </div>
+                </section>
             </div>
 
             {% if cand['status'] == 'interview' or interview %}
@@ -272,12 +271,10 @@
             </div>
             {% else %}
             <div class="col-12">
-                <div class="content-card">
-                    <p class="text-muted mb-0">
-                        현재 상태: <strong>{{ status_labels.get(cand['status'], cand['status']) }}</strong>
-                        - 더 이상 변경할 수 없는 최종 상태입니다.
-                    </p>
-                </div>
+                <p class="home-empty">
+                    현재 상태: <strong>{{ status_labels.get(cand['status'], cand['status']) }}</strong>
+                    - 더 이상 변경할 수 없는 최종 상태입니다.
+                </p>
             </div>
             {% endif %}
 
@@ -294,7 +291,7 @@
                                       placeholder="지원자에 대한 메모를 남겨 주세요." required></textarea>
                         </div>
                         <button type="submit" class="btn btn-sm btn-outline-info">
-                            <i class="fas fa-plus me-1"></i>메모 추가
+                            메모 추가
                         </button>
                     </form>
                     {% if notes %}
@@ -310,7 +307,7 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted small mb-0">아직 작성된 메모가 없습니다.</p>
+                    <p class="home-empty mb-0">아직 작성된 메모가 없습니다.</p>
                     {% endif %}
                 </div>
             </div>

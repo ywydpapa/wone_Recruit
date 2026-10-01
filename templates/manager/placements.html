@@ -4,10 +4,11 @@
 <div class="page-header"><h2>배치 관리</h2></div>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">담당 구직자 배치 <span class="text-muted fs-6 fw-normal">({{ placements|length }}건)</span></h4>
-    </div>
-    <div class="content-card">
+    <div class="home-section">
+        <div class="home-section-head">
+            <h2>담당 구직자 배치</h2>
+            <span class="text-muted small">{{ placements|length }}건</span>
+        </div>
         {% if placements %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -31,16 +32,7 @@
                         <td>{{ p['company_name'] }}</td>
                         <td>{{ p['job_title'] }}</td>
                         <td>{{ p['start_date'] or '-' }}</td>
-                        <td>
-                            {% set st = p['status'] or 'active' %}
-                            {% if st == 'active' %}
-                            <span class="badge bg-primary">적응중</span>
-                            {% elif st == 'settled' %}
-                            <span class="badge bg-success">정착</span>
-                            {% elif st == 'departed' %}
-                            <span class="badge bg-danger">이탈</span>
-                            {% endif %}
-                        </td>
+                        <td><span class="badge {{ p['status_badge'] }}">{{ p['status_label'] }}</span></td>
                         <td>
                             <span class="text-success">{{ fs.get('done', 0) }}</span>/{{ fs.get('total', 0) }}
                             {% if fs.get('overdue', 0) > 0 %}
@@ -53,7 +45,7 @@
             </table>
         </div>
         {% else %}
-        <p class="text-center py-3 text-muted mb-0">배치된 구직자가 없습니다.</p>
+        <p class="home-empty">배치된 구직자가 없습니다.</p>
         {% endif %}
     </div>
 </div>

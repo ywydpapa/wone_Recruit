@@ -11,6 +11,8 @@ INQUIRY_CATEGORIES = [
     "이용방법", "오류/불편", "기타",
 ]
 
+INQUIRY_STATUS_LABELS = {"open": "미답변", "answered": "답변완료", "closed": "종료"}
+
 
 @router.get("/inquiries", response_class=HTMLResponse)
 async def inquiry_list(request: Request, page: int = Query(1)):
@@ -37,6 +39,7 @@ async def inquiry_list(request: Request, page: int = Query(1)):
             "user_name": user["name"], "user_role": role,
             "inquiries": rows,
             "categories": INQUIRY_CATEGORIES,
+            "status_labels": INQUIRY_STATUS_LABELS,
             "pagination": pagination, "base_qs": "",
         }
     )
@@ -86,5 +89,6 @@ async def inquiry_detail(request: Request, inquiry_id: int):
             "request": request, "page_title": row["subject"],
             "user_name": user["name"], "user_role": role,
             "inquiry": row,
+            "status_labels": INQUIRY_STATUS_LABELS,
         }
     )

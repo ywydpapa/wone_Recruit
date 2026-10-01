@@ -54,14 +54,11 @@
             <div class="schedule-event">
                 <div class="schedule-event-time">{{ ev.time_str }}</div>
                 <div class="schedule-event-body">
-                    <div class="schedule-event-title">
-                        <i class="fas {{ ev.icon }}" aria-hidden="true"></i>
-                        {{ ev.title }}
-                    </div>
+                    <div class="schedule-event-title">{{ ev.title }}</div>
                     <div class="schedule-event-meta">
                         {% if ev.subtitle %}<span>{{ ev.subtitle }}</span>{% endif %}
                         {% if ev.iv_type %}<span>{{ ev.iv_type }}</span>{% endif %}
-                        {% if ev.location %}<span><i class="fas fa-map-marker-alt" aria-hidden="true"></i> {{ ev.location }}</span>{% endif %}
+                        {% if ev.location %}<span>{{ ev.location }}</span>{% endif %}
                     </div>
                 </div>
                 {% if ev.status %}
@@ -73,7 +70,6 @@
         {% endfor %}
         {% else %}
         <div class="schedule-empty">
-            <i class="fas fa-calendar" aria-hidden="true"></i>
             예정된 일정이 없습니다.
         </div>
         {% endif %}

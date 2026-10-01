@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}알림 설정 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>알림 설정</h2></div>
+<div class="container">
+    <div class="content-card narrow-form-md">
+        {% if success %}
+        <div class="alert alert-success" role="alert">알림 설정이 저장되었습니다.</div>
+        {% endif %}
+        <p class="text-muted small mb-3">유형별로 알림을 받을지 선택할 수 있습니다. 시스템 알림은 항상 발송됩니다.</p>
+        <form method="post" action="/account/notify">
+            {{ csrf_input }}
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="notify_system" checked disabled>
+                <label class="form-check-label" for="notify_system">시스템 알림 (항상 켜짐)</label>
+            </div>
+            {% for t in toggles %}
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       name="{{ t.kind }}" id="notify_{{ t.kind }}" {% if t.on %}checked{% endif %}>
+                <label class="form-check-label" for="notify_{{ t.kind }}">{{ t.label }} 알림</label>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary w-100">저장하기</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

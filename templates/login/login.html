@@ -178,6 +178,9 @@
             {% elif error %}
             <div class="alert alert-danger py-2 small mb-3">아이디 또는 비밀번호가 올바르지 않습니다.</div>
             {% endif %}
+            {% if request.query_params.get('reset') %}
+            <div class="alert alert-success py-2 small mb-3">비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.</div>
+            {% endif %}
             {% if request.query_params.get('withdrawn') %}
             <div class="alert alert-success py-2 small mb-3">회원탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.</div>
             {% endif %}

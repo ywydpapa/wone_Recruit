@@ -3,47 +3,70 @@
 {% block content %}
 <div class="page-header">
     <h2>{{ company['company_name'] }}</h2>
-    <a href="/mgr/companies" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록</a>
+    <a href="/mgr/companies" class="btn btn-outline-secondary btn-sm">목록</a>
 </div>
 
 <div class="container">
-    <div class="row g-4">
-        <div class="col-md-8">
-            <div class="content-card">
-                <h5 class="fw-bold mb-3">기업 정보</h5>
-                <dl class="row mb-0">
-                    <dt class="col-sm-3 text-muted">기업명</dt>
-                    <dd class="col-sm-9">{{ company['company_name'] }}</dd>
-                    <dt class="col-sm-3 text-muted">업종</dt>
-                    <dd class="col-sm-9">{{ company['industry'] or '-' }}</dd>
-                    <dt class="col-sm-3 text-muted">규모</dt>
-                    <dd class="col-sm-9">{{ company['company_size'] or '-' }}</dd>
-                    <dt class="col-sm-3 text-muted">지역</dt>
-                    <dd class="col-sm-9">{{ company|region('-') }}</dd>
-                    <dt class="col-sm-3 text-muted">사업자번호</dt>
-                    <dd class="col-sm-9">{{ company['biz_no'] or '-' }}</dd>
-                    <dt class="col-sm-3 text-muted">대표</dt>
-                    <dd class="col-sm-9">{{ company['ceo'] or '-' }}</dd>
-                    <dt class="col-sm-3 text-muted">주소</dt>
-                    <dd class="col-sm-9">{{ company['address'] or '-' }}</dd>
-                </dl>
-            </div>
+    <ul class="home-summary" aria-label="기업 현황">
+        <li><a href="/mgr/jobs?q={{ company['company_name'] }}">게시중 공고 <strong>{{ active_jobs }}</strong></a></li>
+        <li><a href="/mgr/placements?company={{ company['id'] }}">현재 배치 <strong>{{ placed_count }}</strong></a></li>
+    </ul>
+
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">기업 정보</h2></div>
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-muted">기업명</dt>
+            <dd class="col-sm-9">{{ company['company_name'] }}</dd>
+            <dt class="col-sm-3 text-muted">업종</dt>
+            <dd class="col-sm-9">{{ company['industry'] or '-' }}</dd>
+            <dt class="col-sm-3 text-muted">규모</dt>
+            <dd class="col-sm-9">{{ company['company_size'] or '-' }}</dd>
+            <dt class="col-sm-3 text-muted">지역</dt>
+            <dd class="col-sm-9">{{ company|region('-') }}</dd>
+            <dt class="col-sm-3 text-muted">사업자번호</dt>
+            <dd class="col-sm-9">{{ company['biz_no'] or '-' }}</dd>
+            <dt class="col-sm-3 text-muted">대표</dt>
+            <dd class="col-sm-9">{{ company['ceo'] or '-' }}</dd>
+            <dt class="col-sm-3 text-muted">주소</dt>
+            <dd class="col-sm-9">{{ company['address'] or '-' }}</dd>
+        </dl>
+    </section>
+
+    {% if env_badges or company['work_env_note'] %}
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">근무환경</h2></div>
+        {% if env_badges %}
+        <div class="mb-2">
+            {% for badge in env_badges %}
+            <span class="badge bg-info text-dark me-1 mb-1">{{ badge }}</span>
+            {% endfor %}
         </div>
-        <div class="col-md-4">
-            <a href="/mgr/jobs?q={{ company['company_name'] }}" class="content-card text-center mb-3 d-block text-decoration-none">
-                <div class="fs-2 fw-bold">{{ active_jobs }}</div>
-                <small class="text-muted">게시중 공고</small>
-            </a>
-            <a href="/mgr/placements?company={{ company['id'] }}" class="content-card text-center d-block text-decoration-none">
-                <div class="fs-2 fw-bold">{{ placed_count }}</div>
-                <small class="text-muted">현재 배치</small>
-            </a>
+        {% endif %}
+        {% if company['work_env_note'] %}
+        <p class="small text-muted mb-0">{{ company['work_env_note'] }}</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if esg_badges or company['esg_note'] %}
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">ESG / 사회공헌</h2></div>
+        {% if esg_badges %}
+        <div class="mb-2">
+            {% for badge in esg_badges %}
+            <span class="badge bg-secondary me-1 mb-1">{{ badge }}</span>
+            {% endfor %}
         </div>
-    </div>
+        {% endif %}
+        {% if company['esg_note'] %}
+        <p class="small text-muted mb-0">{{ company['esg_note'] }}</p>
+        {% endif %}
+    </section>
+    {% endif %}
 
     {% if company['hr_name'] or company['contact_phone'] %}
-    <div class="content-card mt-4">
-        <h5 class="fw-bold mb-3">담당자 연락처</h5>
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">담당자 연락처</h2></div>
         <dl class="row mb-0">
             {% if company['hr_name'] %}
             <dt class="col-sm-3 text-muted">담당자</dt>
@@ -58,15 +81,17 @@
             <dd class="col-sm-9">{{ company['hr_email'] }}</dd>
             {% endif %}
         </dl>
-    </div>
+    </section>
     {% endif %}
 
-    <div class="content-card mt-4">
-        <h5 class="fw-bold mb-3">
-            기업리뷰
-            {% if reviews %}<span class="badge bg-secondary ms-1">{{ reviews|length }}</span>{% endif %}
-            {% if avg_rating %}<span class="review-avg-label">평균 {{ avg_rating }}</span>{% endif %}
-        </h5>
+    <section class="home-section">
+        <div class="home-section-head">
+            <h2 class="dash-section-title mb-0">기업리뷰</h2>
+            <span class="text-secondary">
+                {% if reviews %}{{ reviews|length }}건{% endif %}
+                {% if avg_rating %}&nbsp;&middot;&nbsp;평균 {{ avg_rating }}{% endif %}
+            </span>
+        </div>
         {% if reviews %}
         <div class="review-list">
             {% for rv in reviews %}
@@ -95,8 +120,8 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-muted mb-0 small">등록된 리뷰가 없습니다.</p>
+        <p class="home-empty">등록된 리뷰가 없습니다.</p>
         {% endif %}
-    </div>
+    </section>
 </div>
 {% endblock %}

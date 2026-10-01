@@ -253,7 +253,6 @@ async def delete_post(request: Request, post_id: int):
     conn = get_sqlite()
     try:
         post = conn.execute("SELECT user_id FROM posts WHERE id=?", (post_id,)).fetchone()
-        # 본인 글이거나 운영자면 삭제 가능
         if not post or (post["user_id"] != user["id"] and user["role"] != "operator"):
             return JSONResponse({"error": "unauthorized"}, status_code=403)
         conn.execute("DELETE FROM comments WHERE post_id=?", (post_id,))
@@ -387,6 +386,7 @@ async def send_message(
                 conn, recipient["id"],
                 f"{user['name']}님이 메시지를 보냈습니다: {preview}",
                 f"/messages/{user['id']}",
+                kind="message",
             )
         conn.commit()
     finally:

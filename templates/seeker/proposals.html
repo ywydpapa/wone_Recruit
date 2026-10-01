@@ -2,52 +2,47 @@
 {% block title %}매칭 제안 | WONE Recruit{% endblock %}
 {% block content %}
 <div class="page-header"><h2>매칭 제안</h2></div>
-<div class="content-card">
-            {% if proposals %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <caption class="visually-hidden">매칭 제안 목록</caption>
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">공고 제목</th>
-                            <th scope="col">기업명</th>
-                            <th scope="col">지역</th>
-                            <th scope="col">고용 형태</th>
-                            <th scope="col">제안일</th>
-                            <th scope="col">응답</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for p in proposals %}
-                    <tr>
-                        <td class="fw-semibold"><a href="/jobs/{{ p['job_id'] }}">{{ p['job_title'] }}</a></td>
-                        <td>{{ p['company_name'] }}</td>
-                        <td>{{ p|region('-') }}</td>
-                        <td>{{ p['employment_type'] or '-' }}</td>
-                        <td>{{ p['created_at']|fdate }}</td>
-                        <td>
-                            {% if p['match_stage'] == 'accepted' %}
-                            <span class="badge bg-success">수락됨</span>
-                            {% else %}
-                            <form method="post" action="/proposals/{{ p['id'] }}/respond" class="d-flex gap-1">
-                                {{ csrf_input }}
-                                <button type="submit" name="action" value="accept" class="btn btn-sm btn-success">수락</button>
-                                <button type="submit" name="action" value="reject"
-                                        class="btn btn-sm btn-outline-danger"
-                                        onclick="return confirm('제안을 거절하시겠습니까?')">거절</button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-handshake"></i></div>
-                <p class="empty-state-text">받은 매칭 제안이 없습니다.</p>
-            </div>
-            {% endif %}
-        </div>
+{% if proposals %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <caption class="visually-hidden">매칭 제안 목록</caption>
+        <thead>
+            <tr>
+                <th scope="col">공고 제목</th>
+                <th scope="col">기업명</th>
+                <th scope="col">지역</th>
+                <th scope="col">고용 형태</th>
+                <th scope="col">제안일</th>
+                <th scope="col">응답</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in proposals %}
+        <tr>
+            <td class="fw-semibold"><a href="/jobs/{{ p['job_id'] }}">{{ p['job_title'] }}</a></td>
+            <td>{{ p['company_name'] }}</td>
+            <td>{{ p|region('-') }}</td>
+            <td>{{ p['employment_type'] or '-' }}</td>
+            <td>{{ p['created_at']|fdate }}</td>
+            <td>
+                {% if p['match_stage'] == 'accepted' %}
+                <span class="badge">수락됨</span>
+                {% else %}
+                <form method="post" action="/proposals/{{ p['id'] }}/respond" class="d-flex gap-1">
+                    {{ csrf_input }}
+                    <button type="submit" name="action" value="accept" class="btn btn-sm btn-success">수락</button>
+                    <button type="submit" name="action" value="reject"
+                            class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('제안을 거절하시겠습니까?')">거절</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="home-empty">받은 매칭 제안이 없습니다.</p>
+{% endif %}
 {% endblock %}

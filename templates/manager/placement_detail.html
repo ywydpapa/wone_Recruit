@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
     <h2>{{ placement['seeker_name'] }}</h2>
-    <a href="/mgr/placements" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록</a>
+    <a href="/mgr/placements" class="btn btn-outline-secondary btn-sm">목록</a>
 </div>
 
 <div class="container">
@@ -27,23 +27,16 @@
                 <strong>{{ placement['start_date'] or '-' }}</strong>
             </div>
             <div class="col-md-2 text-end">
-                {% set st = placement['status'] or 'active' %}
-                {% if st == 'active' %}
-                <span class="badge bg-primary fs-6">적응중</span>
-                {% elif st == 'settled' %}
-                <span class="badge bg-success fs-6">정착</span>
-                {% elif st == 'departed' %}
-                <span class="badge bg-danger fs-6">이탈</span>
-                {% endif %}
-                {% if st != 'departed' %}
+                <span class="badge {{ placement_status_badge.get(placement['status'], 'bg-secondary') }} fs-6">{{ placement['status_label'] }}</span>
+                {% if placement['status'] != 'departed' %}
                 <form method="post" action="/mgr/placements/{{ placement['id'] }}/status" class="mt-2">
                     {{ csrf_input }}
                     <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">상태 변경</option>
-                        {% if st == 'active' %}
+                        {% if placement['status'] == 'active' %}
                         <option value="settled">정착 전환</option>
                         <option value="departed">이탈 처리</option>
-                        {% elif st == 'settled' %}
+                        {% elif placement['status'] == 'settled' %}
                         <option value="departed">이탈 처리</option>
                         {% endif %}
                     </select>
@@ -53,49 +46,38 @@
         </div>
     </div>
 
-    <h4 class="fw-bold mb-3">사후관리</h4>
-    {% if followups %}
-    <div class="row g-3">
-        {% for f in followups %}
-        <div class="col-md-6">
-            <div class="content-card {% if f['status'] == 'overdue' %}border-danger{% elif f['status'] == 'completed' %}border-success{% endif %}">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0">
-                        <i class="fas fa-calendar-check me-1"></i>
-                        {{ followup_labels.get(f['followup_type'], f['followup_type']) }}
-                    </h6>
-                    {% if f['status'] == 'pending' %}
-                    <span class="badge bg-warning text-dark">예정</span>
-                    {% elif f['status'] == 'completed' %}
-                    <span class="badge bg-success">완료</span>
-                    {% elif f['status'] == 'overdue' %}
-                    <span class="badge bg-danger">지연</span>
-                    {% endif %}
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">사후관리</h2></div>
+        {% if followups %}
+        <div class="mp-row-list">
+            {% for f in followups %}
+            <div class="mp-row">
+                <div class="mp-row-head">
+                    <div>
+                        <span class="mp-row-title">{{ followup_labels.get(f['followup_type'], f['followup_type']) }}</span>
+                        <div class="mp-row-sub">기한: {{ f['due_date'] }}</div>
+                    </div>
+                    <span class="badge {{ f['status_badge'] }}">{{ f['status_label'] }}</span>
                 </div>
-                <p class="text-muted small mb-2">기한: {{ f['due_date'] }}</p>
 
                 {% if f['status'] == 'completed' %}
-                <div class="bg-light rounded p-2 small">
-                    <p class="mb-1 text-prewrap">{{ f['notes'] or '(메모 없음)' }}</p>
-                    <small class="text-muted">완료: {{ f['completed_at']|fdate }}</small>
-                </div>
+                <p class="mb-1 text-prewrap">{{ f['notes'] or '(메모 없음)' }}</p>
+                <small class="text-muted">완료: {{ f['completed_at']|fdate }}</small>
                 {% else %}
-                <form method="post" action="/mgr/placements/{{ placement['id'] }}/followup/{{ f['id'] }}">
+                <form method="post" action="/mgr/placements/{{ placement['id'] }}/followup/{{ f['id'] }}" class="mt-2">
                     {{ csrf_input }}
                     <div class="mb-2">
                         <textarea name="notes" class="form-control form-control-sm" rows="3" placeholder="면담 내용, 적응 상태 등"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i>완료 처리</button>
+                    <button type="submit" class="btn btn-success btn-sm">완료 처리</button>
                 </form>
                 {% endif %}
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="content-card">
-        <p class="text-center py-3 text-muted mb-0">사후관리 일정이 없습니다.</p>
-    </div>
-    {% endif %}
+        {% else %}
+        <p class="home-empty">사후관리 일정이 없습니다.</p>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

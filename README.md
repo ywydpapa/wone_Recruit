@@ -19,7 +19,7 @@
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python init_db.py        # DB 초기화 (recruit.db 생성)
+python init_db.py        # DB 초기화 (recruit.db 생성, 기존 데이터가 있으면 --force 필요)
 uvicorn main:app --reload
 ```
 

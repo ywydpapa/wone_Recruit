@@ -1,0 +1,11 @@
+<nav class="mypage-nav" aria-label="마이페이지 메뉴">
+    <p class="mypage-name"><strong>{{ user_name }}</strong>님</p>
+    {% for group, links in mypage_menu %}
+    <h2 class="mypage-group">{{ group }}</h2>
+    <ul>
+        {% for href, label in links %}
+        <li><a href="{{ href }}"{% if request.url.path == href or (href != '/profile' and request.url.path.startswith(href + '/')) %} class="active" aria-current="page"{% endif %}>{{ label }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</nav>

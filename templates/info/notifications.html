@@ -1,27 +1,43 @@
 {% extends "base.html" %}
 {% block title %}알림 - WONE Recruit{% endblock %}
 {% block content %}
-<div class="page-header"><h2>알림</h2></div>
-<div class="container">
-        {% if notifications %}
-        <div class="list-group">
-            {% for n in notifications %}
-            <a href="{{ n.link or '#' }}" class="list-group-item list-group-item-action {% if not n.is_read %}fw-semibold{% endif %}">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        {% if not n.is_read %}<i class="fas fa-circle text-primary me-2 icon-dot" aria-hidden="true"></i>{% endif %}
-                        {{ n.message }}
-                    </div>
-                    <small class="text-muted ms-3 text-nowrap">{{ n.created_at|fdate }}</small>
-                </div>
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h2>알림</h2>
+    <a href="/account/notify" class="btn btn-outline-secondary btn-sm">알림 설정</a>
+</div>
+
+<nav aria-label="알림 종류">
+    <ul class="nav nav-tabs mb-3">
+        {% for t in tabs %}
+        <li class="nav-item">
+            <a class="nav-link {% if t.kind == selected_kind %}active{% endif %}"
+               href="/notifications{% if t.kind %}?kind={{ t.kind }}{% endif %}"
+               {% if t.kind == selected_kind %}aria-current="page"{% endif %}>
+                {{ t.label }}
+                {% if t.count %}<span class="badge">{{ t.count }}</span>{% endif %}
             </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="content-card text-center text-muted py-5">
-            <i class="fas fa-bell-slash fs-1 mb-3 d-block" aria-hidden="true"></i>
-            알림이 없습니다.
-        </div>
-        {% endif %}
-    </div>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>
+
+{% if notifications %}
+<form method="post" action="/notifications/read_all" class="text-end mb-2">
+    {{ csrf_input }}
+    <input type="hidden" name="kind" value="{{ selected_kind }}">
+    <button type="submit" class="btn btn-link btn-sm p-0">모두 읽음</button>
+</form>
+<ul class="home-list">
+    {% for n in notifications %}
+    <li{% if not n.is_read %} class="unread"{% endif %}>
+        <a href="{{ n.link or '#' }}">{{ n.message }}</a>
+        <span class="home-list-sub">{{ kind_labels.get(n.kind, '시스템') }}</span>
+        <span class="home-list-end">{{ n.created_at|fdate }}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% include "common/pagination.html" %}
+{% else %}
+<p class="home-empty">알림이 없습니다.</p>
+{% endif %}
 {% endblock %}

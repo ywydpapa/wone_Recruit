@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>매칭 정보 입력</h2>
+</div>
+
+<div class="container narrow-form">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/mgr/seekers">구직자</a></li>
+            <li class="breadcrumb-item"><a href="/mgr/seekers/{{ seeker['id'] }}">{{ seeker['name'] }}</a></li>
+            <li class="breadcrumb-item active">매칭 정보</li>
+        </ol>
+    </nav>
+
+    <form method="post" action="/mgr/seekers/{{ seeker['id'] }}/match-info">
+        {{ csrf_input }}
+        <input type="hidden" name="next" value="{{ next_url }}">
+
+        <fieldset class="form-section">
+            <legend>필요 직무</legend>
+            <div class="form-section-body">
+                {% for grp in category_groups %}
+                <div class="mb-3">
+                    <div class="device-cat-label">{{ grp.major }}</div>
+                    <div class="row g-2">
+                        {% for cat in grp.cats %}
+                        <div class="col-6 col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="target_categories" value="{{ cat.id }}" id="cat_{{ cat.id }}"
+                                    {% if cat.id in selected_categories %}checked{% endif %}>
+                                <label class="form-check-label" for="cat_{{ cat.id }}">{{ cat.name }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>보조장비</legend>
+            <div class="form-section-body">
+                {% for cat, devices in assistive_devices.items() %}
+                <div class="mb-3">
+                    <div class="device-cat-label">{{ cat }}</div>
+                    <div class="device-grid">
+                        {% for name, icon in devices %}
+                        <input type="checkbox" class="device-check" name="assistive_tech" value="{{ name }}" id="mi_dev_{{ loop.index }}_{{ cat }}"
+                            {% if name in selected_devices %}checked{% endif %}>
+                        <label class="device-item" for="mi_dev_{{ loop.index }}_{{ cat }}">
+                            <i class="fas {{ icon }}" aria-hidden="true"></i>
+                            <span>{{ name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>지원 필요사항</legend>
+            <div class="form-section-body">
+                <div class="row g-2">
+                    {% for opt in accommodation_options %}
+                    <div class="col-6 col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="accommodation_needs" value="{{ opt }}" id="need_{{ loop.index }}"
+                                {% if opt in selected_needs %}checked{% endif %}>
+                            <label class="form-check-label" for="need_{{ loop.index }}">{{ opt }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="form-text">구직자가 프로필에서도 직접 수정할 수 있는 항목입니다.</div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>상담 메모</legend>
+            <div class="form-section-body">
+                <label for="match_note" class="form-label">상담에서 파악한 매칭 참고사항</label>
+                <textarea id="match_note" name="match_note" class="form-control" rows="6" maxlength="2000">{{ match_note }}</textarea>
+            </div>
+        </fieldset>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">저장</button>
+            <a href="{{ next_url }}" class="btn btn-outline-secondary">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

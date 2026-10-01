@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
+from core.notices import get_latest as get_latest_notices
 from routers.manager.consultations import SESSION_TYPE_LABELS, METHOD_LABELS
 
 router = APIRouter()
@@ -87,7 +88,13 @@ async def mgr_dashboard(request: Request):
             (uid,),
         ).fetchone()[0]
 
-        # 예정 상담
+        consult_pending = conn.execute(
+            """SELECT COUNT(*) FROM consult_requests cr
+               JOIN manager_assignments ma ON ma.seeker_user_id = cr.seeker_user_id
+               WHERE ma.manager_user_id=? AND cr.status='pending'""",
+            (uid,),
+        ).fetchone()[0]
+
         upcoming_sessions = conn.execute(
             """SELECT cs.*, u.name AS seeker_name
                FROM consultation_sessions cs
@@ -96,7 +103,6 @@ async def mgr_dashboard(request: Request):
                ORDER BY cs.scheduled_at ASC LIMIT 5""",
             (uid,),
         ).fetchall()
-        # 최근 완료 상담
         recent_sessions = conn.execute(
             """SELECT cs.*, u.name AS seeker_name
                FROM consultation_sessions cs
@@ -105,6 +111,8 @@ async def mgr_dashboard(request: Request):
                ORDER BY cs.created_at DESC LIMIT 5""",
             (uid,),
         ).fetchall()
+
+        notices = get_latest_notices(conn, "manager")
     finally:
         conn.close()
 
@@ -128,10 +136,12 @@ async def mgr_dashboard(request: Request):
             "pending_matches": pending_matches,
             "unassigned_count": unassigned_count,
             "total_caseload": total_caseload,
+            "consult_pending": consult_pending,
             "pipeline": pipeline,
             "upcoming_sessions": upcoming_sessions,
             "recent_sessions": recent_sessions,
             "type_labels": SESSION_TYPE_LABELS,
             "method_labels": METHOD_LABELS,
+            "notices": notices,
         }
     )

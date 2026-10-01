@@ -1,16 +1,17 @@
 import json
 import os
 from datetime import datetime
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.db import get_sqlite
-from core.deps import require_role, templates
+from core.deps import INTRO_TITLES, require_role, templates
 from core.upload import save_upload
 from core.resume_completeness import calc_completeness
 from core.constants import (
     EDUCATION_LEVELS_DETAIL, GRADUATION_STATUS, GPA_SCALES,
-    CAREER_EMPLOYMENT_TYPES, LANGUAGE_LIST, LANGUAGE_LEVELS,
+    CAREER_EMPLOYMENT_TYPES, CAREER_POSITIONS, CAREER_DEPTS, LANGUAGE_LIST, LANGUAGE_LEVELS,
     AWARD_CATEGORIES, PORTFOLIO_LINK_TYPES,
     MOBILITY_TYPES, COMMUTE_OPTIONS,
     DAILY_HOURS_OPTIONS, PREFERRED_TIME_OPTIONS,
@@ -139,6 +140,26 @@ async def resume_list(request: Request):
             "completeness_map": completeness_map,
         }
     )
+
+
+# 음성 명령용 경로임. 대표 이력서, 없으면 최근 수정한 이력서의 편집 화면으로 이동함
+@router.get("/resumes/write")
+async def resume_write(request: Request, item: str = ""):
+    user = require_role(request, "seeker")
+    conn = get_sqlite()
+    try:
+        r = conn.execute(
+            "SELECT id FROM resumes WHERE user_id=? ORDER BY is_default DESC, updated_at DESC LIMIT 1",
+            (user["id"],),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not r:
+        return RedirectResponse(url="/resumes", status_code=303)
+    url = f"/resumes/{r['id']}/edit"
+    if item in INTRO_TITLES:
+        url += f"?voice={quote(item)}"
+    return RedirectResponse(url=url, status_code=303)
 
 
 @router.post("/resumes/new")
@@ -340,6 +361,8 @@ async def resume_edit(request: Request, resume_id: int, success: str = "", error
             "graduation_status_list": GRADUATION_STATUS,
             "gpa_scales": GPA_SCALES,
             "career_employment_types": CAREER_EMPLOYMENT_TYPES,
+            "career_positions": CAREER_POSITIONS,
+            "career_depts": CAREER_DEPTS,
             "language_options": LANGUAGE_LIST,
             "language_levels": LANGUAGE_LEVELS,
             "award_categories": AWARD_CATEGORIES,

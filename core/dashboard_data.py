@@ -1,5 +1,8 @@
 import json
 
+from core.constants import CONSULT_CATEGORIES, CONSULT_REQ_STATUS
+from core.notices import get_latest as get_latest_notices
+
 
 def calc_profile_completeness(conn, uid):
     profile = conn.execute(
@@ -100,7 +103,7 @@ def get_recommended_jobs(conn, uid, limit=5):
             pref_disability = []
 
         if pref_disability and disability_name not in pref_disability:
-            continue  # 장애유형 불일치 건 제외
+            continue  # 장애유형이 맞지 않는 건은 제외함
 
         try:
             job_accommodations = json.loads(job["accommodations_provided"]) if job["accommodations_provided"] else []
@@ -113,7 +116,7 @@ def get_recommended_jobs(conn, uid, limit=5):
             match_score = round(match_count / len(seeker_needs) * 100)
         else:
             match_count = 0
-            match_score = 50  # 편의지원 미지정시 기본점수
+            match_score = 50  # 편의지원 미지정 시 기본점수를 부여함
 
         scored.append({
             "job": job,
@@ -152,6 +155,24 @@ def _count_new_alert_jobs(conn, uid):
             params.append(int(filters['category']))
         total += conn.execute(sql, params).fetchone()[0]
     return total
+
+
+def _get_active_consult_reqs(conn, uid):
+    rows = conn.execute(
+        """SELECT cr.*, cs.scheduled_at AS session_scheduled_at
+           FROM consult_requests cr
+           LEFT JOIN consultation_sessions cs ON cr.session_id = cs.id
+           WHERE cr.seeker_user_id=? AND cr.status IN ('pending','accepted','scheduled')
+           ORDER BY cr.created_at DESC""",
+        (uid,),
+    ).fetchall()
+    reqs = []
+    for r in rows:
+        d = dict(r)
+        d["category_label"] = CONSULT_CATEGORIES.get(d["category"], d["category"])
+        d["status_label"], d["status_color"] = CONSULT_REQ_STATUS.get(d["status"], (d["status"], "secondary"))
+        reqs.append(d)
+    return reqs
 
 
 def get_seeker_dashboard(conn, uid):
@@ -206,7 +227,6 @@ def get_seeker_dashboard(conn, uid):
         (uid,),
     ).fetchone()[0]
 
-    # 담당 매니저
     manager = conn.execute(
         "SELECT u.id, u.name FROM manager_assignments ma "
         "JOIN users u ON ma.manager_user_id = u.id "
@@ -215,8 +235,8 @@ def get_seeker_dashboard(conn, uid):
     ).fetchone()
 
     consult_requested = bool(conn.execute(
-        "SELECT 1 FROM notifications WHERE link=? LIMIT 1",
-        (f"/op/seekers/{uid}?from=consult_request",),
+        "SELECT 1 FROM consult_requests WHERE seeker_user_id=? AND status IN ('pending','accepted') LIMIT 1",
+        (uid,),
     ).fetchone())
 
     # 다가오는 일정
@@ -263,6 +283,9 @@ def get_seeker_dashboard(conn, uid):
     upcoming.sort(key=lambda x: x["sort_key"])
     upcoming = upcoming[:5]
 
+    consult_reqs = _get_active_consult_reqs(conn, uid)
+    notices = get_latest_notices(conn, "seeker")
+
     return dict(apps=apps, app_count=app_count, proposals=proposals,
                 open_jobs=open_jobs, has_profile=profile is not None,
                 bookmark_count=bookmark_count, profile_completeness=completeness,
@@ -272,7 +295,8 @@ def get_seeker_dashboard(conn, uid):
                 profile_view_count=profile_view_count,
                 recent_views_count=recent_views_count,
                 manager=manager, consult_requested=consult_requested,
-                upcoming_schedule=upcoming)
+                upcoming_schedule=upcoming,
+                consult_reqs=consult_reqs, notices=notices)
 
 
 def get_company_dashboard(conn, uid):
@@ -393,6 +417,28 @@ def get_company_dashboard(conn, uid):
               AND deadline >= date('now','localtime')
         """, (cid,)).fetchone()[0]
 
+        today_interviews = conn.execute(f"""
+            SELECT COUNT(*) FROM interview_schedules isc
+            JOIN candidacies c ON isc.candidacy_id=c.id
+            JOIN job_postings jp ON c.job_id=jp.id
+            WHERE jp.company_id=? {_filter}
+              AND isc.interview_date = date('now','localtime')
+        """, (cid,)).fetchone()[0]
+
+        duties_done = conn.execute("""
+            SELECT COUNT(*) FROM company_duties
+            WHERE company_id=? AND analysis_status='done'
+              AND analyzed_at >= datetime('now','localtime','-7 days')
+        """, (cid,)).fetchone()[0]
+
+        inquiries_answered = conn.execute("""
+            SELECT COUNT(*) FROM inquiries
+            WHERE user_id=? AND status='answered'
+              AND answered_at >= datetime('now','localtime','-7 days')
+        """, (uid,)).fetchone()[0]
+
+        notices = get_latest_notices(conn, "company")
+
         return dict(company=company, job_count=job_count, open_count=open_count,
                     total_applicants=total_applicants, pending_apps=pending_apps,
                     new_apps_this_week=new_apps_this_week, hired_count=hired_count,
@@ -403,7 +449,9 @@ def get_company_dashboard(conn, uid):
                     stage_colors=stage_colors,
                     job_stats=job_stats, conversion_rate=conversion_rate,
                     avg_days_to_hire=avg_days_to_hire, jobs_closing_soon=jobs_closing_soon,
-                    unread_count=unread_count, upcoming_interviews=upcoming_interviews)
+                    unread_count=unread_count, upcoming_interviews=upcoming_interviews,
+                    today_interviews=today_interviews, duties_done=duties_done,
+                    inquiries_answered=inquiries_answered, notices=notices)
     else:
         return dict(company=None, job_count=0, open_count=0,
                     total_applicants=0, pending_apps=0, new_apps_this_week=0,
@@ -412,7 +460,9 @@ def get_company_dashboard(conn, uid):
                     recent_apps=[], pipeline_stages=[], status_labels={},
                     stage_colors={}, job_stats=[], conversion_rate=0,
                     avg_days_to_hire=None, jobs_closing_soon=0,
-                    unread_count=0, upcoming_interviews=[])
+                    unread_count=0, upcoming_interviews=[],
+                    today_interviews=0, duties_done=0,
+                    inquiries_answered=0, notices=get_latest_notices(conn, "company"))
 
 
 def get_operator_dashboard(conn):
@@ -461,10 +511,20 @@ def get_operator_dashboard(conn):
 
     pipeline['dropped'] = pipeline.get('rejected', 0) + pipeline.get('withdrawn', 0)
 
+    urgent_items = []
+    if pending_companies > 0:
+        urgent_items.append({"label": "승인대기 기업", "url": "/op/companies?approval=pending", "count": pending_companies})
+    if pending_reviews > 0:
+        urgent_items.append({"label": "검토대기 공고", "url": "/op/jobs?status=pending_review", "count": pending_reviews})
+    if unassigned_seekers > 0:
+        urgent_items.append({"label": "미배정 구직자", "url": "/op/seekers", "count": unassigned_seekers})
+    if open_inquiries > 0:
+        urgent_items.append({"label": "미답변 문의", "url": "/op/inquiries?status=open", "count": open_inquiries})
+
     return dict(seeker_count=seeker_count, company_count=company_count,
                 open_jobs=open_jobs, pending_reviews=pending_reviews,
                 pipeline=pipeline, pending_companies=pending_companies,
                 weekly_registrations=weekly_registrations,
                 placement_count=placement_count,
                 unassigned_seekers=unassigned_seekers,
-                open_inquiries=open_inquiries)
+                open_inquiries=open_inquiries, urgent_items=urgent_items)

@@ -2,11 +2,16 @@ import json
 from typing import Optional
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
+from core.bizno import check_bizno
 from core.db import get_sqlite
 from core.deps import require_role, templates
-from core.constants import COMPANY_SIZES, INDUSTRY_TYPES, ACCOMMODATION_OPTIONS
+from core.constants import (
+    COMPANY_SIZES, INDUSTRY_TYPES, ACCOMMODATION_OPTIONS, ESG_ITEMS,
+    COMPANY_APPROVAL_LABELS, COMPANY_APPROVAL_BADGE,
+)
 from core.notifications import create_notification
 from core.upload import save_upload
+from core.levy import calc_levy
 
 router = APIRouter(prefix="/company")
 
@@ -16,8 +21,23 @@ BENEFIT_OPTIONS = [
 ]
 
 
+def env_badges(company):
+    badges = []
+    if company["remote_ok"]:
+        badges.append("재택근무 가능")
+    if company["flexible_ok"]:
+        badges.append("유연근무 가능")
+    if company["shared_office_ok"]:
+        badges.append("공유오피스 연계 가능")
+    return badges
+
+
+def esg_badges(company):
+    return json.loads(company["esg_items"])
+
+
 @router.get("/profile", response_class=HTMLResponse)
-async def company_profile_form(request: Request, success: str = ""):
+async def company_profile_form(request: Request, success: str = "", error: str = ""):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
@@ -25,6 +45,7 @@ async def company_profile_form(request: Request, success: str = ""):
         selected_sido = ""
         accessibility_facilities = []
         selected_benefits = []
+        selected_esg = []
         photos = []
         if company:
             if company["region_id"]:
@@ -36,23 +57,31 @@ async def company_profile_form(request: Request, success: str = ""):
             if company["benefits"]:
                 try:
                     parsed = json.loads(company["benefits"])
-                    # 레거시 텍스트 호환
+                    # 레거시 텍스트 형식과 호환하기 위함
                     if isinstance(parsed, list):
                         selected_benefits = parsed
                 except (json.JSONDecodeError, ValueError):
                     pass
+            selected_esg = json.loads(company["esg_items"])
             photos = conn.execute(
                 "SELECT * FROM company_photos WHERE company_id=? ORDER BY sort_order, id",
                 (company["id"],)
             ).fetchall()
+        rates_rows = conn.execute("SELECT rate_type, amount FROM levy_rates WHERE year=2026").fetchall()
+        rates = {r["rate_type"]: r["amount"] for r in rates_rows}
     finally:
         conn.close()
     approval_status = company["approval_status"] if company else "pending"
+    levy = calc_levy(
+        company["employee_count"] if company else 0,
+        company["disabled_count"] if company else 0,
+        rates,
+    )
     return templates.TemplateResponse(
         request=request, name="company/profile_form.html", context={
             "request": request, "page_title": "기업 정보",
             "user_name": user["name"], "user_role": "company",
-            "company": company, "success": success,
+            "company": company, "success": success, "error": error,
             "selected_sido": selected_sido,
             "company_sizes": COMPANY_SIZES,
             "industry_types": INDUSTRY_TYPES,
@@ -61,7 +90,12 @@ async def company_profile_form(request: Request, success: str = ""):
             "approval_status": approval_status,
             "benefit_options": BENEFIT_OPTIONS,
             "selected_benefits": selected_benefits,
+            "esg_items_options": ESG_ITEMS,
+            "selected_esg": selected_esg,
+            "levy": levy,
             "photos": photos,
+            "approval_label": COMPANY_APPROVAL_LABELS.get(approval_status, approval_status),
+            "approval_badge": COMPANY_APPROVAL_BADGE.get(approval_status, "bg-secondary"),
         }
     )
 
@@ -93,10 +127,26 @@ async def company_profile_save(
     hr_email: str = Form(""),
     tagline: str = Form(""),
     description: str = Form(""),
+    remote_ok: str = Form(None),
+    flexible_ok: str = Form(None),
+    shared_office_ok: str = Form(None),
+    work_env_note: str = Form(""),
+    esg_note: str = Form(""),
     logo: Optional[UploadFile] = File(None),
     biz_doc: Optional[UploadFile] = File(None),
 ):
     user = require_role(request, "company")
+    biz_no = biz_no.strip()
+    conn = get_sqlite()
+    try:
+        prev = conn.execute("SELECT biz_no FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+    finally:
+        conn.close()
+    # 신규 입력 또는 변경된 번호만 검증함. API 미설정이나 장애 시에는 운영자 승인 단계에서 사업자등록증으로 확인함
+    if biz_no and (not prev or prev["biz_no"] != biz_no):
+        if await check_bizno(biz_no) is False:
+            return RedirectResponse(url="/company/profile?error=bizno", status_code=303)
+
     form = await request.form()
     hiring_exp_val = 1 if hiring_experience in ("1", "on", "true") else 0
     accessibility_facilities = json.dumps(form.getlist("accessibility_facilities"), ensure_ascii=False)
@@ -104,6 +154,14 @@ async def company_profile_save(
     photos = form.getlist("photos")
 
     tagline = tagline[:20]
+    work_env_note = work_env_note[:1000]
+    esg_note = esg_note[:1000]
+    remote_ok_val = 1 if remote_ok else 0
+    flexible_ok_val = 1 if flexible_ok else 0
+    shared_office_ok_val = 1 if shared_office_ok else 0
+    esg_items = json.dumps(
+        [v for v in form.getlist("esg_items") if v in ESG_ITEMS], ensure_ascii=False
+    )
 
     logo_path = ""
     if logo and logo.filename:
@@ -140,6 +198,7 @@ async def company_profile_save(
                 contact_phone=?, contact_email=?,
                 hr_name=?, hr_position=?, hr_phone=?, hr_email=?,
                 tagline=?, description=?,
+                esg_items=?, esg_note=?, remote_ok=?, flexible_ok=?, shared_office_ok=?, work_env_note=?,
                 updated_at=datetime('now','localtime')
                 WHERE user_id=?""",
                 (company_name, biz_no, industry, employee_count, disabled_count,
@@ -150,10 +209,11 @@ async def company_profile_save(
                  contact_phone, contact_email,
                  hr_name, hr_position, hr_phone, hr_email,
                  tagline, description,
+                 esg_items, esg_note, remote_ok_val, flexible_ok_val, shared_office_ok_val, work_env_note,
                  user["id"]))
             company_id = existing["id"]
 
-            # 핵심 정보 변경 시 인증 재심사
+            # 핵심 정보 변경 시 인증을 재심사함
             if existing["approval_status"] == "approved":
                 changed = (
                     existing["company_name"] != company_name
@@ -172,6 +232,7 @@ async def company_profile_save(
                             conn, op["id"],
                             f"[{company_name}] 기업 핵심정보가 수정되어 재심사가 필요합니다.",
                             f"/op/companies/{company_id}",
+                            kind="system",
                         )
         else:
             cur = conn.execute("""INSERT INTO companies
@@ -182,8 +243,9 @@ async def company_profile_save(
                  ceo, est_year, biz_type, address, biz_doc_path,
                  contact_phone, contact_email,
                  hr_name, hr_position, hr_phone, hr_email,
-                 tagline, description)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                 tagline, description,
+                 esg_items, esg_note, remote_ok, flexible_ok, shared_office_ok, work_env_note)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (user["id"], company_name, biz_no, industry, employee_count, disabled_count,
                  region_id, intro, website, company_size,
                  accessibility_facilities, accessibility_note,
@@ -191,7 +253,8 @@ async def company_profile_save(
                  ceo, est_year_val, biz_type, address, biz_doc_path,
                  contact_phone, contact_email,
                  hr_name, hr_position, hr_phone, hr_email,
-                 tagline, description))
+                 tagline, description,
+                 esg_items, esg_note, remote_ok_val, flexible_ok_val, shared_office_ok_val, work_env_note))
             company_id = cur.lastrowid
 
         delete_ids = form.getlist("delete_photo")

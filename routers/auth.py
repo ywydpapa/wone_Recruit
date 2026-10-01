@@ -1,16 +1,23 @@
+import asyncio
+import hashlib
 import json
+import os
 import secrets
 import sqlite3
+from urllib.parse import quote
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.constants import PURPOSE_LABELS
 from core.db import get_sqlite
 from core.deps import check_login, require_role, templates
+from core.mail import send_mail
 from core.rate_limit import check_login_rate, record_login_attempt, clear_login_attempts, get_client_ip
-from core.security import hash_password, verify_password, MIN_PASSWORD_LENGTH
+from core.security import check_password, hash_password, verify_password
 
 router = APIRouter()
+
+RESET_TTL_MIN = 30
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -55,13 +62,13 @@ async def login_check(request: Request, username: str = Form(...), password: str
 
 
 @router.get("/forgot-password", response_class=HTMLResponse)
-async def forgot_password_page(request: Request, error: str = ""):
+async def forgot_password_page(request: Request, error: str = "", sent: str = ""):
     if check_login(request):
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse(
         request=request, name="login/forgot_password.html", context={
             "request": request, "page_title": "비밀번호 찾기",
-            "error": error, "temp_pw": "",
+            "error": error, "sent": sent,
         }
     )
 
@@ -70,32 +77,107 @@ async def forgot_password_page(request: Request, error: str = ""):
 async def forgot_password_submit(
     request: Request,
     username: str = Form(...),
-    name: str = Form(...),
-    phone: str = Form(...),
+    email: str = Form(...),
 ):
+    key = "reset:" + get_client_ip(request)
+    if check_login_rate(key):
+        return RedirectResponse(url="/forgot-password?error=rate_limit", status_code=303)
+    record_login_attempt(key)
+
+    email = email.strip()
     conn = get_sqlite()
     try:
         row = conn.execute(
-            "SELECT id, is_deleted, role FROM users WHERE username=? AND name=? AND phone=?",
-            (username, name, phone),
+            "SELECT id, role FROM users WHERE username=? AND LOWER(email)=LOWER(?) AND email<>'' AND is_deleted=0",
+            (username.strip(), email),
         ).fetchone()
-        if not row:
-            return RedirectResponse(url="/forgot-password?error=not_found", status_code=303)
-        if row["is_deleted"]:
-            return RedirectResponse(url="/forgot-password?error=deleted", status_code=303)
-        if row["role"] == "manager":
+        if row and row["role"] == "manager":
             return RedirectResponse(url="/forgot-password?error=manager", status_code=303)
-        temp_pw = secrets.token_urlsafe(8)
-        conn.execute("UPDATE users SET password=? WHERE id=?", (hash_password(temp_pw), row["id"]))
-        conn.commit()
+        token = None
+        if row:
+            token = secrets.token_urlsafe(32)
+            conn.execute(
+                "UPDATE password_resets SET used_at=datetime('now','localtime') WHERE user_id=? AND used_at IS NULL",
+                (row["id"],),
+            )
+            conn.execute(
+                "INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?,?,datetime('now','localtime',?))",
+                (row["id"], _hash_token(token), f"+{RESET_TTL_MIN} minutes"),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+    # 계정 존재 여부가 드러나지 않도록 결과와 관계없이 동일하게 안내함
+    if token:
+        base = os.getenv("BASE_URL") or str(request.base_url)
+        link = f"{base.rstrip('/')}/reset-password?token={token}"
+        await asyncio.to_thread(
+            send_mail, email, "[WONE Recruit] 비밀번호 재설정 안내",
+            f"아래 링크에서 새 비밀번호를 설정해 주세요. 링크는 {RESET_TTL_MIN}분 동안 한 번만 사용할 수 있습니다.\n\n"
+            f"{link}\n\n"
+            "본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.",
+        )
+    return RedirectResponse(url="/forgot-password?sent=1", status_code=303)
+
+
+def _hash_token(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _find_reset(conn, token):
+    return conn.execute(
+        "SELECT id, user_id FROM password_resets "
+        "WHERE token_hash=? AND used_at IS NULL AND expires_at > datetime('now','localtime')",
+        (_hash_token(token),),
+    ).fetchone()
+
+
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request, token: str = "", error: str = ""):
+    conn = get_sqlite()
+    try:
+        valid = bool(token) and _find_reset(conn, token) is not None
     finally:
         conn.close()
     return templates.TemplateResponse(
-        request=request, name="login/forgot_password.html", context={
-            "request": request, "page_title": "비밀번호 찾기",
-            "error": "", "temp_pw": temp_pw,
+        request=request, name="login/reset_password.html", context={
+            "request": request, "page_title": "비밀번호 재설정",
+            "token": token, "valid": valid, "error": error,
         }
     )
+
+
+@router.post("/reset-password")
+async def reset_password_submit(
+    request: Request,
+    token: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+):
+    back = f"/reset-password?token={quote(token)}"
+    if new_password != confirm_password:
+        return RedirectResponse(url=back + "&error=mismatch", status_code=303)
+    pw_err = check_password(new_password)
+    if pw_err:
+        return RedirectResponse(url=f"{back}&error={pw_err}", status_code=303)
+    conn = get_sqlite()
+    try:
+        rst = _find_reset(conn, token)
+        if not rst:
+            return RedirectResponse(url=back, status_code=303)
+        conn.execute(
+            "UPDATE users SET password=?, must_change_password=0 WHERE id=?",
+            (hash_password(new_password), rst["user_id"]),
+        )
+        conn.execute(
+            "UPDATE password_resets SET used_at=datetime('now','localtime') WHERE user_id=? AND used_at IS NULL",
+            (rst["user_id"],),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url="/login?reset=1", status_code=303)
 
 
 @router.get("/change-password", response_class=HTMLResponse)
@@ -120,8 +202,9 @@ async def change_password_submit(
         return RedirectResponse(url="/login", status_code=303)
     if new_password != confirm_password:
         return RedirectResponse(url="/change-password?error=mismatch", status_code=303)
-    if len(new_password) < MIN_PASSWORD_LENGTH:
-        return RedirectResponse(url="/change-password?error=short", status_code=303)
+    pw_err = check_password(new_password)
+    if pw_err:
+        return RedirectResponse(url=f"/change-password?error={pw_err}", status_code=303)
     uid = request.session["id"]
     conn = get_sqlite()
     try:
@@ -156,6 +239,7 @@ async def signup_submit(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    confirm_password: str = Form(...),
     name: str = Form(...),
     phone: str = Form(""),
     email: str = Form(""),
@@ -168,6 +252,14 @@ async def signup_submit(
         return RedirectResponse(url="/signup?error=invalid_role", status_code=303)
     if not agree_terms or not agree_privacy:
         return RedirectResponse(url="/signup?error=agree_required", status_code=303)
+    email = email.strip()
+    if "@" not in email:
+        return RedirectResponse(url="/signup?error=email_required", status_code=303)
+    if password != confirm_password:
+        return RedirectResponse(url="/signup?error=mismatch", status_code=303)
+    pw_err = check_password(password)
+    if pw_err:
+        return RedirectResponse(url=f"/signup?error={pw_err}", status_code=303)
     from datetime import datetime
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     marketing_at = now if agree_marketing else None
@@ -188,11 +280,19 @@ async def signup_submit(
 @router.get("/account/mypage", response_class=HTMLResponse)
 async def mypage(request: Request):
     user = require_role(request, "seeker", "company", "operator", "manager")
+    conn = get_sqlite()
+    try:
+        row = conn.execute(
+            "SELECT username, name, email, phone FROM users WHERE id=?", (user["id"],)
+        ).fetchone()
+    finally:
+        conn.close()
     return templates.TemplateResponse(
         request=request, name="account/mypage.html", context={
             "request": request, "page_title": "마이페이지",
             "user_name": user.get("name", ""),
             "user_role": user.get("role", "seeker"),
+            "account": row,
         }
     )
 
@@ -221,8 +321,9 @@ async def password_change_submit(
     user = require_role(request, "seeker", "company", "operator", "manager")
     if new_password != confirm_password:
         return RedirectResponse(url="/account/password?error=mismatch", status_code=303)
-    if len(new_password) < MIN_PASSWORD_LENGTH:
-        return RedirectResponse(url="/account/password?error=short", status_code=303)
+    pw_err = check_password(new_password)
+    if pw_err:
+        return RedirectResponse(url=f"/account/password?error={pw_err}", status_code=303)
     if current_password == new_password:
         return RedirectResponse(url="/account/password?error=same", status_code=303)
     conn = get_sqlite()
@@ -412,7 +513,8 @@ async def data_download(request: Request):
     }
     name = (user.get("name") or "data").replace(" ", "_")
     resp = JSONResponse(content=payload)
-    resp.headers["Content-Disposition"] = f'attachment; filename="{name}_data.json"'
+    # 한글 파일명은 헤더에 그대로 넣을 수 없어 RFC 5987 형식을 사용함
+    resp.headers["Content-Disposition"] = f"attachment; filename=\"data.json\"; filename*=UTF-8''{quote(name + '_data.json')}"
     return resp
 
 

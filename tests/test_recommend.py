@@ -30,7 +30,7 @@ def test_recommended_excludes_applied_jobs(client):
     login(client, "seeker1")
     conn = get_sqlite()
     uid = conn.execute("SELECT id FROM users WHERE username='seeker1'").fetchone()["id"]
-    # seeker1은 시드에서 job 1에 이미 지원
+    # seeker1은 시드에서 job 1에 이미 지원한 상태임
     applied_job_ids = set(
         r["job_id"] for r in conn.execute(
             "SELECT job_id FROM candidacies WHERE seeker_user_id=?", (uid,)

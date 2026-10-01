@@ -20,7 +20,7 @@ def test_apply_submit(client):
 
 def test_apply_duplicate_blocked(client):
     login(client, "seeker1")
-    # seeker1은 시드에서 job 1에 이미 지원
+    # seeker1은 시드에서 job 1에 이미 지원한 상태임
     r = client.post("/apply/1", data={"cover_letter": "다시 지원"}, follow_redirects=False)
     assert r.status_code == 303
 
@@ -71,7 +71,7 @@ def test_company_status_change(client):
 
 def test_candidacy_transition_logic():
     from core.candidacy import can_transition
-    # conn=None이면 기본 파이프라인으로 검증
+    # conn=None이면 기본 파이프라인 기준으로 검증함
     assert can_transition("pending", "reviewing")
     assert can_transition("pending", "rejected")
     assert not can_transition("pending", "hired")

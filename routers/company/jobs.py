@@ -4,7 +4,7 @@ from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
-from core.constants import EMPLOYMENT_TYPES, ACCOMMODATION_OPTIONS
+from core.constants import EMPLOYMENT_TYPES, ACCOMMODATION_OPTIONS, JOB_STATUS_LABELS, JOB_STATUS_BADGE
 from core.pagination import page_info, PER_PAGE
 
 router = APIRouter(prefix="/company")
@@ -25,7 +25,6 @@ async def job_list(
             return RedirectResponse(url="/company/profile", status_code=303)
         approval = company["approval_status"]
 
-        # 탭별 카운트
         tab_count_params = [company["id"]]
         tab_count_where = "jp.company_id=?"
         if q and q.strip():
@@ -90,24 +89,36 @@ async def job_list(
             "jobs": jobs, "q": q or "", "selected_status": status or "",
             "pagination": pagination, "base_qs": base_qs,
             "approval": approval, "tab_counts": tab_counts,
+            "job_status_labels": JOB_STATUS_LABELS, "job_status_badge": JOB_STATUS_BADGE,
         }
     )
 
 
 @router.get("/jobs/new", response_class=HTMLResponse)
-async def job_new_form(request: Request):
+async def job_new_form(request: Request, duty_id: Optional[int] = Query(None)):
     user = require_role(request, "company")
     conn = get_sqlite()
     try:
         categories = conn.execute("SELECT * FROM job_categories ORDER BY major_code, minor_code").fetchall()
         disability_types = conn.execute("SELECT * FROM disability_types ORDER BY id").fetchall()
+        duty_prefill = {}
+        if duty_id:
+            company = conn.execute("SELECT * FROM companies WHERE user_id=?", (user["id"],)).fetchone()
+            duty = company and conn.execute(
+                "SELECT * FROM company_duties WHERE id=? AND company_id=?", (duty_id, company["id"])
+            ).fetchone()
+            if duty:
+                duty_prefill = {
+                    "title": duty["title"], "category_id": duty["category_id"],
+                    "tasks": duty["tasks"], "tools": duty["tools"],
+                }
     finally:
         conn.close()
     return templates.TemplateResponse(
         request=request, name="company/job_form.html", context={
             "request": request, "page_title": "새 공고 작성",
             "user_name": user["name"], "user_role": "company",
-            "job": None,
+            "job": None, "duty_prefill": duty_prefill,
             "selected_sido": "",
             "employment_types": EMPLOYMENT_TYPES,
             "categories": categories,

@@ -37,7 +37,10 @@ def get_stage_labels(conn, company_id):
 
 
 def get_stage_color_map(conn, company_id):
-    return {key: color for key, label, color in get_pipeline_display(conn, company_id)}
+    colors = {key: color for key, label, color in get_pipeline_display(conn, company_id)}
+    colors["rejected"] = "danger"
+    colors["withdrawn"] = "secondary"
+    return colors
 
 
 def get_next_statuses(conn, company_id, current):
@@ -115,6 +118,7 @@ def apply_transition(conn, candidacy_id, target, actor_id, comment=""):
             conn, cand["seeker_user_id"],
             f"[{job_title}] 지원 상태가 '{label}'(으)로 변경되었습니다.",
             "/applications",
+            kind="apply",
         )
     conn.commit()
     return True

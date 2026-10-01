@@ -29,7 +29,7 @@ def test_profile_reject_non_pdf_resume(client):
     }, files={"resume": ("image.jpg", io.BytesIO(b"fake image"), "image/jpeg")},
     follow_redirects=False)
     assert r.status_code == 303
-    # PDF 아닌 파일은 저장 안됨
+    # PDF가 아닌 파일은 저장되지 않음
     r = client.get("/profile")
     assert "이력서 보기" not in r.text
 

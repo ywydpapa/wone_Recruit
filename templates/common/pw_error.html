@@ -1,0 +1,13 @@
+{% if error == 'short' %}
+<div class="alert alert-danger py-2 small mb-3" role="alert">비밀번호는 12자 이상이어야 합니다.</div>
+{% elif error == 'space' %}
+<div class="alert alert-danger py-2 small mb-3" role="alert">비밀번호에 띄어쓰기는 사용할 수 없습니다.</div>
+{% elif error == 'charset' %}
+<div class="alert alert-danger py-2 small mb-3" role="alert">비밀번호는 영문, 숫자, 특수문자만 사용할 수 있습니다.</div>
+{% elif error == 'weak' %}
+<div class="alert alert-danger py-2 small mb-3" role="alert">영문, 숫자, 특수문자 중 2종류 이상을 섞어 주세요.</div>
+{% elif error == 'common' %}
+<div class="alert alert-danger py-2 small mb-3" role="alert">너무 흔하거나 단순한 비밀번호입니다. 다른 비밀번호를 사용해 주세요.</div>
+{% elif error == 'mismatch' %}
+<div class="alert alert-danger py-2 small mb-3" role="alert">비밀번호가 일치하지 않습니다.</div>
+{% endif %}

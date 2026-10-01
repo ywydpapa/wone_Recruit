@@ -18,7 +18,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2" aria-hidden="true"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -27,53 +27,39 @@
 </div>
 
 <div class="container">
-    <div class="content-card">
+    <section class="home-section" aria-labelledby="inqTitle">
+        <div class="home-section-head">
+            <h2 id="inqTitle">문의 목록</h2>
+        </div>
         {% if inquiries %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <caption class="visually-hidden">문의 목록</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">상태</th>
-                        <th scope="col">분류</th>
-                        <th scope="col">제목</th>
-                        <th scope="col">작성자</th>
-                        <th scope="col">유형</th>
-                        <th scope="col">등록일</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for inq in inquiries %}
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>
-                        {% if inq['status'] == 'open' %}
-                        <span class="badge bg-warning text-dark">미답변</span>
-                        {% elif inq['status'] == 'answered' %}
-                        <span class="badge bg-success">답변완료</span>
-                        {% else %}
-                        <span class="badge bg-secondary">종료</span>
-                        {% endif %}
-                    </td>
+                    <th>상태</th>
+                    <th>분류</th>
+                    <th>제목</th>
+                    <th>작성자</th>
+                    <th>유형</th>
+                    <th>등록일</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for inq in inquiries %}
+                <tr>
+                    <td><span class="badge {{ status_badge.get(inq['status'], 'bg-secondary') }}">{{ status_labels.get(inq['status'], inq['status']) }}</span></td>
                     <td>{{ inq['category'] or '-' }}</td>
-                    <td><a href="/op/inquiries/{{ inq['id'] }}" class="link-plain">{{ inq['subject'] }}</a></td>
+                    <td><a href="/op/inquiries/{{ inq['id'] }}">{{ inq['subject'] }}</a></td>
                     <td>{{ inq['user_name'] }}</td>
-                    <td>
-                        {% if inq['user_role'] == 'seeker' %}
-                        <span class="badge bg-info text-dark">구직자</span>
-                        {% else %}
-                        <span class="badge bg-primary">기업</span>
-                        {% endif %}
-                    </td>
+                    <td>{{ role_labels.get(inq['user_role'], inq['user_role']) }}</td>
                     <td>{{ inq['created_at']|fdate }}</td>
                 </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            {% endfor %}
+            </tbody>
+        </table>
         {% include "common/pagination.html" %}
         {% else %}
-        <p class="text-muted text-center py-4 mb-0">문의가 없습니다.</p>
+        <p class="home-empty">문의가 없습니다.</p>
         {% endif %}
-    </div>
+    </section>
 </div>
 {% endblock %}

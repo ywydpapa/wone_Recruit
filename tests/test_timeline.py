@@ -21,7 +21,6 @@ def test_timeline_shows_status_labels(client):
     login(client, "seeker1")
     r = client.get("/applications")
     assert r.status_code == 200
-    # 상태 라벨: pending=접수, reviewing=검토중 등
     assert "접수" in r.text
 
 

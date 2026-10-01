@@ -1,12 +1,12 @@
 from fastapi import APIRouter
 from routers.company import (
     profile, jobs, job_edit, applicants, applicant_actions,
-    talents, calendar, recommendations, levy, job_report,
+    talents, calendar, recommendations, levy, job_report, duties,
 )
 
 router = APIRouter()
 for mod in [profile, jobs, job_edit, applicants, applicant_actions,
-            talents, calendar, recommendations, levy, job_report]:
+            talents, calendar, recommendations, levy, job_report, duties]:
     router.include_router(mod.router)
 
 api_router = talents.api_router

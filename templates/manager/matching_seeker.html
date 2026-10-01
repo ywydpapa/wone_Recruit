@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>{{ page_title }}</h2></div>
+
+<div class="container">
+    <div class="content-card mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-1">{{ seeker['name'] }}</h5>
+                <span class="text-muted small">{{ seeker['disability_name'] or '-' }} &middot; {{ seeker['desired_job'] or '-' }} &middot; {{ seeker|region('-') }}</span>
+            </div>
+            <a href="/mgr/matching" class="btn btn-outline-secondary btn-sm">공고로 매칭</a>
+        </div>
+    </div>
+
+    {% if jobs is none %}
+    <p class="home-empty">개인정보 활용 동의가 없어 매칭 결과를 볼 수 없습니다.</p>
+    {% else %}
+    <section class="home-section" aria-labelledby="recTitle">
+        <div class="home-section-head">
+            <h2 id="recTitle">추천 공고 ({{ jobs|length }}건)</h2>
+        </div>
+        {% if jobs %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>공고명</th>
+                        <th>기업</th>
+                        <th>지역</th>
+                        <th>근무시간</th>
+                        <th>매칭</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for j in jobs %}
+                    {% set comp = scores[j['id']] %}
+                    <tr>
+                        <td class="fw-semibold">{{ j['title'] }}</td>
+                        <td>{{ j['company_name'] }}</td>
+                        <td>
+                            {{ j|region('-') }}
+                            {% if comp.region %}<span class="text-success small">(일치)</span>{% endif %}
+                        </td>
+                        <td>
+                            {{ j['min_work_hours'] }}시간
+                            {% if comp.hours %}<span class="text-success small">(충족)</span>{% endif %}
+                        </td>
+                        <td>
+                            <div>
+                                <span class="badge bg-primary">적합도 {{ comp.score }}</span>
+                                {% if comp.fit_label %}<span class="badge bg-secondary">{{ comp.fit_label }}</span>{% endif %}
+                                {% if comp.target %}<span class="badge bg-info text-dark">희망 직무</span>{% endif %}
+                            </div>
+                            <div class="small mt-1">
+                                편의 {{ comp.met|length }}/{{ comp.met|length + comp.missing|length }} 충족 &middot;
+                                {% if comp.device %}보조기기 지원 가능{% else %}보조기기 미확인{% endif %}
+                            </div>
+                            {% if comp.missing %}
+                            <div class="text-muted small">미충족: {{ comp.missing|join(', ') }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="/mgr/matching/propose" class="d-inline">
+                                {{ csrf_input }}
+                                <input type="hidden" name="job_id" value="{{ j['id'] }}">
+                                <input type="hidden" name="seeker_user_id" value="{{ seeker['id'] }}">
+                                <button type="submit" class="btn btn-primary btn-sm">매칭 제안</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="home-empty">추천할 공고가 없습니다.</p>
+        {% endif %}
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

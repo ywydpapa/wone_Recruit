@@ -5,6 +5,8 @@ python-multipart
 python-dotenv
 bcrypt
 itsdangerous
-alembic
 pytest
 httpx
+faster-whisper
+supertonic
+soundfile

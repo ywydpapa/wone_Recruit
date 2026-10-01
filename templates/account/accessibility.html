@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}접근성 설정 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>접근성 설정</h2></div>
+<div class="container">
+    <div class="content-card narrow-form-lg a11y-settings">
+
+        {% if success %}
+        <div class="alert alert-success" role="alert">접근성 설정이 저장되었습니다.</div>
+        {% endif %}
+
+        <p class="text-muted small mb-4">이 화면의 설정은 화면 오른쪽 아래 접근성 도구에도 동일하게 적용됩니다.</p>
+
+        <form method="post" action="/account/accessibility">
+            {{ csrf_input }}
+
+            <fieldset class="a11y-form-section">
+                <legend>화면</legend>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_high_contrast" name="high_contrast" {% if a11y.get('high_contrast') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_high_contrast">고대비</label>
+                    <small class="text-muted d-block">배경과 글자의 명암 대비를 높여 표시합니다.</small>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label d-block">글자 크기</span>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="font_size" id="af_font_100" value="100" {% if a11y.get('font_size', 100) == 100 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_font_100">보통</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="font_size" id="af_font_150" value="150" {% if a11y.get('font_size', 100) == 150 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_font_150">150%</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="font_size" id="af_font_200" value="200" {% if a11y.get('font_size', 100) == 200 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_font_200">200%</label>
+                    </div>
+                    <small class="text-muted">화면 전체의 글자 크기를 조절합니다.</small>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_large_target" name="large_target" {% if a11y.get('large_target') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_large_target">큰 조작 영역</label>
+                    <small class="text-muted d-block">버튼과 링크의 선택 영역을 넓혀 표시합니다.</small>
+                </div>
+
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_easy_mode" name="easy_mode" {% if a11y.get('easy_mode') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_easy_mode">쉬운 화면</label>
+                    <small class="text-muted d-block">줄 간격을 넓히고 사용 빈도가 낮은 메뉴를 숨겨 화면을 간결하게 표시합니다.</small>
+                </div>
+            </fieldset>
+
+            <fieldset class="a11y-form-section">
+                <legend>조작</legend>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_head_mouse" name="head_mouse" {% if a11y.get('head_mouse') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_head_mouse">머리로 조작</label>
+                    <small class="text-muted d-block">카메라로 머리 움직임을 인식하여 마우스 대신 화면을 조작합니다.</small>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label d-block">응시 클릭 시간</span>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="dwell_ms" id="af_dwell_1000" value="1000" {% if a11y.get('dwell_ms', 1500) == 1000 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_dwell_1000">1초</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="dwell_ms" id="af_dwell_1500" value="1500" {% if a11y.get('dwell_ms', 1500) == 1500 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_dwell_1500">1.5초</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="dwell_ms" id="af_dwell_2000" value="2000" {% if a11y.get('dwell_ms', 1500) == 2000 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_dwell_2000">2초</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="dwell_ms" id="af_dwell_3000" value="3000" {% if a11y.get('dwell_ms', 1500) == 3000 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_dwell_3000">3초</label>
+                    </div>
+                    <small class="text-muted">머리로 조작할 때 한 곳을 바라본 후 클릭이 실행되기까지의 시간입니다.</small>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label d-block">입력 지연시간</span>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="input_delay" id="af_delay_0" value="0" {% if a11y.get('input_delay', 0) == 0 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_delay_0">사용 안 함</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="input_delay" id="af_delay_500" value="500" {% if a11y.get('input_delay', 0) == 500 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_delay_500">0.5초</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="input_delay" id="af_delay_1000" value="1000" {% if a11y.get('input_delay', 0) == 1000 %}checked{% endif %}>
+                        <label class="form-check-label" for="af_delay_1000">1초</label>
+                    </div>
+                    <small class="text-muted">손 떨림 등으로 클릭이 연속 입력되는 경우, 설정한 시간 동안 이어지는 클릭을 무시합니다.</small>
+                </div>
+            </fieldset>
+
+            <fieldset class="a11y-form-section">
+                <legend>음성</legend>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_click_read" name="click_read" {% if a11y.get('click_read') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_click_read">클릭 읽기</label>
+                    <small class="text-muted d-block">버튼이나 링크를 클릭하면 해당 내용을 음성으로 안내합니다.</small>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_voice_auto" name="voice_auto" aria-describedby="af_voice_auto_help" {% if a11y.get('voice_auto') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_voice_auto">음성 명령 항상 켜기</label>
+                    <small class="text-muted d-block" id="af_voice_auto_help">로그인하거나 새 창을 열 때 음성 명령 대기 상태로 시작합니다. 화면의 마이크 버튼 또는 Alt+V로 켜고 끌 수 있습니다.</small>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="af_sr_mode" name="sr_mode" aria-describedby="af_sr_mode_help" {% if a11y.get('sr_mode') %}checked{% endif %}>
+                    <label class="form-check-label" for="af_sr_mode">스크린리더 모드</label>
+                    <small class="text-muted d-block" id="af_sr_mode_help">NVDA, 보이스오버 등 스크린리더 사용 시 설정합니다. 사이트 자체 음성 안내 대신 스크린리더가 안내를 읽으며, 스크린리더 소리가 마이크에 입력되지 않도록 헤드셋 사용을 권장합니다.</small>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label d-block">음성 종류</span>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tts_voice" id="af_voice_f1" value="F1" {% if a11y.get('tts_voice', 'F1') == 'F1' %}checked{% endif %}>
+                        <label class="form-check-label" for="af_voice_f1">여성</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tts_voice" id="af_voice_m1" value="M1" {% if a11y.get('tts_voice', 'F1') == 'M1' %}checked{% endif %}>
+                        <label class="form-check-label" for="af_voice_m1">남성</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label d-block">읽기 속도</span>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tts_speed" id="af_speed_slow" value="slow" {% if a11y.get('tts_speed', 'normal') == 'slow' %}checked{% endif %}>
+                        <label class="form-check-label" for="af_speed_slow">느리게</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tts_speed" id="af_speed_normal" value="normal" {% if a11y.get('tts_speed', 'normal') == 'normal' %}checked{% endif %}>
+                        <label class="form-check-label" for="af_speed_normal">보통</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tts_speed" id="af_speed_fast" value="fast" {% if a11y.get('tts_speed', 'normal') == 'fast' %}checked{% endif %}>
+                        <label class="form-check-label" for="af_speed_fast">빠르게</label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="btn btn-primary">저장</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

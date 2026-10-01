@@ -7,8 +7,11 @@ from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.constants import EMPLOYMENT_TYPES, COMPANY_SIZES, INDUSTRY_TYPES
 from core.pagination import page_info, PER_PAGE
+from routers.company.profile import env_badges as build_env_badges, esg_badges as build_esg_badges
 
 router = APIRouter()
+
+JOB_STATUS_LABELS = {"open": "게시중", "closed": "마감", "rejected": "반려", "pending": "심사중"}
 
 
 @router.get("/companies", response_class=HTMLResponse)
@@ -118,6 +121,8 @@ async def mgr_company_detail(request: Request, company_id: int):
             "company": company,
             "active_jobs": active_jobs,
             "placed_count": placed_count,
+            "env_badges": build_env_badges(company),
+            "esg_badges": build_esg_badges(company),
             "reviews": reviews,
             "avg_rating": avg_rating,
         }
@@ -162,10 +167,14 @@ async def mgr_jobs(
         page = max(1, page)
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
-        jobs = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
         pagination = page_info(total, page)
     finally:
         conn.close()
+    jobs = [
+        {**dict(j), "status_label": JOB_STATUS_LABELS.get(j["status"], j["status"])}
+        for j in rows
+    ]
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
     if status: qs_parts.append(f"status={status}")
@@ -211,6 +220,10 @@ async def mgr_job_detail(request: Request, job_id: int):
             return HTMLResponse(status_code=404)
         accommodations_provided = json.loads(job["accommodations_provided"]) if job["accommodations_provided"] else []
         preferred_disability = json.loads(job["preferred_disability"]) if job["preferred_disability"] else []
+        if not preferred_disability and job["preferred_severity"] == "무관":
+            support_label = "전체 장애유형 지원 가능"
+        else:
+            support_label = "특정 장애유형 우대"
         applicant_count = conn.execute(
             "SELECT COUNT(*) FROM candidacies WHERE job_id=?", (job_id,)
         ).fetchone()[0]
@@ -232,6 +245,7 @@ async def mgr_job_detail(request: Request, job_id: int):
             "job": job,
             "accommodations_provided": accommodations_provided,
             "preferred_disability": preferred_disability,
+            "support_label": support_label,
             "seeker_needs": [],
             "is_bookmarked": False,
             "similar_jobs": [],

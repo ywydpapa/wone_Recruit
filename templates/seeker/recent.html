@@ -22,25 +22,25 @@
                             <span class="item-title text-muted">{{ job['title'] }}</span>
                             {% endif %}
                             <div class="item-meta">
-                                <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
-                                <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
+                                <div>{{ job['company_name'] }}</div>
+                                <div>{{ job|region('전국') }}</div>
                                 {% if job['category_name'] %}
-                                <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
+                                <div>{{ job['category_name'] }}</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                     <hr class="text-muted">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small"><i class="far fa-eye me-1"></i>{{ job['viewed_at']|fdatetime }} 열람</span>
+                        <span class="text-muted small">{{ job['viewed_at']|fdatetime }} 열람</span>
                         <div class="d-flex align-items-center gap-2">
                             {% if job['salary'] %}
-                            <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
+                            <span class="small fw-bold">{{ job['salary'] }}</span>
                             {% endif %}
                             {% if job['status'] == 'open' %}
-                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
+                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm">상세보기</a>
                             {% else %}
-                            <span class="btn btn-outline-secondary btn-sm rounded-pill px-3 disabled">마감됨</span>
+                            <span class="btn btn-outline-secondary btn-sm disabled">마감됨</span>
                             {% endif %}
                         </div>
                     </div>
@@ -49,12 +49,6 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="content-card">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-history"></i></div>
-                <p class="empty-state-text">최근 본 공고가 없습니다.</p>
-                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
-            </div>
-        </div>
+        <p class="home-empty">최근 본 공고가 없습니다. <a href="/jobs">공고 검색하기</a></p>
         {% endif %}
 {% endblock %}

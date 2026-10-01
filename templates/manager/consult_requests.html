@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}상담 요청 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>상담 요청</h2></div>
+
+<div class="container">
+    <div class="schedule-filter-bar">
+        <div class="schedule-filter-tabs">
+            {% for key, label in tabs %}
+            <a href="/mgr/consult-requests?status={{ key }}"
+               class="schedule-filter-tab{% if selected == key %} active{% endif %}"
+               {% if selected == key %}aria-current="page"{% endif %}>
+                {{ label }} <span class="cnt">{{ counts[key] }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="home-section">
+        {% if reqs %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <caption class="visually-hidden">담당 구직자 상담 요청 목록</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">구직자</th>
+                        <th scope="col">분류</th>
+                        <th scope="col">방법</th>
+                        <th scope="col">희망 시간</th>
+                        <th scope="col">내용</th>
+                        <th scope="col">신청일</th>
+                        <th scope="col">상태</th>
+                        <th scope="col"><span class="visually-hidden">상세</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reqs %}
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="/mgr/seekers/{{ r.seeker_user_id }}">{{ r.seeker_name }}</a>
+                        </td>
+                        <td>{{ r.category_label }}</td>
+                        <td>{{ r.method_label }}</td>
+                        <td>{{ r.preferred_time or '-' }}</td>
+                        <td class="consult-content-preview truncate-cell">{{ r.content_preview }}</td>
+                        <td class="text-muted small">{{ r.created_at|fdate }}</td>
+                        <td><span class="badge bg-{{ r.status_color }}">{{ r.status_label }}</span></td>
+                        <td><a href="/mgr/consult-requests/{{ r.id }}" class="btn btn-outline-secondary btn-sm">상세</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="home-empty">해당하는 상담 요청이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

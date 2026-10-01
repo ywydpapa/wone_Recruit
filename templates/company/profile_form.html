@@ -3,35 +3,35 @@
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="fas fa-building me-2"></i>기업 정보</h2>
+    <h2>기업 정보</h2>
 </div>
 
 {% if success == '1' %}
 <div class="alert alert-success" role="alert">
-    <i class="fas fa-check-circle me-2"></i>기업 정보가 저장되었습니다.
+    기업 정보가 저장되었습니다.
+</div>
+{% endif %}
+{% if error == 'bizno' %}
+<div class="alert alert-danger" role="alert">
+    유효하지 않은 사업자등록번호입니다. 번호를 다시 확인해 주세요.
 </div>
 {% endif %}
 
 {% if company %}
 <div class="mb-4">
-    {% if company['approval_status'] == 'approved' %}
-        <span class="badge bg-success">사업자 인증 완료</span>
-    {% elif company['approval_status'] == 'rejected' %}
-        <span class="badge bg-danger">반려</span>
-        {% if company['rejection_reason'] %}
-        <p class="text-danger mt-1 small">{{ company['rejection_reason'] }}</p>
-        {% endif %}
-    {% else %}
-        <span class="badge bg-warning text-dark">인증 대기</span>
+    <span class="badge {{ approval_badge }}">{{ approval_label }}</span>
+    {% if company['approval_status'] == 'rejected' and company['rejection_reason'] %}
+    <p class="text-danger mt-1 small">{{ company['rejection_reason'] }}</p>
     {% endif %}
 </div>
 {% endif %}
 
-<form method="post" action="/company/profile" enctype="multipart/form-data" novalidate>
+<div class="content-card">
+<form method="post" action="/company/profile" enctype="multipart/form-data" id="profileForm" novalidate>
 {{ csrf_input }}
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-building"></i>기본 정보</legend>
+    <fieldset class="form-fieldset">
+        <legend>기본 정보</legend>
         <div class="form-section-body">
 
                     <div class="mb-3">
@@ -59,7 +59,7 @@
                                 placeholder="예: 123-45-67890">
                             <button type="button" class="btn btn-outline-secondary" id="btnBiznoCheck">확인</button>
                         </div>
-                        <div id="biznoResult" class="small mt-1"></div>
+                        <div id="biznoResult" class="small mt-1" aria-live="polite"></div>
                     </div>
 
                     <div class="mb-3">
@@ -163,8 +163,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-phone"></i>연락처</legend>
+    <fieldset class="form-fieldset">
+        <legend>연락처</legend>
         <div class="form-section-body">
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
@@ -213,8 +213,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-wheelchair"></i>편의시설 현황</legend>
+    <fieldset class="form-fieldset">
+        <legend>편의시설 현황</legend>
         <div class="form-section-body">
 
                     <div class="mb-3">
@@ -242,8 +242,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-history"></i>장애인 고용 이력</legend>
+    <fieldset class="form-fieldset">
+        <legend>장애인 고용 이력</legend>
         <div class="form-section-body">
 
                     <div class="mb-3">
@@ -264,8 +264,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-gift"></i>복리후생</legend>
+    <fieldset class="form-fieldset">
+        <legend>복리후생</legend>
         <div class="form-section-body">
             <div class="row g-2">
                 {% for opt in benefit_options %}
@@ -283,8 +283,95 @@
         </div>
     </fieldset>
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-info-circle"></i>기업 소개</legend>
+    <fieldset class="form-fieldset">
+        <legend>근무환경</legend>
+        <div class="form-section-body">
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="remote_ok" name="remote_ok"
+                    {{ 'checked' if company and company.remote_ok else '' }}>
+                <label class="form-check-label fw-semibold" for="remote_ok">재택근무 가능</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexible_ok" name="flexible_ok"
+                    {{ 'checked' if company and company.flexible_ok else '' }}>
+                <label class="form-check-label fw-semibold" for="flexible_ok">유연근무 가능</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="shared_office_ok" name="shared_office_ok"
+                    {{ 'checked' if company and company.shared_office_ok else '' }}>
+                <label class="form-check-label fw-semibold" for="shared_office_ok">공유오피스 근무 연계 가능</label>
+            </div>
+            <div class="mb-3">
+                <label for="work_env_note" class="form-label fw-semibold">근무환경 설명</label>
+                <textarea class="form-control" id="work_env_note" name="work_env_note" rows="3" maxlength="1000"
+                    placeholder="예: 매주 화/목 재택근무, 코어타임 11시~16시">{{ company.work_env_note if company else '' }}</textarea>
+                <div class="form-text">최대 1000자</div>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-fieldset">
+        <legend>ESG / 사회공헌</legend>
+        <div class="form-section-body">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">활동 항목</label>
+                <div class="row g-2">
+                    {% for item in esg_items_options %}
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                name="esg_items" value="{{ item }}"
+                                id="esg_{{ loop.index }}"
+                                {{ 'checked' if item in selected_esg else '' }}>
+                            <label class="form-check-label" for="esg_{{ loop.index }}">{{ item }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="esg_note" class="form-label fw-semibold">ESG 활동 설명</label>
+                <textarea class="form-control" id="esg_note" name="esg_note" rows="3" maxlength="1000"
+                    placeholder="예: 매년 장애인 인식개선 교육 실시, 연계고용 협약 체결">{{ company.esg_note if company else '' }}</textarea>
+                <div class="form-text">최대 1000자</div>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-fieldset">
+        <legend>장애인 의무고용</legend>
+        <div class="form-section-body">
+            <p class="text-muted small mb-3">전체 직원 수와 장애인 근로자 수를 기준으로 자동 계산됩니다. 별도로 저장하지 않습니다.</p>
+            <dl class="row mb-2">
+                <dt class="col-sm-4 text-muted">의무고용 대상 여부</dt>
+                <dd class="col-sm-8">
+                    {% if levy.employee_count >= 50 %}<span class="badge bg-warning text-dark">대상 (50인 이상)</span>{% else %}<span class="badge bg-secondary">비대상</span>{% endif %}
+                </dd>
+                <dt class="col-sm-4 text-muted">부담금 대상 여부</dt>
+                <dd class="col-sm-8">
+                    {% if levy.levy_applicable %}<span class="badge bg-danger">대상 (100인 이상)</span>{% else %}<span class="badge bg-secondary">비대상</span>{% endif %}
+                </dd>
+                <dt class="col-sm-4 text-muted">의무고용 인원</dt>
+                <dd class="col-sm-8">{{ levy.mandatory }}명</dd>
+                <dt class="col-sm-4 text-muted">현재 장애인 근로자 수</dt>
+                <dd class="col-sm-8">{{ levy.disabled_count }}명</dd>
+                <dt class="col-sm-4 text-muted">미달/초과 인원</dt>
+                <dd class="col-sm-8">
+                    {% if levy.shortfall > 0 %}
+                    <span class="text-danger">{{ levy.shortfall }}명 미달</span>
+                    {% elif levy.surplus > 0 %}
+                    <span class="text-success">{{ levy.surplus }}명 초과</span>
+                    {% else %}
+                    <span class="text-muted">해당 없음</span>
+                    {% endif %}
+                </dd>
+            </dl>
+            <a href="/company/levy" class="btn btn-outline-primary btn-sm">부담금 상세 계산 보기</a>
+        </div>
+    </fieldset>
+
+    <fieldset class="form-fieldset">
+        <legend>기업 소개</legend>
         <div class="form-section-body">
             <div class="mb-3">
                 <label for="tagline" class="form-label fw-semibold">한줄 소개</label>
@@ -309,8 +396,8 @@
         </div>
     </fieldset>
 
-    <fieldset class="form-section">
-        <legend><i class="fas fa-images"></i>근무환경 사진</legend>
+    <fieldset class="form-fieldset">
+        <legend>근무환경 사진</legend>
         <div class="form-section-body">
             {% if photos %}
             <div class="mb-3">
@@ -352,13 +439,12 @@
     </fieldset>
 
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary px-4">
-            <i class="fas fa-save me-1"></i>저장
-        </button>
+        <button type="submit" class="btn btn-primary px-4">저장</button>
         <a href="/" class="btn btn-outline-secondary">취소</a>
     </div>
 
 </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -393,6 +479,34 @@ document.addEventListener('DOMContentLoaded', function(){
                 });
         });
     }
+
+    // 저장 전에 변경된 사업자번호를 먼저 검증하여 입력값이 유실되지 않도록 함
+    var profileForm = document.getElementById('profileForm');
+    var bizInput = document.getElementById('biz_no');
+    var origBizno = bizInput.value.trim();
+    var bizChecked = false;
+    profileForm.addEventListener('submit', function(e) {
+        var val = bizInput.value.trim();
+        if (bizChecked || !val || val === origBizno) return;
+        e.preventDefault();
+        fetch('/api/bizno/check?biz_no=' + encodeURIComponent(val))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.valid === false) {
+                    var result = document.getElementById('biznoResult');
+                    result.textContent = '유효하지 않은 사업자등록번호입니다';
+                    result.className = 'small mt-1 text-danger';
+                    bizInput.focus();
+                    return;
+                }
+                bizChecked = true;
+                profileForm.requestSubmit();
+            })
+            .catch(function() {
+                bizChecked = true;
+                profileForm.requestSubmit();
+            });
+    });
 });
 </script>
 {% endblock %}

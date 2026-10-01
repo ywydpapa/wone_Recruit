@@ -245,6 +245,7 @@ async def talent_detail(request: Request, seeker_user_id: int, back: str = Query
                 conn, seeker_user_id,
                 f"{company['company_name']}에서 프로필을 열람했습니다.",
                 "/profile/views",
+                kind="proposal",
             )
         conn.commit()
     finally:
@@ -313,6 +314,7 @@ async def send_talent_offer(
             conn, seeker_user_id,
             f"{company_name}에서 입사 제안을 보냈습니다",
             "/proposals",
+            kind="proposal",
         )
         conn.commit()
     finally:

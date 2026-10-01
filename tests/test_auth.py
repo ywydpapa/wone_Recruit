@@ -3,8 +3,8 @@ from tests.conftest import login
 
 def test_signup_seeker(client):
     r = client.post("/signup", data={
-        "username": "new_seeker", "password": "testpass1234",
-        "name": "테스트", "phone": "010-0000-0000", "role": "seeker",
+        "username": "new_seeker", "password": "testpass1234", "confirm_password": "testpass1234",
+        "name": "테스트", "phone": "010-0000-0000", "email": "new@example.com", "role": "seeker",
         "agree_terms": "1", "agree_privacy": "1",
     }, follow_redirects=False)
     assert r.status_code == 303
@@ -13,8 +13,8 @@ def test_signup_seeker(client):
 
 def test_signup_company(client):
     r = client.post("/signup", data={
-        "username": "new_comp", "password": "testpass1234",
-        "name": "테스트기업", "phone": "051-000-0000", "role": "company",
+        "username": "new_comp", "password": "testpass1234", "confirm_password": "testpass1234",
+        "name": "테스트기업", "phone": "051-000-0000", "email": "comp@example.com", "role": "company",
         "agree_terms": "1", "agree_privacy": "1",
     }, follow_redirects=False)
     assert r.status_code == 303
@@ -22,7 +22,7 @@ def test_signup_company(client):
 
 def test_signup_without_agree(client):
     r = client.post("/signup", data={
-        "username": "no_agree", "password": "testpass1234",
+        "username": "no_agree", "password": "testpass1234", "confirm_password": "testpass1234",
         "name": "미동의", "phone": "", "role": "seeker",
     }, follow_redirects=False)
     assert r.status_code == 303
@@ -31,7 +31,7 @@ def test_signup_without_agree(client):
 
 def test_signup_operator_rejected(client):
     r = client.post("/signup", data={
-        "username": "bad_op", "password": "testpass1234",
+        "username": "bad_op", "password": "testpass1234", "confirm_password": "testpass1234",
         "name": "해커", "phone": "", "role": "operator",
     }, follow_redirects=False)
     assert r.status_code == 303

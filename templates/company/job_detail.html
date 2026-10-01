@@ -3,46 +3,25 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="/company/jobs" class="btn btn-sm btn-outline-secondary">
-        <i class="fas fa-arrow-left me-1"></i>공고 목록
-    </a>
+    <a href="/company/jobs" class="btn btn-sm btn-outline-secondary">공고 목록</a>
     <div class="d-flex gap-2 align-items-center">
-        {% set s = job['status'] %}
-        {% if s == 'open' %}
-            <span class="badge bg-success">공개</span>
-        {% elif s == 'draft' %}
-            <span class="badge bg-secondary">임시저장</span>
-        {% elif s == 'closed' %}
-            <span class="badge bg-warning text-dark">마감</span>
-        {% elif s == 'filled' %}
-            <span class="badge bg-info text-dark">채용완료</span>
-        {% elif s == 'pending_review' %}
-            <span class="badge bg-info text-dark">검토 중</span>
-        {% elif s == 'rejected' %}
-            <span class="badge bg-danger">반려</span>
-        {% endif %}
-        <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-primary">
-            <i class="fas fa-pen me-1"></i>전체 수정
-        </a>
-        <a href="/company/jobs/{{ job['id'] }}/preview" class="btn btn-sm btn-outline-info" target="_blank">
-            <i class="fas fa-eye me-1"></i>미리보기
-        </a>
-        <a href="/company/jobs/{{ job['id'] }}/report" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-chart-bar me-1"></i>채용 보고서
-        </a>
+        <span class="badge {{ job_status_badge_class }}">{{ job_status_label }}</span>
+        <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-primary">전체 수정</a>
+        <a href="/company/jobs/{{ job['id'] }}/preview" class="btn btn-sm btn-outline-info" target="_blank">미리보기</a>
+        <a href="/company/jobs/{{ job['id'] }}/report" class="btn btn-sm btn-outline-secondary">채용 보고서</a>
     </div>
 </div>
 
 {% if job['status'] == 'rejected' and job['rejection_reason'] %}
 <div class="alert alert-danger mb-3">
-    <strong><i class="fas fa-ban me-1"></i>반려 사유</strong>
+    <strong>반려 사유</strong>
     <div class="mt-1">{{ job['rejection_reason'] }}</div>
 </div>
 {% endif %}
 
 {% if job['status'] == 'pending_review' %}
 <div class="alert alert-info mb-3">
-    <i class="fas fa-hourglass-half me-1"></i>운영자 검토 중입니다. 승인되면 구직자에게 공개됩니다.
+    운영자 검토 중입니다. 승인되면 구직자에게 공개됩니다.
 </div>
 {% endif %}
 
@@ -68,22 +47,18 @@
 
     <div class="job-summary-bar mb-3">
         <div class="job-summary-item">
-            <i class="fas fa-briefcase"></i>
             <div class="summary-label">경력</div>
             <div class="summary-value">{{ job['experience_level'] or '무관' }}</div>
         </div>
         <div class="job-summary-item">
-            <i class="fas fa-won-sign"></i>
             <div class="summary-label">급여</div>
             <div class="summary-value">{{ job['salary'] or '협의' }}</div>
         </div>
         <div class="job-summary-item">
-            <i class="fas fa-map-marker-alt"></i>
             <div class="summary-label">근무지역</div>
             <div class="summary-value">{{ job|region('전국') }}</div>
         </div>
         <div class="job-summary-item">
-            <i class="fas fa-graduation-cap"></i>
             <div class="summary-label">학력</div>
             <div class="summary-value">{{ job['education'] or '무관' }}</div>
         </div>
@@ -91,7 +66,7 @@
 
     <div class="content-card mb-3">
         <h5 class="job-section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-file-alt"></i> 채용 정보</span>
+            <span>채용 정보</span>
             <a href="/company/jobs/{{ job['id'] }}/edit#sec-basic" class="btn btn-sm btn-outline-secondary">수정</a>
         </h5>
         <div class="job-info-grid">
@@ -126,7 +101,7 @@
 
     <div class="content-card mb-3">
         <h5 class="job-section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-clock"></i> 근무 조건</span>
+            <span>근무 조건</span>
             <a href="/company/jobs/{{ job['id'] }}/edit#sec-work" class="btn btn-sm btn-outline-secondary">수정</a>
         </h5>
         <div class="job-info-grid">
@@ -157,7 +132,7 @@
     {% if job['tasks'] or job['tools'] or job['qualifications'] or job['preferred'] or job['hiring_process'] %}
     <div class="content-card mb-3">
         <h5 class="job-section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-clipboard-list"></i> 직무 내용</span>
+            <span>직무 내용</span>
             <a href="/company/jobs/{{ job['id'] }}/edit#sec-duties" class="btn btn-sm btn-outline-secondary">수정</a>
         </h5>
 
@@ -218,7 +193,7 @@
     {% if job['benefits'] %}
     <div class="content-card mb-3">
         <h5 class="job-section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-gift"></i> 복리후생</span>
+            <span>복리후생</span>
             <a href="/company/jobs/{{ job['id'] }}/edit#sec-salary" class="btn btn-sm btn-outline-secondary">수정</a>
         </h5>
         <div class="d-flex flex-wrap gap-2">
@@ -233,7 +208,7 @@
 
     <div class="content-card mb-3">
         <h5 class="job-section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-hands-helping"></i> 편의 제공</span>
+            <span>편의 제공</span>
             <a href="/company/jobs/{{ job['id'] }}/edit#sec-accom" class="btn btn-sm btn-outline-secondary">수정</a>
         </h5>
         {% if accommodations_provided %}
@@ -264,7 +239,7 @@
     {% if job['description'] %}
     <div class="content-card mb-3">
         <h5 class="job-section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-info-circle"></i> 기타 안내</span>
+            <span>기타 안내</span>
             <a href="/company/jobs/{{ job['id'] }}/edit#sec-duties" class="btn btn-sm btn-outline-secondary">수정</a>
         </h5>
         <div class="text-prewrap small">{{ job['description'] }}</div>

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}직무 분석 요청 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>직무 분석 요청</h2></div>
+
+<div class="container">
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link {% if not selected_status %}active{% endif %}" {% if not selected_status %}aria-current="page"{% endif %}
+               href="/op/duties">
+                전체 <span class="badge bg-secondary">{{ tab_counts['all'] }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected_status == 'requested' %}active{% endif %}" {% if selected_status == 'requested' %}aria-current="page"{% endif %}
+               href="/op/duties?status=requested">
+                분석 대기 <span class="badge bg-secondary">{{ tab_counts['requested'] }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if selected_status == 'done' %}active{% endif %}" {% if selected_status == 'done' %}aria-current="page"{% endif %}
+               href="/op/duties?status=done">
+                완료 <span class="badge bg-secondary">{{ tab_counts['done'] }}</span>
+            </a>
+        </li>
+    </ul>
+
+    {% if duties %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>상태</th>
+                <th>기업</th>
+                <th>직무명</th>
+                <th>요청 내용</th>
+                <th>요청일</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for duty in duties %}
+            {% set s = status_labels[duty['analysis_status']] %}
+            <tr>
+                <td><span class="badge bg-{{ s[1] }}">{{ s[0] }}</span></td>
+                <td>{{ duty['company_name'] }}</td>
+                <td><a href="/op/duties/{{ duty['id'] }}">{{ duty['title'] }}</a></td>
+                <td class="duty-req-preview">{{ duty['analysis_request'] }}</td>
+                <td>{{ duty['updated_at']|fdate }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="home-empty">직무 분석 요청이 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}

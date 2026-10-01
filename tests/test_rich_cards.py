@@ -21,7 +21,7 @@ def test_job_card_shows_remote_badge(client):
     login(client, "seeker1")
     r = client.get("/jobs")
     assert r.status_code == 200
-    # 시드에 재택근무 공고 존재
+    # 시드에 재택근무 공고가 있음
     assert "재택 가능" in r.text
     assert "badge-green" in r.text
 

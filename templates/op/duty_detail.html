@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ duty['title'] }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>직무 분석</h2></div>
+
+<div class="container">
+    <section class="home-section">
+        <div class="home-section-head">
+            <h2 class="dash-section-title mb-0">{{ duty['title'] }}</h2>
+            <div>
+                <span class="badge bg-primary me-1">{{ duty['company_name'] }}</span>
+                {% set s = status_labels[duty['analysis_status']] %}
+                <span class="badge bg-{{ s[1] }}">{{ s[0] }}</span>
+            </div>
+        </div>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">카테고리</dt>
+            <dd class="col-sm-9">{{ duty['category_name'] or '-' }}</dd>
+            <dt class="col-sm-3">난이도</dt>
+            <dd class="col-sm-9">{{ difficulty_label }}</dd>
+            <dt class="col-sm-3">재택 가능</dt>
+            <dd class="col-sm-9">{{ '가능' if duty['remote_ok'] else '불가' }}</dd>
+            <dt class="col-sm-3">주요 업무</dt>
+            <dd class="col-sm-9 text-prewrap">{{ duty['tasks'] or '-' }}</dd>
+            <dt class="col-sm-3">사용 도구</dt>
+            <dd class="col-sm-9">{{ duty['tools'] or '-' }}</dd>
+            <dt class="col-sm-3">비고</dt>
+            <dd class="col-sm-9 text-prewrap">{{ duty['note'] or '-' }}</dd>
+        </dl>
+    </section>
+
+    {% if duty['analysis_request'] %}
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">기업 분석 요청 내용</h2></div>
+        <div class="text-prewrap">{{ duty['analysis_request'] }}</div>
+    </section>
+    {% endif %}
+
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">장애유형별 적합성</h2></div>
+        {% for row in duty_fit_rows %}
+        <div class="duty-fit-readonly-row">
+            <span class="duty-fit-readonly-label">{{ row.label }}</span>
+            <span class="badge bg-{{ row.color }}">{{ row.level_label }}</span>
+        </div>
+        {% endfor %}
+    </section>
+
+    {% if duty['analysis_status'] == 'done' %}
+    <section class="home-section">
+        <div class="home-section-head">
+            <h2 class="dash-section-title mb-0">분석 답변</h2>
+            <small class="text-muted">{{ duty['analyzed_at']|fdatetime }} &middot; {{ duty['analyzed_by_name'] }}</small>
+        </div>
+        <div class="text-prewrap">{{ duty['analysis_note'] }}</div>
+    </section>
+    {% endif %}
+
+    <div class="content-card mb-3">
+        <div class="p-3">
+            <h5 class="fw-bold mb-3">{% if duty['analysis_status'] == 'done' %}분석 답변 수정{% else %}분석 답변 작성{% endif %}</h5>
+            <form method="post" action="/op/duties/{{ duty['id'] }}/analysis">
+                {{ csrf_input }}
+                <label for="analysis_note" class="form-label">답변 내용 <span class="text-danger">*</span></label>
+                <textarea id="analysis_note" name="analysis_note" class="form-control mb-3" rows="5" required maxlength="2000">{{ duty['analysis_note'] }}</textarea>
+
+                <p class="fw-semibold mb-2">장애유형별 적합성 조정</p>
+                {% for row in duty_fit_rows %}
+                <fieldset class="border rounded p-3 mb-2 duty-fit-row">
+                    <legend class="fs-6 fw-semibold px-2 w-auto">{{ row.label }}</legend>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% for lvl_val, lvl in fit_levels.items() %}
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="{{ row.col }}" id="op_{{ row.col }}_{{ lvl_val }}"
+                                value="{{ lvl_val }}" {% if row.value == lvl_val %}checked{% endif %}>
+                            <label class="form-check-label" for="op_{{ row.col }}_{{ lvl_val }}">{{ lvl[0] }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary mt-2">답변 저장</button>
+            </form>
+        </div>
+    </div>
+
+    <a href="/op/duties" class="btn btn-outline-secondary">목록으로</a>
+</div>
+{% endblock %}

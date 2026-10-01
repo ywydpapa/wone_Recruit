@@ -5,6 +5,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
+from core.notifications import create_notification
 
 router = APIRouter()
 
@@ -68,7 +69,7 @@ async def mgr_consultations(
         sql += " ORDER BY cs.scheduled_at"
         rows = conn.execute(sql, params).fetchall()
 
-        # 상태별 카운트 (필터 무관)
+        # 상태별 건수는 필터와 무관하게 집계함
         count_sql = """SELECT status, COUNT(*) as cnt
                        FROM consultation_sessions
                        WHERE manager_user_id = ?
@@ -163,7 +164,7 @@ async def mgr_consultations(
 
 
 @router.get("/consultations/new", response_class=HTMLResponse)
-async def mgr_consultation_new(request: Request, seeker_id: int = Query(None)):
+async def mgr_consultation_new(request: Request, seeker_id: int = Query(None), request_id: int = Query(None)):
     user = require_role(request, "manager")
     conn = get_sqlite()
     try:
@@ -177,6 +178,18 @@ async def mgr_consultation_new(request: Request, seeker_id: int = Query(None)):
             "WHERE ma.manager_user_id = ? ORDER BY u.name",
             (user["id"],),
         ).fetchall()
+        preselect_method = ""
+        if request_id:
+            req = conn.execute(
+                "SELECT cr.method FROM consult_requests cr "
+                "JOIN manager_assignments ma ON ma.seeker_user_id = cr.seeker_user_id "
+                "WHERE cr.id=? AND ma.manager_user_id=?",
+                (request_id, user["id"]),
+            ).fetchone()
+            if not req:
+                raise HTTPException(status_code=404)
+            if req["method"] in METHOD_LABELS:
+                preselect_method = req["method"]
     finally:
         conn.close()
     if seeker_id and not seeker:
@@ -188,6 +201,8 @@ async def mgr_consultation_new(request: Request, seeker_id: int = Query(None)):
             "seeker": seeker, "consultation": None,
             "seekers": seekers,
             "preselect_seeker_id": seeker_id or 0,
+            "request_id": request_id or 0,
+            "preselect_method": preselect_method,
             "session_types": SESSION_TYPE_LABELS,
             "method_labels": METHOD_LABELS,
         }
@@ -203,18 +218,34 @@ async def mgr_consultation_create(
     method: str = Form("in_person"),
     location: str = Form(""),
     notes: str = Form(""),
+    request_id: int = Form(0),
 ):
     user = require_role(request, "manager")
     sched = scheduled_at.strip() or None
     status = "scheduled" if sched else "completed"
     conn = get_sqlite()
     try:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO consultation_sessions "
             "(seeker_user_id, manager_user_id, session_type, scheduled_at, method, location, status, notes) "
             "VALUES (?,?,?,?,?,?,?,?)",
             (seeker_id, user["id"], session_type, sched, method, location.strip(), status, notes.strip()),
         )
+        session_id = cur.lastrowid
+        if request_id:
+            req = conn.execute(
+                "SELECT cr.id FROM consult_requests cr "
+                "JOIN manager_assignments ma ON ma.seeker_user_id = cr.seeker_user_id "
+                "WHERE cr.id=? AND ma.manager_user_id=?",
+                (request_id, user["id"]),
+            ).fetchone()
+            if req:
+                conn.execute(
+                    "UPDATE consult_requests SET status='scheduled', session_id=?, manager_user_id=?, "
+                    "handled_at=datetime('now','localtime') WHERE id=?",
+                    (session_id, user["id"], request_id),
+                )
+                create_notification(conn, seeker_id, "상담 일정이 확정되었습니다", "/consult", kind="consult")
         conn.commit()
     finally:
         conn.close()
@@ -239,6 +270,8 @@ async def mgr_consultation_edit(request: Request, session_id: int):
             "seeker": seeker, "consultation": row,
             "seekers": [],
             "preselect_seeker_id": 0,
+            "request_id": 0,
+            "preselect_method": "",
             "session_types": SESSION_TYPE_LABELS,
             "method_labels": METHOD_LABELS,
         }
@@ -279,10 +312,12 @@ async def mgr_consultation_complete(request: Request, session_id: int):
     seeker_id = form.get("seeker_id")
     conn = get_sqlite()
     try:
-        conn.execute(
+        cur = conn.execute(
             "UPDATE consultation_sessions SET status='completed' WHERE id=? AND manager_user_id=?",
             (session_id, user["id"]),
         )
+        if cur.rowcount:
+            conn.execute("UPDATE consult_requests SET status='done' WHERE session_id=?", (session_id,))
         conn.commit()
     finally:
         conn.close()

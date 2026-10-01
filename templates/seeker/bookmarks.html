@@ -22,10 +22,10 @@
                             <span class="item-title text-muted">{{ job['title'] }}</span>
                             {% endif %}
                             <div class="item-meta">
-                                <div><i class="far fa-building"></i> {{ job['company_name'] }}</div>
-                                <div><i class="fas fa-map-marker-alt"></i> {{ job|region('전국') }}</div>
+                                <div>{{ job['company_name'] }}</div>
+                                <div>{{ job|region('전국') }}</div>
                                 {% if job['category_name'] %}
-                                <div><i class="fas fa-tag"></i> {{ job['category_name'] }}</div>
+                                <div>{{ job['category_name'] }}</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -39,15 +39,15 @@
                     </div>
                     <hr class="text-muted">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small"><i class="far fa-clock me-1"></i>{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
+                        <span class="text-muted small">{% if job['deadline'] %}~ {{ job['deadline'] }}{% else %}상시채용{% endif %}</span>
                         <div class="d-flex align-items-center gap-2">
                             {% if job['salary'] %}
-                            <span class="small fw-bold"><i class="fas fa-won-sign me-1"></i>{{ job['salary'] }}</span>
+                            <span class="small fw-bold">{{ job['salary'] }}</span>
                             {% endif %}
                             {% if job['status'] == 'open' %}
-                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">상세보기</a>
+                            <a href="/jobs/{{ job['id'] }}" class="btn btn-outline-primary btn-sm">상세보기</a>
                             {% else %}
-                            <span class="btn btn-outline-secondary btn-sm rounded-pill px-3 disabled">마감됨</span>
+                            <span class="btn btn-outline-secondary btn-sm disabled">마감됨</span>
                             {% endif %}
                         </div>
                     </div>
@@ -56,12 +56,6 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="content-card">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="far fa-heart"></i></div>
-                <p class="empty-state-text">저장한 공고가 없습니다. 공고를 검색하고 <i class="far fa-heart"></i>를 눌러 저장하세요.</p>
-                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
-            </div>
-        </div>
+        <p class="home-empty">저장한 공고가 없습니다. 공고를 검색하고 하트를 눌러 저장하세요. <a href="/jobs">공고 검색하기</a></p>
         {% endif %}
 {% endblock %}

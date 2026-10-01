@@ -27,7 +27,7 @@ def test_seeker_jobs_wcag_article_headings(client):
     login(client, "seeker1")
     r = client.get("/jobs")
     assert r.status_code == 200
-    # article이 있으면 h3 필수
+    # article이 있으면 h3가 반드시 있어야 함
     text = r.text
     article_count = text.count("<article")
     h3_count = text.count("<h3")

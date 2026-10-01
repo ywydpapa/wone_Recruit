@@ -1,51 +1,41 @@
 {% extends "base.html" %}
 {% block title %}내 글/댓글 - WONE Recruit{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">내 글/댓글</h2><a href="/community" class="btn btn-light rounded-pill px-4 shadow-sm"><i class="fas fa-arrow-left me-2"></i>돌아가기</a></div>
-<div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-9">
-                <div class="content-card">
-                    <div class="card-title mb-3"><span><i class="fas fa-pencil-alt me-2 text-primary"></i>내가 쓴 글 ({{ posts|length }})</span></div>
-                    {% for p in posts %}
-                    {% set meta = categories.get(p.category, ('자유', 'secondary')) %}
-                    <div class="border-bottom py-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <span class="badge bg-{{ meta[1] }} bg-opacity-10 text-{{ meta[1] }} px-2 py-1 me-2">{{ meta[0] }}</span>
-                                <a href="/post/{{ p.id }}" class="fw-bold text-dark text-decoration-none">{{ p.title }}</a>
-                            </div>
-                            <span class="small text-muted">{{ p.created_at }}</span>
-                        </div>
-                        <div class="small text-muted mt-1">
-                            <span class="me-3"><i class="far fa-eye me-1"></i>{{ p.views }}</span>
-                            <span><i class="far fa-comment-dots me-1"></i>{{ p.comment_count }}</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon"><i class="far fa-list-alt"></i></div>
-                        <p class="empty-state-text">작성한 글이 없습니다.</p>
-                        <a href="/write_post" class="btn btn-primary btn-sm">글 작성하기</a>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="content-card mt-4">
-                    <div class="card-title mb-3"><span><i class="far fa-comment-dots me-2 text-primary"></i>내가 쓴 댓글 ({{ comments|length }})</span></div>
-                    {% for c in comments %}
-                    <div class="border-bottom py-3">
-                        <a href="/post/{{ c.post_id }}" class="small text-primary text-decoration-none">{{ c.post_title }}</a>
-                        <p class="mb-0 mt-1">{{ c.content }}</p>
-                        <span class="small text-muted">{{ c.created_at }}</span>
-                    </div>
-                    {% else %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon"><i class="far fa-comment-dots"></i></div>
-                        <p class="empty-state-text">작성한 댓글이 없습니다.</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="page-header"><h2>내 글/댓글</h2></div>
+
+<section class="home-section" aria-labelledby="myPostsTitle">
+    <div class="home-section-head"><h2 id="myPostsTitle">내가 쓴 글</h2></div>
+    {% if posts %}
+    <ul class="home-list">
+        {% for p in posts %}
+        {% set meta = categories.get(p.category, ('자유', 'secondary')) %}
+        <li>
+            <span class="badge bg-{{ meta[1] }}">{{ meta[0] }}</span>
+            <a href="/post/{{ p.id }}">{{ p.title }}</a>
+            <span class="home-list-sub">{{ p.created_at }}</span>
+            <span class="home-list-end">댓글 {{ p.comment_count }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="home-empty">작성한 글이 없습니다. <a href="/write_post">글 작성하기</a></p>
+    {% endif %}
+</section>
+
+<section class="home-section" aria-labelledby="myCommentsTitle">
+    <div class="home-section-head"><h2 id="myCommentsTitle">내가 쓴 댓글</h2></div>
+    {% if comments %}
+    <ul class="home-list">
+        {% for c in comments %}
+        <li>
+            <a href="/post/{{ c.post_id }}">{{ c.post_title }}</a>
+            <span class="home-list-sub">{{ c.content }}</span>
+            <span class="home-list-end">{{ c.created_at }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="home-empty">작성한 댓글이 없습니다.</p>
+    {% endif %}
+</section>
 {% endblock %}

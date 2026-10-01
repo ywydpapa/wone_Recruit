@@ -15,6 +15,24 @@ MATCH_STAGE_LABELS = {
     "submitted": "기업전달",
 }
 
+JOB_STATUS_LABELS = {
+    "pending_review": "검토 대기",
+    "open": "공개",
+    "rejected": "반려",
+    "draft": "임시저장",
+    "closed": "마감",
+    "filled": "채용완료",
+}
+
+JOB_STATUS_BADGE = {
+    "pending_review": "bg-info text-dark",
+    "open": "bg-success",
+    "rejected": "bg-danger",
+    "draft": "bg-secondary",
+    "closed": "bg-warning text-dark",
+    "filled": "bg-info text-dark",
+}
+
 
 EMPLOYMENT_TYPES = ["정규직", "계약직", "인턴", "파견", "프리랜서"]
 
@@ -93,6 +111,21 @@ GPA_SCALES = ['4.0', '4.3', '4.5', '100']
 
 CAREER_EMPLOYMENT_TYPES = ['정규직', '계약직', '인턴', '파견직', '프리랜서', '아르바이트']
 
+CAREER_POSITIONS = [
+    '인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사', '상무', '전무', '부사장', '사장',
+    '선임', '책임', '수석', '연구원', '선임연구원', '책임연구원', '수석연구원',
+    '팀원', '팀장', '파트장', '실장', '본부장', '센터장', '그룹장', '매니저', '프로', 'TL', 'PL', 'PM',
+]
+
+CAREER_DEPTS = [
+    '인사', 'HR', 'HRD', '조직문화', '교육', '교육기획', 'LMS', '총무', '법무', '재무', '회계', '경영지원', '기획',
+    '영업', '마케팅', '구매', '구매전략', '외자구매', '내자구매', '프라이싱', 'SCM', '물류', 'CS',
+    '개발', 'IT', '인프라', '클라우드', '정보보안', '정보보호', '데이터', 'AX', 'DX', 'ERP', '연구개발', 'R&D',
+    '생산', '생산관리', '품질', '품질보증', '공정기술', '양산기술', '기반기술', '분석기술', '불량분석',
+    'MLCC', 'PCB', 'Mask', 'Etching', 'NAND', 'eSSD',
+    '안전', 'EHS', '보건', '산업안전', '산업위생', '환경',
+]
+
 LANGUAGE_LIST = ['영어', '일본어', '중국어', '기타']
 
 LANGUAGE_LEVELS = ['네이티브', '비즈니스', '일상회화', '기초']
@@ -106,6 +139,30 @@ PURPOSE_LABELS = {
     "talent_search": "인재 검색",
     "operator_view": "운영자 조회",
     "manager_view": "매니저 조회",
+}
+
+ROLE_LABELS = {
+    "seeker": "구직자",
+    "company": "기업",
+    "operator": "운영자",
+    "manager": "채용매니저",
+}
+
+COMPANY_APPROVAL_LABELS = {
+    "pending": "대기",
+    "approved": "승인",
+    "rejected": "반려",
+}
+
+COMPANY_APPROVAL_BADGE = {
+    "pending": "bg-warning text-dark",
+    "approved": "bg-success",
+    "rejected": "bg-danger",
+}
+
+FIT_BADGE_CLASS = {
+    "추천": "bg-success",
+    "조건부": "bg-warning text-dark",
 }
 
 COMMUNITY_CATEGORIES = [
@@ -138,3 +195,44 @@ POST_CATEGORIES = {
     "life": ("일상", "success"),
     "tip": ("꿀팁", "warning"),
 }
+
+CONSULT_CATEGORIES = {
+    "job": "취업 상담",
+    "device": "보조장비",
+    "work": "근무 중 어려움",
+    "rights": "권익 보호",
+    "etc": "기타",
+}
+
+CONSULT_METHODS = {"phone": "전화", "video": "화상", "in_person": "대면", "chat": "메시지"}
+
+CONSULT_REQ_STATUS = {
+    "pending": ("접수", "secondary"),
+    "accepted": ("확인", "info"),
+    "scheduled": ("일정 확정", "primary"),
+    "done": ("완료", "success"),
+    "cancelled": ("취소", "light"),
+}
+
+ESG_ITEMS = [
+    "장애인 표준사업장", "장애인 고용 우수사업주", "연계고용 참여",
+    "사회적기업 인증", "ESG 보고서 공개", "장애인 인식개선 교육",
+]
+
+DUTY_DIFFICULTY = {"low": "쉬움", "low-mid": "보통 이하", "mid": "보통", "mid-high": "보통 이상", "high": "어려움"}
+
+# job_categories.fit_* 점수 0~3
+FIT_TYPES = {
+    "fit_physical_lower": "지체(하지)",
+    "fit_physical_upper": "지체(상지)",
+    "fit_hearing": "청각",
+    "fit_visual_low": "시각(저시력)",
+    "fit_intellectual": "지적",
+    "fit_autism": "자폐성",
+    "fit_mental": "정신",
+    "fit_internal_organ": "내부기관",
+    "fit_brain_lesion": "뇌병변",
+}
+FIT_LEVELS = {0: ("어려움", "danger"), 1: ("제한적", "warning"), 2: ("가능", "info"), 3: ("적합", "success")}
+
+DUTY_ANALYSIS_STATUS = {"none": ("미요청", "light"), "requested": ("분석 대기", "warning"), "done": ("분석 완료", "success")}

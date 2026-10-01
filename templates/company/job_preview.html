@@ -3,10 +3,8 @@
 {% block content %}
 
 <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
-    <span><i class="fas fa-eye me-2"></i>미리보기 - 구직자에게 이렇게 보입니다</span>
-    <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-outline-secondary">
-        <i class="fas fa-arrow-left me-1"></i>돌아가기
-    </a>
+    <span>미리보기 - 구직자에게 이렇게 보입니다</span>
+    <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-sm btn-outline-secondary">돌아가기</a>
 </div>
 
 <div class="job-detail-wrap">
@@ -38,29 +36,25 @@
 
     <div class="job-summary-bar mb-3">
         <div class="job-summary-item">
-            <i class="fas fa-briefcase"></i>
             <div class="summary-label">경력</div>
             <div class="summary-value">{{ job['experience_level'] or '무관' }}</div>
         </div>
         <div class="job-summary-item">
-            <i class="fas fa-won-sign"></i>
             <div class="summary-label">급여</div>
             <div class="summary-value">{{ job['salary'] or '협의' }}</div>
         </div>
         <div class="job-summary-item">
-            <i class="fas fa-map-marker-alt"></i>
             <div class="summary-label">근무지역</div>
             <div class="summary-value">{{ job|region('전국') }}</div>
         </div>
         <div class="job-summary-item">
-            <i class="fas fa-graduation-cap"></i>
             <div class="summary-label">학력</div>
             <div class="summary-value">{{ job['education'] or '무관' }}</div>
         </div>
     </div>
 
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-file-alt"></i> 채용 정보</h5>
+        <h5 class="job-section-title">채용 정보</h5>
         <div class="job-info-grid">
             <div class="job-info-row">
                 <span class="job-info-label">직무</span>
@@ -118,7 +112,7 @@
 
     {% if job['tasks'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-clipboard-list"></i> 주요 업무</h5>
+        <h5 class="job-section-title">주요 업무</h5>
         <ul class="mb-0 ps-3">
             {% for line in job['tasks'].split('\n') %}
             {% if line.strip() %}
@@ -131,7 +125,7 @@
 
     {% if job['tools'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-tools"></i> 사용 도구</h5>
+        <h5 class="job-section-title">사용 도구</h5>
         <div class="d-flex flex-wrap gap-2">
             {% for tool in job['tools'].split(',') %}
             {% if tool.strip() %}
@@ -144,21 +138,21 @@
 
     {% if job['qualifications'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-user-check"></i> 자격요건</h5>
+        <h5 class="job-section-title">자격요건</h5>
         <p class="small mb-0">{{ job['qualifications'] }}</p>
     </div>
     {% endif %}
 
     {% if job['preferred'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-star"></i> 우대사항</h5>
+        <h5 class="job-section-title">우대사항</h5>
         <p class="small mb-0">{{ job['preferred'] }}</p>
     </div>
     {% endif %}
 
     {% if job['benefits'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-gift"></i> 복리후생</h5>
+        <h5 class="job-section-title">복리후생</h5>
         <div class="d-flex flex-wrap gap-2">
             {% for b in job['benefits'].split(',') %}
             {% if b.strip() %}
@@ -171,7 +165,7 @@
 
     {% if job['hiring_process'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-route"></i> 전형절차</h5>
+        <h5 class="job-section-title">전형절차</h5>
         <div class="hiring-steps">
             {% for step in job['hiring_process']|split_steps %}
             <span class="hiring-step">{{ step }}</span>
@@ -182,7 +176,7 @@
     {% endif %}
 
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-hands-helping"></i> 편의 제공</h5>
+        <h5 class="job-section-title">편의 제공</h5>
         {% if accommodations_provided %}
         <div class="mb-2">
             {% for item in accommodations_provided %}
@@ -210,7 +204,7 @@
 
     {% if job['description'] %}
     <div class="content-card mb-3">
-        <h5 class="job-section-title"><i class="fas fa-info-circle"></i> 기타 안내</h5>
+        <h5 class="job-section-title">기타 안내</h5>
         <div class="text-prewrap small">{{ job['description'] }}</div>
     </div>
     {% endif %}
@@ -218,12 +212,8 @@
 </div>
 
 <div class="job-sticky-bar">
-    <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-light">
-        <i class="fas fa-arrow-left me-2"></i>돌아가기
-    </a>
-    <button class="btn btn-secondary rounded-pill btn-apply" disabled>
-        <i class="fas fa-paper-plane me-2"></i>지원하기 (미리보기)
-    </button>
+    <a href="/company/jobs/{{ job['id'] }}/edit" class="btn btn-light">돌아가기</a>
+    <button class="btn btn-secondary rounded-pill btn-apply" disabled>지원하기 (미리보기)</button>
 </div>
 
 {% endblock %}

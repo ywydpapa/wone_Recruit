@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}공지사항 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>공지사항</h2></div>
+
+<div class="container filter-section">
+    <div class="filter-card">
+        <form method="get" action="/notices">
+            <fieldset class="border-0 p-0 m-0"><legend class="visually-hidden">검색</legend>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="q" class="visually-hidden">제목 검색</label>
+                    <input type="text" id="q" name="q" class="form-control" placeholder="제목 검색" value="{{ q }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2" aria-hidden="true"></i>검색</button>
+                </div>
+            </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    <div class="content-card">
+        {% if notices %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <caption class="visually-hidden">공지사항 목록</caption>
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">번호</th>
+                        <th scope="col">제목</th>
+                        <th scope="col">등록일</th>
+                        <th scope="col">조회</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for n in notices %}
+                <tr>
+                    <td>
+                        {% if n['pinned'] %}
+                        <span class="badge bg-primary">공지</span>
+                        {% else %}
+                        {{ n['no'] }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/notices/{{ n['id'] }}" class="link-plain">{{ n['title'] }}</a>
+                        {% if n['new'] %}<span class="badge bg-danger ms-1">N</span>{% endif %}
+                    </td>
+                    <td>{{ n['created_at']|fdate }}</td>
+                    <td>{{ n['views'] }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include "common/pagination.html" %}
+        {% else %}
+        <p class="text-muted text-center py-4 mb-0">등록된 공지가 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

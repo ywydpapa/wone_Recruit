@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}직무 관리{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>직무 관리</h2>
+    <a href="/company/duties/new" class="btn btn-primary">새 직무 등록</a>
+</div>
+
+<div class="mb-4">
+    {% if duties %}
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">직무 목록</caption>
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">직무명</th>
+                    <th scope="col">카테고리</th>
+                    <th scope="col">난이도</th>
+                    <th scope="col">재택</th>
+                    <th scope="col">적합 유형</th>
+                    <th scope="col">분석 상태</th>
+                    <th scope="col">관리</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for duty in duties %}
+            <tr>
+                <td class="fw-semibold">{{ duty.title }}</td>
+                <td>{{ duty.category_name or '-' }}</td>
+                <td>{{ duty.difficulty_label }}</td>
+                <td>
+                    {% if duty.remote_ok %}
+                    <span class="badge bg-success">재택 가능</span>
+                    {% else %}
+                    <span class="badge bg-secondary">현장 근무</span>
+                    {% endif %}
+                </td>
+                <td>{{ duty.fit_count }}개 유형</td>
+                <td><span class="badge bg-{{ duty.status_color }}">{{ duty.status_label }}</span></td>
+                <td>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <a href="/company/duties/{{ duty.id }}/edit" class="btn btn-sm btn-outline-primary">수정</a>
+                        <a href="/company/duties/{{ duty.id }}/job" class="btn btn-sm btn-outline-success">공고 만들기</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-duty-id="{{ duty.id }}" data-duty-title="{{ duty.title }}"
+                                onclick="showDeleteModal(this)">삭제</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="home-empty">등록된 직무가 없습니다. <a href="/company/duties/new">새 직무 등록하기</a></p>
+    {% endif %}
+</div>
+
+<h2 class="dash-section-title mb-2">원격근무 추천 직무</h2>
+<p class="text-secondary mb-3">현장 근무가 필수가 아닌 직무 중 시장 수요가 높은 직무를 추천합니다.</p>
+<div class="row g-3 mb-4">
+    {% for cat in recommends %}
+    <div class="col-md-4">
+        <div class="content-card h-100 duty-recommend-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">{{ cat.title }}</h6>
+                <span class="badge bg-info text-dark">{{ cat.market_demand_label }}</span>
+            </div>
+            <p class="duty-recommend-desc text-muted small">{{ cat.description }}</p>
+            <a href="/company/duties/new?category_id={{ cat.id }}" class="btn btn-sm btn-outline-primary">이 직무로 등록</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 직무 삭제 확인 모달 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">직무 삭제</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong id="deleteTargetTitle"></strong> 직무를 삭제하시겠습니까?</p>
+                <p class="text-muted small mb-0">삭제하면 되돌릴 수 없습니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form method="post" id="deleteForm" class="d-inline">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showDeleteModal(btn) {
+    document.getElementById('deleteTargetTitle').textContent = btn.dataset.dutyTitle;
+    document.getElementById('deleteForm').action = '/company/duties/' + btn.dataset.dutyId + '/delete';
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

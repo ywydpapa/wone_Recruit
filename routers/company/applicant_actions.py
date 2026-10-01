@@ -59,6 +59,7 @@ async def save_interview(
                 conn, cand_row["seeker_user_id"],
                 f"[{cand_row['title']}] 면접이 예정되었습니다. ({interview_date})",
                 "/applications",
+                kind="interview",
             )
         conn.commit()
     finally:
@@ -108,7 +109,7 @@ async def applicants_all_bulk_status(
             ids = [int(x) for x in candidacy_ids.split(",") if x.strip().isdigit()]
             for cid in ids:
                 # apply_transition 내부에서 company 소유 여부를 검증하지 않으므로
-                # job을 통해 소유 확인 후 처리
+                # job을 통해 소유 여부를 확인한 후 처리함
                 cand = conn.execute(
                     """SELECT c.id FROM candidacies c
                        JOIN job_postings jp ON c.job_id=jp.id

@@ -13,11 +13,13 @@ from core.upload import save_upload
 from core.constants import (
     EMPLOYMENT_TYPES, STATUS_LABELS, PURPOSE_LABELS,
     MOBILITY_TYPES, COMMUTE_OPTIONS,
-    COMMUNICATION_OPTIONS, ACCOMMODATION_OPTIONS,
+    COMMUNICATION_OPTIONS, ACCOMMODATION_OPTIONS, FIT_BADGE_CLASS,
 )
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
+from core.jobs import build_search_sql
 from core.matching import build_capability_profile, calc_category_fit
+from routers.company.profile import env_badges as build_env_badges, esg_badges as build_esg_badges
 from routers.resume import build_resume_snapshot
 
 router = APIRouter()
@@ -170,7 +172,7 @@ async def profile_save(request: Request):
             )
         conn.commit()
 
-        # 자격증 저장 (기존 삭제 후 재삽입)
+        # 자격증은 기존 항목 삭제 후 다시 저장함
         cert_names = form.getlist("cert_name")
         cert_dates = form.getlist("cert_date")
         cert_orgs = form.getlist("cert_org")
@@ -286,6 +288,7 @@ async def job_search(
                     fit_label = ""
                 job["fit_score"] = fit
                 job["fit_label"] = fit_label
+                job["fit_badge"] = FIT_BADGE_CLASS.get(fit_label, "")
                 try:
                     provided = json.loads(job.get("accommodations_provided") or "[]")
                 except (json.JSONDecodeError, TypeError):
@@ -313,6 +316,7 @@ async def job_search(
                     fit_label = ""
                 job["fit_score"] = fit
                 job["fit_label"] = fit_label
+                job["fit_badge"] = FIT_BADGE_CLASS.get(fit_label, "")
                 try:
                     provided = json.loads(job.get("accommodations_provided") or "[]")
                 except (json.JSONDecodeError, TypeError):
@@ -409,7 +413,7 @@ async def apply_form(request: Request, job_id: int):
             "SELECT name FROM disability_types WHERE id=?", (profile["disability_type_id"],)
         ).fetchone()
         disability_name = disability_type["name"] if disability_type else ""
-        # private이면 기업에 장애정보 전달하지 않음
+        # private이면 기업에 장애정보를 전달하지 않음
         disability_hidden = profile["disability_visibility"] == "private"
         if disability_hidden:
             disability_name = ""
@@ -477,6 +481,7 @@ async def apply_submit(
                     conn, job_row["company_user_id"],
                     f"[{job_row['title']}] 새로운 지원이 있습니다.",
                     f"/company/jobs/{job_id}/applicants",
+                    kind="apply",
                 )
             conn.commit()
         except Exception:
@@ -631,7 +636,7 @@ async def proposal_respond(
                     (candidacy_id, cand["status"], cand["status"], user["id"]),
                 )
                 if history:
-                    create_notification(conn, history["actor_id"], f"[{job_title}] 구직자가 매칭 제안을 수락했습니다.", "/op/candidacies")
+                    create_notification(conn, history["actor_id"], f"[{job_title}] 구직자가 매칭 제안을 수락했습니다. 기업전달을 진행해 주세요.", f"/mgr/candidacies?seeker_id={user['id']}&hl={candidacy_id}#cand-{candidacy_id}", kind="proposal")
             elif action == "reject":
                 conn.execute(
                     """UPDATE candidacies SET status='withdrawn',
@@ -645,7 +650,7 @@ async def proposal_respond(
                     (candidacy_id, cand["status"], user["id"]),
                 )
                 if history:
-                    create_notification(conn, history["actor_id"], f"[{job_title}] 구직자가 매칭 제안을 거절했습니다.", "/op/candidacies")
+                    create_notification(conn, history["actor_id"], f"[{job_title}] 구직자가 매칭 제안을 거절했습니다.", f"/mgr/candidacies?seeker_id={user['id']}&hl={candidacy_id}#cand-{candidacy_id}", kind="proposal")
             conn.commit()
     finally:
         conn.close()
@@ -771,6 +776,8 @@ async def company_detail(request: Request, company_id: int):
                 accessibility_facilities = json.loads(company["accessibility_facilities"])
             except (json.JSONDecodeError, TypeError):
                 pass
+        env_badges = build_env_badges(company)
+        esg_badges = build_esg_badges(company)
 
         reviews = conn.execute(
             "SELECT id, rating, pros, cons, created_at FROM company_reviews WHERE company_id=? ORDER BY created_at DESC",
@@ -800,6 +807,8 @@ async def company_detail(request: Request, company_id: int):
             "company": company,
             "open_jobs": open_jobs,
             "accessibility_facilities": accessibility_facilities,
+            "env_badges": env_badges,
+            "esg_badges": esg_badges,
             "reviews": reviews,
             "avg_rating": avg_rating,
             "can_review": can_review,
@@ -916,6 +925,10 @@ async def job_detail(request: Request, job_id: int):
         needs = json.loads(profile["accommodation_needs"]) if profile and profile["accommodation_needs"] else []
         accommodations_provided = json.loads(job["accommodations_provided"]) if job and job["accommodations_provided"] else []
         preferred_disability = json.loads(job["preferred_disability"]) if job and job["preferred_disability"] else []
+        if not preferred_disability and job and job["preferred_severity"] == "무관":
+            support_label = "전체 장애유형 지원 가능"
+        else:
+            support_label = "특정 장애유형 우대"
         is_bookmarked = conn.execute(
             "SELECT 1 FROM bookmarks WHERE user_id=? AND job_id=?",
             (user["id"], job_id),
@@ -936,7 +949,7 @@ async def job_detail(request: Request, job_id: int):
                 (user["id"], job_id),
             )
             conn.commit()
-            # 같은 직무 카테고리 또는 같은 지역 공고
+            # 같은 직무 카테고리 또는 같은 지역의 공고를 조회함
             similar_sql = (
                 "SELECT jp.id, jp.title, jp.employment_type, jp.salary, jp.deadline, "
                 "c.company_name, r.sido AS region_sido, r.sigungu AS region_sigungu "
@@ -977,6 +990,7 @@ async def job_detail(request: Request, job_id: int):
             "job": job,
             "accommodations_provided": accommodations_provided,
             "preferred_disability": preferred_disability,
+            "support_label": support_label,
             "seeker_needs": needs,
             "is_bookmarked": is_bookmarked,
             "similar_jobs": similar_jobs,
@@ -994,45 +1008,6 @@ _SEARCH_FILTER_KEYS = [
     'q', 'sido', 'region_id', 'employment_type', 'remote',
     'category', 'max_hours', 'accommodation', 'disability_type', 'severity',
 ]
-
-
-def _build_search_sql(filters):
-    sql = (
-        "SELECT jp.id, jp.created_at FROM job_postings jp "
-        "LEFT JOIN regions r ON jp.region_id=r.id "
-        "WHERE jp.status='open'"
-    )
-    params = []
-    if filters.get('q'):
-        sql += " AND (jp.title LIKE ? OR jp.description LIKE ?)"
-        params += [f"%{filters['q']}%", f"%{filters['q']}%"]
-    if filters.get('region_id'):
-        sql += " AND jp.region_id=?"
-        params.append(int(filters['region_id']))
-    elif filters.get('sido'):
-        sql += " AND r.sido=?"
-        params.append(filters['sido'])
-    if filters.get('employment_type'):
-        sql += " AND jp.employment_type=?"
-        params.append(filters['employment_type'])
-    if filters.get('remote'):
-        sql += " AND jp.remote_available=1"
-    if filters.get('category'):
-        sql += " AND jp.category_id=?"
-        params.append(int(filters['category']))
-    if filters.get('max_hours'):
-        sql += " AND jp.min_work_hours<=?"
-        params.append(int(filters['max_hours']))
-    if filters.get('accommodation'):
-        sql += " AND jp.accommodations_provided LIKE ?"
-        params.append(f"%{filters['accommodation']}%")
-    if filters.get('disability_type'):
-        sql += " AND jp.preferred_disability LIKE ?"
-        params.append(f"%{filters['disability_type']}%")
-    if filters.get('severity'):
-        sql += " AND (jp.preferred_severity=? OR jp.preferred_severity='무관')"
-        params.append(filters['severity'])
-    return sql, params
 
 
 @router.post("/saved-searches")
@@ -1095,7 +1070,7 @@ async def saved_searches_list(request: Request):
         for s in searches:
             filters = json.loads(s["filters"]) if s["filters"] else {}
             last_checked = s["last_checked_at"] or s["created_at"]
-            count_sql, count_params = _build_search_sql(filters)
+            count_sql, count_params = build_search_sql(filters)
             count_sql = f"SELECT COUNT(*) FROM ({count_sql} AND jp.created_at > ?)"
             count_params.append(last_checked)
             new_count = conn.execute(count_sql, count_params).fetchone()[0]
@@ -1177,26 +1152,6 @@ async def delete_saved_search(request: Request, search_id: int):
     return JSONResponse({"redirect": "/saved-searches"})
 
 
-@router.post("/request-consultation")
-async def request_consultation(request: Request):
-    user = require_role(request, "seeker")
-    conn = get_sqlite()
-    try:
-        operators = conn.execute(
-            "SELECT id FROM users WHERE role='operator'"
-        ).fetchall()
-        for op in operators:
-            create_notification(
-                conn, op["id"],
-                f"{user['name']}님이 상담을 신청했습니다",
-                f"/op/seekers/{user['id']}?from=consult_request",
-            )
-        conn.commit()
-    finally:
-        conn.close()
-    return RedirectResponse(url="/", status_code=303)
-
-
 # 일정 뷰
 _SCHED_TYPE = {
     'initial_assessment': '초기 평가', 'career_counseling': '진로 상담',
@@ -1245,7 +1200,7 @@ async def schedule_view(request: Request, year: int = Query(None), month: int = 
 
         cs_rows = conn.execute(
             """SELECT cs.id, cs.scheduled_at, cs.session_type, cs.method,
-                      cs.location, cs.status, cs.notes, u.name AS manager_name
+                      cs.location, cs.status, u.name AS manager_name
                FROM consultation_sessions cs
                JOIN users u ON cs.manager_user_id = u.id
                WHERE cs.seeker_user_id = ? AND cs.scheduled_at IS NOT NULL

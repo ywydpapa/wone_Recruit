@@ -102,7 +102,7 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
                WHERE sp.user_id=?""",
             (cand["seeker_user_id"],),
         ).fetchone()
-        # 장애정보 공개 설정에 따라 마스킹
+        # 장애정보 공개 설정에 따라 마스킹함
         disability_hidden = False
         if profile:
             if profile["disability_visibility"] != "public":
@@ -135,6 +135,7 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
                 conn, cand["seeker_user_id"],
                 f"{company['company_name']}에서 프로필을 열람했습니다.",
                 "/profile/views",
+                kind="apply",
             )
         conn.commit()
         current_status = cand["status"]
@@ -152,7 +153,6 @@ async def applicant_detail(request: Request, job_id: int, candidacy_id: int):
             (candidacy_id,),
         ).fetchall()
 
-        # 이력서
         resume = conn.execute(
             "SELECT * FROM resumes WHERE user_id=? ORDER BY is_default DESC, updated_at DESC LIMIT 1",
             (cand["seeker_user_id"],),

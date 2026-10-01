@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}상담 내역 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>상담</h2></div>
+
+{% include "consult/_tabs.html" %}
+
+{% if manager %}
+<p class="text-muted mb-3">담당 매니저 {{ manager['name'] }}</p>
+{% endif %}
+
+<section class="home-section" aria-labelledby="reqTitle">
+    <div class="home-section-head">
+        <h2 id="reqTitle">신청한 상담</h2>
+    </div>
+    {% if reqs %}
+    <div class="table-responsive">
+        <table class="table">
+            <caption class="visually-hidden">신청한 상담 목록</caption>
+            <thead>
+                <tr>
+                    <th scope="col">분야</th>
+                    <th scope="col">방법</th>
+                    <th scope="col">내용</th>
+                    <th scope="col">상태</th>
+                    <th scope="col">답변</th>
+                    <th scope="col">신청일</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in reqs %}
+            <tr>
+                <td>{{ r['category_label'] }}</td>
+                <td>{{ r['method_label'] }}</td>
+                <td class="consult-content-cell">{{ r['content'] }}</td>
+                <td><span class="badge">{{ r['status_label'] }}</span></td>
+                <td>{{ r['reply'] or '-' }}</td>
+                <td>{{ r['created_at']|fdate }}</td>
+                <td>
+                    {% if r['status'] == 'pending' %}
+                    <form method="post" action="/consult/{{ r['id'] }}/cancel">
+                        {{ csrf_input }}
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">취소</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="home-empty">신청한 상담이 없습니다.</p>
+    {% endif %}
+</section>
+
+<section class="home-section" aria-labelledby="sessionTitle">
+    <div class="home-section-head">
+        <h2 id="sessionTitle">상담 일정</h2>
+    </div>
+    {% if sessions %}
+    <div class="table-responsive">
+        <table class="table">
+            <caption class="visually-hidden">상담 일정 목록</caption>
+            <thead>
+                <tr>
+                    <th scope="col">유형</th>
+                    <th scope="col">일시</th>
+                    <th scope="col">방법</th>
+                    <th scope="col">장소</th>
+                    <th scope="col">상태</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in sessions %}
+            <tr>
+                <td>{{ s['type_label'] }}</td>
+                <td>{{ s['scheduled_at']|fdatetime if s['scheduled_at'] else '-' }}</td>
+                <td>{{ s['method_label'] }}</td>
+                <td>{{ s['location'] or '-' }}</td>
+                <td>{{ s['status_label'] }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="home-empty">예정된 상담이 없습니다.</p>
+    {% endif %}
+</section>
+
+<section class="home-section" aria-labelledby="hotlineTitle">
+    <div class="home-section-head">
+        <h2 id="hotlineTitle">도움받을 수 있는 곳</h2>
+    </div>
+    <ul class="hotline-list">
+        <li><span class="hotline-label">한국장애인고용공단</span><a href="tel:1588-1519">1588-1519</a></li>
+        <li><span class="hotline-label">국가인권위원회</span><a href="tel:1331">1331</a></li>
+        <li><span class="hotline-label">긴급 신고</span><a href="tel:112">112</a> / <a href="tel:119">119</a></li>
+    </ul>
+</section>
+{% endblock %}

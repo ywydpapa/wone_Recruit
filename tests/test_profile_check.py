@@ -5,7 +5,7 @@ from tests.conftest import login
 
 def test_apply_blocked_without_profile(client):
     login(client, "seeker1")
-    # seeker1 프로필 삭제하여 미완성 상태 시뮬레이션
+    # seeker1 프로필을 삭제하여 미완성 상태를 재현함
     conn = get_sqlite()
     uid = conn.execute("SELECT id FROM users WHERE username='seeker1'").fetchone()["id"]
     conn.execute("DELETE FROM seeker_profiles WHERE user_id=?", (uid,))
@@ -19,7 +19,7 @@ def test_apply_blocked_without_profile(client):
 
 
 def test_apply_allowed_missing_disability_type(client):
-    # disability_type_id는 매니저가 설정 - 없어도 지원 가능
+    # disability_type_id는 매니저가 설정하는 항목이므로 없어도 지원 가능함
     login(client, "seeker1")
     conn = get_sqlite()
     uid = conn.execute("SELECT id FROM users WHERE username='seeker1'").fetchone()["id"]

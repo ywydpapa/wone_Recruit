@@ -1,0 +1,18 @@
+<section class="home-section" aria-labelledby="noticeTitle">
+    <div class="home-section-head">
+        <h2 id="noticeTitle">공지사항</h2>
+        <a href="/notices">전체 보기</a>
+    </div>
+    {% if notices %}
+    <ul class="home-list">
+        {% for n in notices %}
+        <li>
+            <a href="/notices/{{ n.id }}">{% if n.pinned %}[공지] {% endif %}{{ n.title }}</a>
+            <span class="home-list-end">{{ n.created_at|fdate }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="home-empty">등록된 공지사항이 없습니다.</p>
+    {% endif %}
+</section>

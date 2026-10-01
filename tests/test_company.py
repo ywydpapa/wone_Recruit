@@ -78,3 +78,14 @@ def test_company_accessibility_stored(client):
     assert "휠체어접근" in r.text
     assert "장애인화장실" in r.text
     assert "엘리베이터" in r.text
+
+
+def test_company_profile_rejects_bad_bizno(client):
+    login(client, "comp1")
+    r = client.post("/company/profile", data={
+        "company_name": "한빛테크",
+        "biz_no": "123-45-67899",
+        "region_id": 1,
+    }, follow_redirects=False)
+    assert r.status_code == 303
+    assert "error=bizno" in r.headers["location"]

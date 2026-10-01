@@ -3,87 +3,45 @@
 {% block content %}
 <div class="page-header"><h2>내 지원 현황</h2></div>
 {% if applications %}
-        {% for app in applications %}
-        <div class="content-card mb-3">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                <div>
-                    <h6 class="fw-bold mb-1"><a href="/jobs/{{ app['job_id'] }}">{{ app['title'] }}</a></h6>
-                    <span class="text-muted small">{{ app['company_name'] }} · {{ app['created_at']|fdate }}</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    {% set s = app['status'] %}
-                    {% if s == 'pending' %}
-                        <span class="badge bg-secondary"><i class="fas fa-clock badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'reviewing' %}
-                        <span class="badge bg-primary"><i class="fas fa-eye badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'shortlisted' %}
-                        <span class="badge bg-info text-dark"><i class="fas fa-list badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'interview' %}
-                        <span class="badge bg-warning text-dark"><i class="fas fa-comments badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'offer' %}
-                        <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'hired' %}
-                        <span class="badge bg-success"><i class="fas fa-check badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'rejected' %}
-                        <span class="badge bg-danger"><i class="fas fa-times badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% elif s == 'withdrawn' %}
-                        <span class="badge bg-light text-dark border"><i class="fas fa-undo badge-icon" aria-hidden="true"></i>{{ status_labels[s] }}</span>
-                    {% else %}
-                        <span class="badge bg-secondary"><i class="fas fa-circle badge-icon" aria-hidden="true"></i>{{ s }}</span>
-                    {% endif %}
-                    {% if app['status'] not in ('hired', 'rejected', 'withdrawn') %}
-                    <form method="post" action="/applications/{{ app['id'] }}/withdraw"
-                          onsubmit="return confirm('지원을 취소하시겠습니까?')">
-                        {{ csrf_input }}
-                        <button type="submit" class="btn btn-sm btn-outline-danger">취소</button>
-                    </form>
-                    {% endif %}
-                </div>
+<div class="mp-row-list">
+    {% for app in applications %}
+    <div class="mp-row">
+        <div class="mp-row-head">
+            <div>
+                <a href="/jobs/{{ app['job_id'] }}" class="mp-row-title">{{ app['title'] }}</a>
+                <div class="mp-row-sub">{{ app['company_name'] }} &middot; {{ app['created_at']|fdate }}</div>
             </div>
-
-            {% set hm = history_map.get(app['id'], {}) %}
-            {% if hm.get('reached') %}
-            <div class="status-timeline mt-3">
-                {% for step in ['pending', 'reviewing', 'shortlisted', 'interview', 'offer', 'hired'] %}
-                <div class="timeline-step {% if step in hm.reached %}active{% endif %} {% if step == app['status'] and step not in ('rejected', 'withdrawn') %}current{% endif %}" role="listitem">
-                    <div class="timeline-dot">
-                        {% if step in hm.reached %}<i class="fas fa-check" aria-hidden="true"></i>{% endif %}
-                    </div>
-                    <span class="timeline-label">{{ status_labels.get(step, step) }}</span>
-                    {% if hm.dates.get(step) %}
-                    <span class="timeline-date">{{ hm.dates[step] }}</span>
-                    {% endif %}
-                </div>
-                {% endfor %}
-
-                {% if app['status'] == 'rejected' %}
-                <div class="timeline-step active rejected" role="listitem">
-                    <div class="timeline-dot"><i class="fas fa-times" aria-hidden="true"></i></div>
-                    <span class="timeline-label">{{ status_labels.get('rejected', '불합격') }}</span>
-                    {% if dates.get('rejected') %}
-                    <span class="timeline-date">{{ dates['rejected'] }}</span>
-                    {% endif %}
-                </div>
-                {% elif app['status'] == 'withdrawn' %}
-                <div class="timeline-step active withdrawn" role="listitem">
-                    <div class="timeline-dot"><i class="fas fa-undo" aria-hidden="true"></i></div>
-                    <span class="timeline-label">{{ status_labels.get('withdrawn', '취소') }}</span>
-                    {% if dates.get('withdrawn') %}
-                    <span class="timeline-date">{{ dates['withdrawn'] }}</span>
-                    {% endif %}
-                </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge">{{ status_labels.get(app['status'], app['status']) }}</span>
+                {% if app['status'] not in ('hired', 'rejected', 'withdrawn') %}
+                <form method="post" action="/applications/{{ app['id'] }}/withdraw"
+                      onsubmit="return confirm('지원을 취소하시겠습니까?')">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">취소</button>
+                </form>
                 {% endif %}
             </div>
+        </div>
+
+        {% set hm = history_map.get(app['id'], {}) %}
+        {% if hm.get('reached') %}
+        <ul class="mp-timeline">
+            {% for step in ['pending', 'reviewing', 'shortlisted', 'interview', 'offer', 'hired'] %}
+            <li class="{% if step in hm.reached %}done{% endif %}{% if step == app['status'] and step not in ('rejected', 'withdrawn') %} current{% endif %}">
+                {{ status_labels.get(step, step) }}{% if hm.dates.get(step) %} {{ hm.dates[step] }}{% endif %}
+            </li>
+            {% endfor %}
+            {% if app['status'] == 'rejected' %}
+            <li class="done current">{{ status_labels.get('rejected', '불합격') }}{% if hm.dates.get('rejected') %} {{ hm.dates['rejected'] }}{% endif %}</li>
+            {% elif app['status'] == 'withdrawn' %}
+            <li class="done current">{{ status_labels.get('withdrawn', '취소') }}{% if hm.dates.get('withdrawn') %} {{ hm.dates['withdrawn'] }}{% endif %}</li>
             {% endif %}
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="content-card">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-file-alt"></i></div>
-                <p class="empty-state-text">아직 지원한 공고가 없습니다.</p>
-                <a href="/jobs" class="btn btn-primary btn-sm">공고 검색하기</a>
-            </div>
-        </div>
+        </ul>
         {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="home-empty">아직 지원한 공고가 없습니다. <a href="/jobs">공고 검색하기</a></p>
+{% endif %}
 {% endblock %}

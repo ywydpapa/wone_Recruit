@@ -1,4 +1,4 @@
-from core.security import hash_password, MIN_PASSWORD_LENGTH
+from core.security import check_password, hash_password
 import json
 import secrets
 from urllib.parse import quote
@@ -7,7 +7,11 @@ from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
-from core.constants import PURPOSE_LABELS, EMPLOYMENT_TYPES, COMPANY_SIZES, INDUSTRY_TYPES
+from core.constants import (
+    PURPOSE_LABELS, EMPLOYMENT_TYPES, COMPANY_SIZES, INDUSTRY_TYPES,
+    JOB_STATUS_LABELS, JOB_STATUS_BADGE, STATUS_LABELS,
+    ROLE_LABELS, COMPANY_APPROVAL_LABELS, COMPANY_APPROVAL_BADGE,
+)
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
 
@@ -143,8 +147,9 @@ async def op_create_manager(
     password: str = Form(...),
 ):
     require_role(request, "operator")
-    if len(password) < MIN_PASSWORD_LENGTH:
-        return RedirectResponse(url="/op/managers?error=short_pw", status_code=303)
+    pw_err = check_password(password)
+    if pw_err:
+        return RedirectResponse(url=f"/op/managers?error={pw_err}", status_code=303)
     conn = get_sqlite()
     try:
         exists = conn.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone()
@@ -200,7 +205,7 @@ async def op_toggle_manager(request: Request, manager_id: int):
         new_val = 0 if mgr["is_deleted"] else 1
         conn.execute("UPDATE users SET is_deleted=? WHERE id=?", (new_val, manager_id))
 
-        # 비활성화 시 담당 구직자 이관
+        # 비활성화 시 담당 구직자를 이관함
         if new_val == 1:
             seekers = conn.execute(
                 "SELECT seeker_user_id FROM manager_assignments WHERE manager_user_id=?",
@@ -235,7 +240,7 @@ async def op_toggle_manager(request: Request, manager_id: int):
                     msg = f"담당 매니저가 {new_mgr_name}(으)로 변경되었습니다."
                 else:
                     msg = "담당 매니저가 변경되었습니다. 새 매니저가 배정되면 안내드리겠습니다."
-                create_notification(conn, sid, msg)
+                create_notification(conn, sid, msg, kind="consult")
 
         conn.commit()
     finally:
@@ -253,7 +258,7 @@ async def op_reset_manager_pw(request: Request, manager_id: int):
         ).fetchone()
         if not mgr:
             raise HTTPException(status_code=404, detail="상담사를 찾을 수 없습니다.")
-        temp_pw = secrets.token_urlsafe(8)
+        temp_pw = secrets.token_urlsafe(12)
         conn.execute(
             "UPDATE users SET password=?, must_change_password=1 WHERE id=?",
             (hash_password(temp_pw), manager_id),
@@ -325,6 +330,11 @@ async def op_companies(
             d["facility_count"] = len(json.loads(fac))
         except (json.JSONDecodeError, TypeError):
             d["facility_count"] = 0
+        if d.get("reverify"):
+            d["approval_label"], d["approval_badge"] = "재심사", "bg-danger"
+        else:
+            d["approval_label"] = COMPANY_APPROVAL_LABELS.get(d["approval_status"], d["approval_status"])
+            d["approval_badge"] = COMPANY_APPROVAL_BADGE.get(d["approval_status"], "bg-secondary")
         companies.append(d)
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
@@ -380,6 +390,8 @@ async def op_company_detail(request: Request, company_id: int):
         avg_rating = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
     finally:
         conn.close()
+    approval_labels = {"pending": "심사 대기", "approved": "승인", "rejected": "반려"}
+    approval_badges = {"pending": "bg-warning text-dark", "approved": "bg-success", "rejected": "bg-danger"}
     return templates.TemplateResponse(
         request=request, name="op/company_detail.html", context={
             "request": request, "page_title": f"기업 상세 - {company['company_name']}",
@@ -389,6 +401,9 @@ async def op_company_detail(request: Request, company_id: int):
             "placed_count": placed_count,
             "reviews": reviews,
             "avg_rating": avg_rating,
+            "approval_label": approval_labels.get(company["approval_status"], company["approval_status"]),
+            "approval_badge": approval_badges.get(company["approval_status"], "bg-secondary"),
+            "env_items": [("재택", company["remote_ok"]), ("유연근무", company["flexible_ok"]), ("공유오피스", company["shared_office_ok"])],
         }
     )
 
@@ -401,7 +416,7 @@ async def op_company_approve(request: Request, company_id: int):
         conn.execute("UPDATE companies SET approval_status='approved', rejection_reason='', reverify=0 WHERE id=?", (company_id,))
         company = conn.execute("SELECT user_id FROM companies WHERE id=?", (company_id,)).fetchone()
         if company:
-            create_notification(conn, company["user_id"], "사업자 인증이 승인되었습니다.", "/company/profile")
+            create_notification(conn, company["user_id"], "사업자 인증이 승인되었습니다.", "/company/profile", kind="system")
         conn.commit()
     finally:
         conn.close()
@@ -418,7 +433,7 @@ async def op_company_reject(request: Request, company_id: int):
         conn.execute("UPDATE companies SET approval_status='rejected', rejection_reason=?, reverify=0 WHERE id=?", (reason, company_id))
         company = conn.execute("SELECT user_id FROM companies WHERE id=?", (company_id,)).fetchone()
         if company:
-            create_notification(conn, company["user_id"], "사업자 인증이 반려되었습니다. 사유를 확인해 주세요.", "/company/profile")
+            create_notification(conn, company["user_id"], "사업자 인증이 반려되었습니다. 사유를 확인해 주세요.", "/company/profile", kind="system")
         conn.commit()
     finally:
         conn.close()
@@ -479,6 +494,11 @@ async def op_jobs(
         total = conn.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
         sql += f" LIMIT {PER_PAGE} OFFSET {(page - 1) * PER_PAGE}"
         jobs = conn.execute(sql, params).fetchall()
+        jobs = [
+            {**dict(j), "status_label": JOB_STATUS_LABELS.get(j["status"], j["status"]),
+             "status_badge": JOB_STATUS_BADGE.get(j["status"], "bg-secondary")}
+            for j in jobs
+        ]
         pagination = page_info(total, page)
     finally:
         conn.close()
@@ -530,14 +550,14 @@ async def op_job_detail(request: Request, job_id: int):
         conn.close()
     if not job:
         return RedirectResponse(url="/op/jobs", status_code=303)
-    _labels = {
-        "pending": "접수", "reviewing": "검토중", "shortlisted": "서류합격",
-        "interview": "면접", "offer": "제의", "hired": "채용",
-        "rejected": "불합격", "withdrawn": "지원취소",
-    }
-    status_breakdown = [(_labels.get(r["status"], r["status"]), r["cnt"]) for r in status_rows]
+    status_breakdown = [(STATUS_LABELS.get(r["status"], r["status"]), r["cnt"]) for r in status_rows]
     total_applicants = sum(r["cnt"] for r in status_rows)
     accommodations = json.loads(job["accommodations_provided"]) if job["accommodations_provided"] else []
+    job = {
+        **dict(job),
+        "status_label": JOB_STATUS_LABELS.get(job["status"], job["status"]),
+        "status_badge": JOB_STATUS_BADGE.get(job["status"], "bg-secondary"),
+    }
     return templates.TemplateResponse(
         request=request, name="op/job_detail.html", context={
             "request": request, "page_title": job["title"],
@@ -569,6 +589,7 @@ async def op_job_approve(request: Request, job_id: int):
                 conn, job["user_id"],
                 f"[{job['title']}] 공고가 승인되어 게시되었습니다.",
                 "/company/jobs",
+                kind="job",
             )
         conn.commit()
     finally:
@@ -596,6 +617,7 @@ async def op_job_reject(request: Request, job_id: int):
                 conn, job["user_id"],
                 f"[{job['title']}] 공고가 반려되었습니다. 사유를 확인해 주세요.",
                 "/company/jobs",
+                kind="job",
             )
         conn.commit()
     finally:
@@ -615,14 +637,15 @@ async def op_reset_password(
     new_password: str = Form(...),
 ):
     user = require_role(request, "operator")
-    if len(new_password) < MIN_PASSWORD_LENGTH:
-        return RedirectResponse(url=f"/op/seekers/{target_user_id}", status_code=303)
+    pw_err = check_password(new_password)
+    if pw_err:
+        return RedirectResponse(url=f"/op/seekers/{target_user_id}?pw_error={pw_err}", status_code=303)
     hashed = hash_password(new_password)
     conn = get_sqlite()
     try:
         target = conn.execute("SELECT id, role FROM users WHERE id=?", (target_user_id,)).fetchone()
         if target:
-            conn.execute("UPDATE users SET password=? WHERE id=?", (hashed, target_user_id))
+            conn.execute("UPDATE users SET password=?, must_change_password=1 WHERE id=?", (hashed, target_user_id))
             conn.commit()
     finally:
         conn.close()
@@ -636,6 +659,7 @@ async def op_reset_password(
 
 
 INQUIRY_STATUS = {"open": "미답변", "answered": "답변완료", "closed": "종료"}
+INQUIRY_STATUS_BADGE = {"open": "bg-warning text-dark", "answered": "bg-success", "closed": "bg-secondary"}
 
 
 @router.get("/inquiries", response_class=HTMLResponse)
@@ -671,6 +695,8 @@ async def op_inquiries(
             "user_name": user["name"], "user_role": "operator",
             "inquiries": rows,
             "status_labels": INQUIRY_STATUS,
+            "status_badge": INQUIRY_STATUS_BADGE,
+            "role_labels": ROLE_LABELS,
             "selected_status": status or "",
             "pagination": pagination, "base_qs": "&".join(qs_parts),
         }
@@ -697,6 +723,8 @@ async def op_inquiry_detail(request: Request, inquiry_id: int):
             "user_name": user["name"], "user_role": "operator",
             "inquiry": row,
             "status_labels": INQUIRY_STATUS,
+            "status_badge": INQUIRY_STATUS_BADGE,
+            "role_labels": ROLE_LABELS,
         }
     )
 
@@ -720,6 +748,7 @@ async def op_inquiry_answer(
                 conn, inq["user_id"],
                 f"[{inq['subject']}] 문의에 답변이 등록되었습니다.",
                 f"/inquiries/{inquiry_id}",
+                kind="consult",
             )
         conn.commit()
     finally:
@@ -766,6 +795,7 @@ async def op_access_log(request: Request, page: int = Query(1)):
             "logs": logs,
             "pagination": pagination,
             "purpose_labels": PURPOSE_LABELS,
+            "role_labels": ROLE_LABELS,
             "base_qs": "",
         }
     )

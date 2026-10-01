@@ -37,7 +37,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -46,10 +46,11 @@
 </div>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">기업 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}개)</span></h4>
-    </div>
-    <div class="content-card">
+    <div class="home-section">
+        <div class="home-section-head">
+            <h2>기업</h2>
+            <span class="text-muted small">{{ pagination.total }}개</span>
+        </div>
         {% if companies %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -58,7 +59,7 @@
                 </thead>
                 <tbody>
                     {% for c in companies %}
-                    <tr onclick="location.href='/mgr/companies/{{ c['id'] }}'" style="cursor:pointer">
+                    <tr onclick="location.href='/mgr/companies/{{ c['id'] }}'" class="row-link">
                         <td class="fw-semibold">{{ c['company_name'] }}</td>
                         <td>{{ c['industry'] or '-' }}</td>
                         <td>{{ c['company_size'] or '-' }}</td>
@@ -70,7 +71,7 @@
             </table>
         </div>
         {% else %}
-        <p class="text-center py-3 text-muted mb-0">등록된 기업이 없습니다.</p>
+        <p class="home-empty">등록된 기업이 없습니다.</p>
         {% endif %}
     </div>
     {% if companies %}

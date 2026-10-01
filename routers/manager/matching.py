@@ -1,4 +1,3 @@
-import json
 from typing import Optional
 
 from fastapi import APIRouter, Form, HTTPException, Query, Request
@@ -8,7 +7,7 @@ from core.deps import require_role, templates
 from core.constants import STATUS_LABELS, MATCH_STAGE_LABELS
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
-from core.matching import build_capability_profile, calc_category_fit
+from core.matching import match_score
 from core.logger import log
 
 router = APIRouter()
@@ -29,16 +28,23 @@ async def mgr_matching(request: Request, job_id: int = None):
                    WHERE jp.status = 'open'
                    ORDER BY jp.created_at DESC"""
             ).fetchall()
+            my_seekers = conn.execute(
+                "SELECT u.id, u.name FROM users u "
+                "JOIN manager_assignments ma ON ma.seeker_user_id = u.id "
+                "WHERE ma.manager_user_id = ? ORDER BY u.name",
+                (user["id"],),
+            ).fetchall()
             return templates.TemplateResponse(
                 request=request, name="manager/matching.html", context={
                     "request": request, "page_title": "매칭 - 공고 선택",
                     "user_name": user["name"], "user_role": "manager",
                     "open_jobs": open_jobs, "job": None, "candidates": None,
+                    "my_seekers": my_seekers,
                 }
             )
 
         job = conn.execute(
-            """SELECT jp.*, c.company_name,
+            """SELECT jp.*, c.company_name, c.accessibility_facilities, c.remote_ok, c.flexible_ok,
                       r.sido AS region_sido, r.sigungu AS region_sigungu
                FROM job_postings jp
                JOIN companies c ON jp.company_id = c.id
@@ -47,15 +53,12 @@ async def mgr_matching(request: Request, job_id: int = None):
             (job_id,),
         ).fetchone()
 
-        job_accommodations = json.loads(job["accommodations_provided"]) if job and job["accommodations_provided"] else []
-        job_min_hours = job["min_work_hours"] if job else 8
-        job_region_sido = job["region_sido"] if job else ""
-
         # 내 담당 구직자 중 미지원자
         candidates = conn.execute(
             """SELECT u.id, u.name, sp.work_pref,
                       sp.severity, dt.name AS disability_name,
                       sp.desired_job, sp.daily_work_hours, sp.accommodation_needs,
+                      sp.target_categories, sp.assistive_tech,
                       r.sido AS region_sido, r.sigungu AS region_sigungu
                FROM users u
                JOIN manager_assignments ma ON ma.seeker_user_id = u.id
@@ -72,31 +75,13 @@ async def mgr_matching(request: Request, job_id: int = None):
         ).fetchall()
 
         job_category = None
-        if job and job["category_id"]:
+        if job["category_id"]:
             job_category = conn.execute(
                 "SELECT * FROM job_categories WHERE id=?", (job["category_id"],)
             ).fetchone()
 
-        compatibility = {}
-        for c in candidates:
-            needs = json.loads(c["accommodation_needs"]) if c["accommodation_needs"] else []
-            cap_profile = build_capability_profile(conn, c["id"])
-            fit = calc_category_fit(cap_profile, job_category) if job_category else 3.0
-            if fit >= 2:
-                fit_label = "적합"
-            elif fit >= 1:
-                fit_label = "조건부"
-            else:
-                fit_label = ""
-            compatibility[c["id"]] = {
-                "region": c["region_sido"] == job_region_sido if job_region_sido and c["region_sido"] else False,
-                "hours": (c["daily_work_hours"] or 8) >= job_min_hours,
-                "accommodation": len(set(needs) & set(job_accommodations)) if needs and job_accommodations else 0,
-                "accommodation_total": len(needs) if needs else 0,
-                "fit_score": fit,
-                "fit_label": fit_label,
-            }
-        candidates = sorted(candidates, key=lambda c: compatibility[c["id"]]["fit_score"], reverse=True)
+        scores = {c["id"]: match_score(conn, c, job, job_category) for c in candidates}
+        candidates = sorted(candidates, key=lambda c: scores[c["id"]]["score"], reverse=True)
     finally:
         conn.close()
 
@@ -105,7 +90,62 @@ async def mgr_matching(request: Request, job_id: int = None):
             "request": request, "page_title": "매칭 - 후보자 선택",
             "user_name": user["name"], "user_role": "manager",
             "open_jobs": None, "job": job, "job_id": job_id,
-            "candidates": candidates, "compatibility": compatibility,
+            "candidates": candidates, "scores": scores,
+        }
+    )
+
+
+@router.get("/matching/seeker/{seeker_id}", response_class=HTMLResponse)
+async def mgr_matching_seeker(request: Request, seeker_id: int):
+    user = require_role(request, "manager")
+    conn = get_sqlite()
+    try:
+        assigned = conn.execute(
+            "SELECT 1 FROM manager_assignments WHERE manager_user_id=? AND seeker_user_id=?",
+            (user["id"], seeker_id),
+        ).fetchone()
+        if not assigned:
+            raise HTTPException(status_code=404)
+
+        seeker = conn.execute(
+            """SELECT u.id, u.name, sp.severity, dt.name AS disability_name,
+                      sp.desired_job, sp.daily_work_hours, sp.accommodation_needs,
+                      sp.target_categories, sp.assistive_tech, sp.consent_sensitive,
+                      r.sido AS region_sido, r.sigungu AS region_sigungu
+               FROM users u
+               JOIN seeker_profiles sp ON u.id = sp.user_id
+               LEFT JOIN disability_types dt ON sp.disability_type_id = dt.id
+               LEFT JOIN regions r ON sp.region_id = r.id
+               WHERE u.id = ?""",
+            (seeker_id,),
+        ).fetchone()
+
+        jobs = None
+        scores = None
+        if seeker["consent_sensitive"]:
+            jobs = conn.execute(
+                """SELECT jp.*, c.company_name, c.accessibility_facilities, c.remote_ok, c.flexible_ok,
+                          r.sido AS region_sido, r.sigungu AS region_sigungu
+                   FROM job_postings jp
+                   JOIN companies c ON jp.company_id = c.id
+                   LEFT JOIN regions r ON jp.region_id = r.id
+                   WHERE jp.status = 'open'
+                     AND jp.id NOT IN (
+                         SELECT job_id FROM candidacies WHERE seeker_user_id = ?
+                     )""",
+                (seeker_id,),
+            ).fetchall()
+            cats = {row["id"]: row for row in conn.execute("SELECT * FROM job_categories").fetchall()}
+            scores = {j["id"]: match_score(conn, seeker, j, cats.get(j["category_id"])) for j in jobs}
+            jobs = sorted(jobs, key=lambda j: scores[j["id"]]["score"], reverse=True)[:30]
+    finally:
+        conn.close()
+
+    return templates.TemplateResponse(
+        request=request, name="manager/matching_seeker.html", context={
+            "request": request, "page_title": "매칭 - 추천 공고",
+            "user_name": user["name"], "user_role": "manager",
+            "seeker": seeker, "jobs": jobs, "scores": scores,
         }
     )
 
@@ -133,7 +173,7 @@ async def mgr_propose(
         )
         job = conn.execute("SELECT title FROM job_postings WHERE id=?", (job_id,)).fetchone()
         job_title = job["title"] if job else "공고"
-        create_notification(conn, seeker_user_id, f"[{job_title}] 매니저가 매칭을 제안했습니다.", "/proposals")
+        create_notification(conn, seeker_user_id, f"[{job_title}] 매니저가 매칭을 제안했습니다.", "/proposals", kind="proposal")
         conn.commit()
     except Exception:
         log.exception("매칭 제안 실패: job_id=%s seeker=%s", job_id, seeker_user_id)
@@ -179,6 +219,7 @@ async def mgr_candidacies(
     seeker_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     match_stage: Optional[str] = Query(None),
+    hl: Optional[int] = Query(None),
     page: int = Query(1),
 ):
     user = require_role(request, "manager")
@@ -215,6 +256,12 @@ async def mgr_candidacies(
             "WHERE ma.manager_user_id = ? ORDER BY u.name",
             (user["id"],),
         ).fetchall()
+        confirmed_cnt = conn.execute(
+            """SELECT COUNT(*) FROM candidacies c
+               JOIN manager_assignments ma ON ma.seeker_user_id = c.seeker_user_id
+               WHERE ma.manager_user_id = ? AND c.match_stage = 'seeker_confirmed'""",
+            (user["id"],),
+        ).fetchone()[0]
     finally:
         conn.close()
     qs_parts = []
@@ -222,6 +269,8 @@ async def mgr_candidacies(
         qs_parts.append(f"seeker_id={seeker_id}")
     if status:
         qs_parts.append(f"status={status}")
+    if match_stage:
+        qs_parts.append(f"match_stage={match_stage}")
     return templates.TemplateResponse(
         request=request, name="manager/candidacies.html", context={
             "request": request, "page_title": "지원 현황",
@@ -230,6 +279,9 @@ async def mgr_candidacies(
             "seekers": seekers,
             "selected_seeker": seeker_id or "",
             "selected_status": status or "",
+            "match_stage": match_stage or "",
+            "hl": hl,
+            "confirmed_cnt": confirmed_cnt,
             "status_labels": STATUS_LABELS,
             "match_stage_labels": MATCH_STAGE_LABELS,
             "pagination": pagination, "base_qs": "&".join(qs_parts),
@@ -264,6 +316,7 @@ async def mgr_submit(request: Request, candidacy_id: int):
                     conn, job["company_user_id"],
                     f"[{job['title']}] 새로운 매칭 후보가 전달되었습니다.",
                     f"/company/jobs/{cand['job_id']}/applicants",
+                    kind="apply",
                 )
             conn.commit()
     finally:

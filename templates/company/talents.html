@@ -54,7 +54,7 @@
                     </div>
                 </div>
                 <div class="col-md-2 col-sm-6">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             <input type="hidden" name="sort" value="{{ selected_sort }}">
@@ -88,17 +88,17 @@
             </div>
             <div class="item-meta small">
                 {% if t.disability_name %}
-                <div><i class="fas fa-id-card"></i> {{ t.disability_name }} &middot; {{ t.severity }}</div>
+                <div>{{ t.disability_name }} &middot; {{ t.severity }}</div>
                 {% else %}
-                <div><i class="fas fa-id-card"></i> <span class="text-muted">장애 정보: 비공개</span></div>
+                <div><span class="text-muted">장애 정보: 비공개</span></div>
                 {% endif %}
-                <div><i class="fas fa-map-marker-alt"></i> {{ t|region }}</div>
-                <div><i class="fas fa-briefcase"></i> {{ t.work_pref }}{% if t.recent_job_title %} &middot; {{ t.recent_job_title }}{% endif %}</div>
-                <div><i class="fas fa-graduation-cap"></i> {{ t.education_level or '미지정' }}{% if t.career_years > 0 %} &middot; 경력 {{ t.career_years }}년{% else %} &middot; 신입{% endif %}</div>
-                <div><i class="fas fa-clock"></i> {{ t.daily_work_hours }}시간 &middot; {{ t.preferred_time }}</div>
+                <div>{{ t|region }}</div>
+                <div>{{ t.work_pref }}{% if t.recent_job_title %} &middot; {{ t.recent_job_title }}{% endif %}</div>
+                <div>{{ t.education_level or '미지정' }}{% if t.career_years > 0 %} &middot; 경력 {{ t.career_years }}년{% else %} &middot; 신입{% endif %}</div>
+                <div>{{ t.daily_work_hours }}시간 &middot; {{ t.preferred_time }}</div>
             </div>
             {% if t.user_id in offered_ids %}
-            <button class="btn btn-secondary w-100 mt-3 rounded-pill" disabled><i class="fas fa-check me-1"></i>제안 완료</button>
+            <button class="btn btn-secondary w-100 mt-3 rounded-pill" disabled>제안 완료</button>
             {% else %}
             <button type="button" class="btn btn-outline-primary w-100 mt-3 rounded-pill btn-view-profile"
                     data-href="/company/talent/{{ t.user_id }}{% if base_qs %}?back={{ base_qs|urlencode }}{% endif %}"
@@ -110,12 +110,7 @@
 </div>
 {% include "common/pagination.html" %}
 {% else %}
-<div class="content-card text-center py-5">
-    <div class="mb-3"><i class="fas fa-users fa-2x text-muted"></i></div>
-    <p class="text-muted mb-2">조건에 맞는 인재가 없습니다.</p>
-    <p class="text-muted small">검색 조건을 변경하거나 필터를 초기화해 보세요.</p>
-    <a href="/company/talents" class="btn btn-outline-secondary btn-sm mt-2">필터 초기화</a>
-</div>
+<p class="home-empty">조건에 맞는 인재가 없습니다. <a href="/company/talents">필터 초기화</a></p>
 {% endif %}
 
 
@@ -131,7 +126,6 @@
                     <strong id="viewProfileName"></strong>님의 프로필을 열람하시겠습니까?
                 </p>
                 <div class="alert alert-info py-2 mb-0">
-                    <i class="fas fa-info-circle me-1"></i>
                     프로필 열람 시 해당 구직자에게 열람 알림이 전송됩니다.
                 </div>
             </div>

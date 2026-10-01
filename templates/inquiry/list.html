@@ -3,13 +3,12 @@
 {% block content %}
 <div class="page-header"><h2>내 문의</h2></div>
 
-<div class="container">
-    <!-- 문의 작성 -->
-    <div class="content-card mb-4">
-        <div class="dash-section-header">
-            <h3 class="dash-section-title">새 문의</h3>
-        </div>
-        <form method="post" action="/inquiries" class="p-3">
+<section class="home-section" aria-labelledby="newTitle">
+    <div class="home-section-head">
+        <h2 id="newTitle">새 문의</h2>
+    </div>
+    <div class="content-card p-3">
+        <form method="post" action="/inquiries">
             <div class="row g-3">
                 <div class="col-md-4">
                     <label for="category" class="form-label">분류</label>
@@ -34,49 +33,40 @@
             </div>
         </form>
     </div>
+</section>
 
-    <!-- 문의 목록 -->
-    <div class="content-card">
-        <div class="dash-section-header">
-            <h3 class="dash-section-title">문의 내역</h3>
-            <span class="text-muted">{{ pagination.total }}건</span>
-        </div>
-        {% if inquiries %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <caption class="visually-hidden">문의 내역</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">분류</th>
-                        <th scope="col">제목</th>
-                        <th scope="col">상태</th>
-                        <th scope="col">등록일</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for inq in inquiries %}
-                <tr>
-                    <td>{{ inq['category'] or '-' }}</td>
-                    <td><a href="/inquiries/{{ inq['id'] }}" class="link-plain">{{ inq['subject'] }}</a></td>
-                    <td>
-                        {% if inq['status'] == 'open' %}
-                        <span class="badge bg-warning text-dark">미답변</span>
-                        {% elif inq['status'] == 'answered' %}
-                        <span class="badge bg-success">답변완료</span>
-                        {% else %}
-                        <span class="badge bg-secondary">종료</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ inq['created_at']|fdate }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% include "common/pagination.html" %}
-        {% else %}
-        <p class="text-muted text-center py-4 mb-0">문의 내역이 없습니다.</p>
-        {% endif %}
+<section class="home-section" aria-labelledby="listTitle">
+    <div class="home-section-head">
+        <h2 id="listTitle">문의 내역</h2>
+        <span class="text-muted">{{ pagination.total }}건</span>
     </div>
-</div>
+    {% if inquiries %}
+    <div class="table-responsive">
+        <table class="table">
+            <caption class="visually-hidden">문의 내역</caption>
+            <thead>
+                <tr>
+                    <th scope="col">분류</th>
+                    <th scope="col">제목</th>
+                    <th scope="col">상태</th>
+                    <th scope="col">등록일</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for inq in inquiries %}
+            <tr>
+                <td>{{ inq['category'] or '-' }}</td>
+                <td><a href="/inquiries/{{ inq['id'] }}" class="link-plain">{{ inq['subject'] }}</a></td>
+                <td><span class="badge">{{ status_labels.get(inq['status'], inq['status']) }}</span></td>
+                <td>{{ inq['created_at']|fdate }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "common/pagination.html" %}
+    {% else %}
+    <p class="home-empty">문의 내역이 없습니다.</p>
+    {% endif %}
+</section>
 {% endblock %}

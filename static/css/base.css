@@ -43,15 +43,83 @@
 
 body {
     font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--text);
     background-color: var(--bg);
 }
 
-/* 접근성 */
-.a11y-large body, .a11y-large { font-size: 1.15rem; }
-.a11y-xlarge body, .a11y-xlarge { font-size: 1.35rem; }
-.a11y-contrast { filter: contrast(1.2); }
+/* 글자 크기 */
+html.font-lg { font-size: 150%; }
+html.font-lg body { font-size: 21px; }
+html.font-xl { font-size: 200%; }
+html.font-xl body { font-size: 28px; }
+
+/* 고대비 */
+body.theme-high-contrast {
+    --primary: #4da6ff;
+    --primary-hover: #80bfff;
+    --text: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #cccccc;
+    --border: #666666;
+    --bg: #000000;
+    --bg-card: #1a1a1a;
+    --bg-subtle: #1a1a1a;
+    --bg-hover: #222222;
+    --bs-body-color: #ffffff;
+    --bs-body-bg: #000000;
+    --bs-border-color: #666666;
+    --bs-table-color: #ffffff;
+    --bs-table-bg: #1a1a1a;
+}
+body.theme-high-contrast a { color: #4da6ff; }
+body.theme-high-contrast :focus-visible { outline: 3px solid #ffcc00; }
+
+/* 큰 조작 영역 */
+body.large-target a,
+body.large-target button,
+body.large-target input,
+body.large-target select,
+body.large-target textarea {
+    min-height: 52px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+body.large-target .sidebar-link {
+    padding: 14px 20px;
+    font-size: 1rem;
+    gap: 12px;
+}
+body.large-target .topbar-icon {
+    width: 52px;
+    height: 52px;
+}
+body.large-target .table td,
+body.large-target .table th {
+    padding: 14px 16px;
+}
+
+/* 쉬운 화면 */
+body.easy-mode,
+body.easy-mode p,
+body.easy-mode li,
+body.easy-mode td {
+    line-height: 1.9;
+}
+body.easy-mode .content-card {
+    padding: 2rem;
+}
+body.easy-mode a {
+    text-decoration: underline;
+}
+body.easy-mode .btn {
+    min-height: 48px;
+    padding: 12px 20px;
+    font-size: 1.05rem;
+}
+body.easy-mode .easy-hide {
+    display: none;
+}
 
 .skip-link {
     position: absolute;
@@ -76,6 +144,7 @@ body {
 
 /* 부트스트랩 오버라이드 */
 .text-muted { color: var(--text-muted) !important; }
+small, .small { font-size: 0.9em; }
 
 /* 폼 전역 */
 .form-control, .form-select { border-radius: 8px; border-color: var(--border); }

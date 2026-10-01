@@ -54,7 +54,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -63,74 +63,49 @@
 </div>
 
 <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0">기업 목록 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}개)</span></h4>
+    <section class="home-section" aria-labelledby="companyListTitle">
+        <div class="home-section-head">
+            <h2 id="companyListTitle">전체 {{ pagination.total }}개</h2>
         </div>
-        <div class="content-card">
-            {% if companies %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <caption class="visually-hidden">기업 목록</caption>
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">기업명</th>
-                            <th scope="col">업종</th>
-                            <th scope="col">규모</th>
-                            <th scope="col">직원 수</th>
-                            <th scope="col">장애인 고용</th>
-                            <th scope="col">편의시설</th>
-                            <th scope="col">채용 경험</th>
-                            <th scope="col">인증</th>
-                            <th scope="col">지역</th>
-                            <th scope="col"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for c in companies %}
-                    <tr>
-                        <td class="fw-semibold"><a href="/op/companies/{{ c['id'] }}" class="link-plain">{{ c['company_name'] }}</a></td>
-                        <td>{{ c['industry'] or '-' }}</td>
-                        <td>{{ c['company_size'] or '-' }}</td>
-                        <td>{{ c['employee_count'] }}</td>
-                        <td>{{ c['disabled_count'] }}</td>
-                        <td>
-                            {% if c['facility_count'] > 0 %}
-                            <span class="badge bg-info text-dark">{{ c['facility_count'] }}개</span>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if c['hiring_experience'] %}
-                            <span class="badge bg-success">경험 있음</span>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if c['approval_status'] == 'approved' %}
-                            <span class="badge bg-success">승인</span>
-                            {% elif c['approval_status'] == 'rejected' %}
-                            <span class="badge bg-danger">반려</span>
-                            {% elif c['reverify'] %}
-                            <span class="badge bg-danger">재심사</span>
-                            {% else %}
-                            <span class="badge bg-warning text-dark">대기</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ c|region('-') }}</td>
-                        <td><a href="/op/companies/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a></td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% include "common/pagination.html" %}
-            {% else %}
-            <p class="text-muted text-center py-4">등록된 기업이 없습니다.</p>
-            {% endif %}
-        </div>
-    </div>
+        {% if companies %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>기업명</th>
+                    <th>업종</th>
+                    <th>규모</th>
+                    <th>직원 수</th>
+                    <th>장애인 고용</th>
+                    <th>편의시설</th>
+                    <th>채용 경험</th>
+                    <th>인증</th>
+                    <th>지역</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in companies %}
+                <tr>
+                    <td><a href="/op/companies/{{ c['id'] }}">{{ c['company_name'] }}</a></td>
+                    <td>{{ c['industry'] or '-' }}</td>
+                    <td>{{ c['company_size'] or '-' }}</td>
+                    <td>{{ c['employee_count'] }}</td>
+                    <td>{{ c['disabled_count'] }}</td>
+                    <td>{% if c['facility_count'] > 0 %}{{ c['facility_count'] }}개{% else %}-{% endif %}</td>
+                    <td>{% if c['hiring_experience'] %}경험 있음{% else %}-{% endif %}</td>
+                    <td><span class="badge {{ c['approval_badge'] }}">{{ c['approval_label'] }}</span></td>
+                    <td>{{ c|region('-') }}</td>
+                    <td><a href="/op/companies/{{ c['id'] }}">상세</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "common/pagination.html" %}
+        {% else %}
+        <p class="home-empty">등록된 기업이 없습니다.</p>
+        {% endif %}
+    </section>
+</div>
 {% endblock %}
 {% block scripts %}
 <script>

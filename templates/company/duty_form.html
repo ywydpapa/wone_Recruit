@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ '직무 수정' if duty else '새 직무 등록' }}{% endblock %}
+
+{% block content %}
+<div class="page-header"><h2>{{ '직무 수정' if duty else '새 직무 등록' }}</h2></div>
+
+<div class="content-card narrow-form">
+    <form method="post" action="{{ '/company/duties/' + duty['id']|string if duty else '/company/duties' }}" novalidate>
+        {{ csrf_input }}
+
+        <div class="mb-3">
+            <label for="category_id" class="form-label fw-semibold">직무 카테고리</label>
+            <select id="category_id" name="category_id" class="form-select">
+                <option value="">선택 안 함</option>
+                {% set current_major = namespace(val='') %}
+                {% for cat in categories %}
+                    {% if cat['major_name_ko'] != current_major.val %}
+                        {% if current_major.val %}
+                        </optgroup>
+                        {% endif %}
+                        <optgroup label="{{ cat['major_name_ko'] }}">
+                        {% set current_major.val = cat['major_name_ko'] %}
+                    {% endif %}
+                    <option value="{{ cat['id'] }}" {% if form_data['category_id'] == cat['id'] %}selected{% endif %}>
+                        {{ cat['minor_name_ko'] }}
+                    </option>
+                {% endfor %}
+                {% if current_major.val %}
+                </optgroup>
+                {% endif %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="title" class="form-label fw-semibold">직무명 <span class="text-danger">*</span></label>
+            <input type="text" id="title" name="title" class="form-control" required maxlength="100" value="{{ form_data['title'] }}">
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label for="difficulty" class="form-label fw-semibold">난이도</label>
+                <select id="difficulty" name="difficulty" class="form-select">
+                    {% for key, label in difficulty_options.items() %}
+                    <option value="{{ key }}" {% if form_data['difficulty'] == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input type="checkbox" role="switch" id="remote_ok" name="remote_ok" value="1" class="form-check-input"
+                        {% if form_data['remote_ok'] %}checked{% endif %}>
+                    <label for="remote_ok" class="form-check-label">재택/원격근무 가능</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="tasks" class="form-label fw-semibold">주요 업무</label>
+            <textarea id="tasks" name="tasks" class="form-control" rows="4" placeholder="줄바꿈으로 구분하여 입력하세요">{{ form_data['tasks'] }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="tools" class="form-label fw-semibold">사용 도구</label>
+            <textarea id="tools" name="tools" class="form-control" rows="2" placeholder="쉼표로 구분 (예: Excel, Photoshop, Jira)">{{ form_data['tools'] }}</textarea>
+        </div>
+
+        <div class="mb-4">
+            <label for="note" class="form-label fw-semibold">비고</label>
+            <textarea id="note" name="note" class="form-control" rows="2">{{ form_data['note'] }}</textarea>
+        </div>
+
+        <fieldset class="form-fieldset">
+            <legend>장애유형별 적합성</legend>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">항목</th>
+                        {% for lvl_val, lvl in fit_levels.items() %}
+                        <th scope="col">{{ lvl[0] }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in duty_fit_rows %}
+                    <tr>
+                        <th scope="row">{{ row.label }}</th>
+                        {% for lvl_val, lvl in fit_levels.items() %}
+                        <td>
+                            <input type="radio" class="form-check-input" name="{{ row.col }}" id="{{ row.col }}_{{ lvl_val }}"
+                                value="{{ lvl_val }}" {% if row.value == lvl_val %}checked{% endif %}
+                                aria-label="{{ row.label }} {{ lvl[0] }}">
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-primary">저장</button>
+            <a href="/company/duties" class="btn btn-outline-secondary">취소</a>
+        </div>
+    </form>
+</div>
+
+{% if duty %}
+<div class="content-card narrow-form mt-3">
+    <h5 class="fw-bold mb-3">직무 분석 요청</h5>
+    <p class="mb-3">
+        현재 상태:
+        <span class="badge bg-{{ analysis_status[1] }}">{{ analysis_status[0] }}</span>
+    </p>
+    {% if duty['analysis_status'] == 'done' %}
+    <div class="mb-3">
+        <p class="fw-semibold mb-1">운영자 분석 답변</p>
+        <div class="text-prewrap">{{ duty['analysis_note'] }}</div>
+    </div>
+    {% endif %}
+    <form method="post" action="/company/duties/{{ duty['id'] }}/analysis">
+        {{ csrf_input }}
+        <label for="request_text" class="form-label">분석 요청 내용</label>
+        <textarea id="request_text" name="request_text" class="form-control mb-3" rows="3" maxlength="1000">{{ duty['analysis_request'] }}</textarea>
+        <button type="submit" class="btn btn-outline-primary">분석 요청하기</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

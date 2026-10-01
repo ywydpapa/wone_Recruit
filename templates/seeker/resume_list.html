@@ -23,33 +23,30 @@
 {% endif %}
 
 <div class="page-header d-flex justify-content-between align-items-center">
-    <h2><i class="fas fa-file-alt me-2"></i>이력서 관리</h2>
-    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newResumeModal">
-        <i class="fas fa-plus me-1"></i>새 이력서
-    </button>
+    <h2>이력서 관리</h2>
+    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newResumeModal">새 이력서</button>
 </div>
 
 {% if resumes %}
+<div class="mp-row-list">
     {% for r in resumes %}
     {% set counts = item_counts.get(r.id, {}) %}
-    <div class="content-card mb-3">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div class="mp-row">
+        <div class="mp-row-head">
             <div>
                 {% if r.is_default %}
                 <span class="badge bg-primary mb-1">기본 이력서</span>
                 {% endif %}
-                <h5 class="fw-bold mb-1">{{ r.name }}</h5>
-                <div class="text-muted small mb-1">
+                <div class="mp-row-title">{{ r.name }}</div>
+                <div class="mp-row-sub">
                     {% if r.desired_job %}희망직종: {{ r.desired_job }}{% endif %}
-                    {% if r.desired_job and r.work_pref %}&nbsp;|&nbsp;{% endif %}
+                    {% if r.desired_job and r.work_pref %} &middot; {% endif %}
                     {% if r.work_pref %}근무형태: {{ r.work_pref }}{% endif %}
                 </div>
                 {% if item_summaries.get(r.id) %}
-                <div class="small mb-1">
-                    <span class="text-secondary">{{ item_summaries[r.id] }}</span>
-                </div>
+                <div class="mp-row-sub">{{ item_summaries[r.id] }}</div>
                 {% endif %}
-                <div class="text-muted small">최종 수정: {{ updated_dates.get(r.id, '-') }}</div>
+                <div class="mp-row-sub">최종 수정: {{ updated_dates.get(r.id, '-') }}</div>
             </div>
             <div class="d-flex gap-2 flex-wrap">
                 <a href="/resumes/{{ r.id }}" class="btn btn-sm btn-outline-secondary">보기</a>
@@ -79,14 +76,12 @@
         </div>
     </div>
     {% endfor %}
-{% else %}
-<div class="content-card text-center py-5">
-    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-    <p class="text-muted mb-3">아직 작성한 이력서가 없습니다.</p>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newResumeModal">
-        <i class="fas fa-plus me-1"></i>첫 이력서 작성하기
-    </button>
 </div>
+{% else %}
+<p class="home-empty">
+    아직 작성한 이력서가 없습니다.
+    <button type="button" class="btn btn-link p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#newResumeModal">첫 이력서 작성하기</button>
+</p>
 {% endif %}
 
 <div class="modal fade" id="newResumeModal" tabindex="-1">
@@ -116,7 +111,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-1"></i>작성 시작</button>
+                    <button type="submit" class="btn btn-primary">작성 시작</button>
                 </div>
             </form>
         </div>

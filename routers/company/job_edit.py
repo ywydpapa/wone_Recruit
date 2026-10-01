@@ -4,7 +4,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
-from core.constants import EMPLOYMENT_TYPES, ACCOMMODATION_OPTIONS
+from core.constants import EMPLOYMENT_TYPES, ACCOMMODATION_OPTIONS, JOB_STATUS_LABELS, JOB_STATUS_BADGE
 
 router = APIRouter(prefix="/company")
 
@@ -46,6 +46,8 @@ async def job_detail(request: Request, job_id: int):
             "applicant_count": applicant_count,
             "accommodations_provided": accommodations_provided,
             "preferred_disability": preferred_disability,
+            "job_status_label": JOB_STATUS_LABELS.get(job["status"], job["status"]),
+            "job_status_badge_class": JOB_STATUS_BADGE.get(job["status"], "bg-secondary"),
         }
     )
 

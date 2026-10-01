@@ -32,8 +32,6 @@ body {
 .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
 .link-custom { color: var(--primary); text-decoration: none; font-weight: 600; }
 .link-custom:hover { color: var(--primary-hover); text-decoration: underline; }
-.temp-pw-box { background: #e8f4fd; border: 1px solid #b8daef; border-radius: 6px; padding: 20px; text-align: center; }
-.temp-pw-box code { font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; color: var(--primary); }
 
 [data-theme="dark"] {
     --text: #D1D5DB; --text-muted: #6B7280; --border: #2D333B; --bg: #161B22;
@@ -44,4 +42,3 @@ body {
 [data-theme="dark"] .form-control-lg { background-color: var(--bg); color: var(--text); }
 [data-theme="dark"] .form-control-lg:focus { background-color: #1C2128; }
 [data-theme="dark"] .input-icon-wrapper i { color: var(--text-muted); }
-[data-theme="dark"] .temp-pw-box { background: #1a2636; border-color: #2D4A6A; }

@@ -21,13 +21,7 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    {% if company['approval_status'] == 'approved' %}
-                        <span class="badge bg-success">승인</span>
-                    {% elif company['approval_status'] == 'rejected' %}
-                        <span class="badge bg-danger">반려</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">심사 대기</span>
-                    {% endif %}
+                    <span class="badge {{ approval_badge }}">{{ approval_label }}</span>
                 </div>
             </div>
         </div>
@@ -101,6 +95,14 @@
                         <span class="profile-field-value"><span class="badge bg-success">있음</span></span>
                     </div>
                     {% endif %}
+                    <div class="profile-field">
+                        <span class="profile-field-label">근무환경</span>
+                        <span class="profile-field-value">
+                            {% for label, ok in env_items %}
+                            <span class="badge {{ 'bg-info' if ok else 'bg-light' }}">{{ label }} {{ '가능' if ok else '불가' }}</span>
+                            {% endfor %}
+                        </span>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <div class="profile-field">
@@ -234,7 +236,7 @@
     </div>
 
     <div class="mt-3">
-        <a href="/op/companies" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>목록으로</a>
+        <a href="/op/companies" class="btn btn-outline-secondary">목록으로</a>
     </div>
 
 </div>

@@ -20,6 +20,7 @@
         <form method="post" action="{% if consultation %}/mgr/consultations/{{ consultation['id'] }}{% else %}/mgr/consultations{% endif %}">
             {{ csrf_input }}
 
+            {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
             {% if seeker %}
             <input type="hidden" name="seeker_id" value="{{ seeker['id'] }}">
             <div class="mb-3">
@@ -51,7 +52,9 @@
                     <label for="method" class="form-label">상담 방식</label>
                     <select id="method" name="method" class="form-select">
                         {% for key, label in method_labels.items() %}
-                        <option value="{{ key }}" {% if consultation and consultation['method'] == key %}selected{% endif %}>{{ label }}</option>
+                        <option value="{{ key }}"
+                            {% if consultation and consultation['method'] == key %}selected
+                            {% elif not consultation and preselect_method == key %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -78,7 +81,7 @@
             </div>
 
             <div class="d-flex gap-2 align-items-center">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>저장</button>
+                <button type="submit" class="btn btn-primary">저장</button>
                 {% if seeker %}
                 <a href="/mgr/seekers/{{ seeker['id'] }}" class="btn btn-outline-secondary">취소</a>
                 {% else %}
@@ -86,6 +89,7 @@
                 {% endif %}
                 {% if consultation and consultation['status'] == 'completed' and seeker %}
                 <a href="/mgr/consultations/new?seeker_id={{ seeker['id'] }}" class="btn btn-outline-primary ms-auto">다음 상담 등록</a>
+                <a href="/mgr/seekers/{{ seeker['id'] }}/match-info?next=/mgr/consultations/{{ consultation['id'] }}/edit" class="btn btn-outline-secondary">매칭 정보 입력</a>
                 {% endif %}
             </div>
         </form>

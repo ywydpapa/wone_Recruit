@@ -6,7 +6,7 @@ from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.pagination import page_info, PER_PAGE
 from core.notifications import create_notification
-from core.constants import DISABILITY_ICONS, ASSISTIVE_DEVICES, STATUS_LABELS, MATCH_STAGE_LABELS
+from core.constants import DISABILITY_ICONS, ASSISTIVE_DEVICES, ACCOMMODATION_OPTIONS, STATUS_LABELS, MATCH_STAGE_LABELS
 from routers.manager.consultations import SESSION_TYPE_LABELS, METHOD_LABELS, CONSULT_STATUS_LABELS
 
 
@@ -141,6 +141,7 @@ async def mgr_seekers(
             except (json.JSONDecodeError, TypeError):
                 continue
             sd = dict(r)
+            sd["severity_class"] = "bg-danger" if r["severity"] == "중증" else "bg-success"
             for name in names:
                 device_counts[name] = device_counts.get(name, 0) + 1
                 device_seekers.setdefault(name, []).append(sd)
@@ -157,6 +158,7 @@ async def mgr_seekers(
     for s in rows:
         d = dict(s)
         d["device_icons"], d["device_overflow"] = _device_icons(s["assistive_tech"])
+        d["severity_class"] = "bg-danger" if s["severity"] == "중증" else "bg-success"
         seekers.append(d)
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
@@ -225,6 +227,7 @@ async def mgr_seekers_by_device(
     for s in rows:
         d = dict(s)
         d["device_icons"], d["device_overflow"] = _device_icons(s["assistive_tech"])
+        d["severity_class"] = "bg-danger" if s["severity"] == "중증" else "bg-success"
         seekers.append(d)
     device_icon = _DEVICE_ICON_MAP.get(device, "fa-circle-dot")
     return templates.TemplateResponse(
@@ -293,6 +296,7 @@ async def mgr_seekers_unassigned(
     for s in rows:
         d = dict(s)
         d["device_icons"], d["device_overflow"] = _device_icons(s["assistive_tech"])
+        d["severity_class"] = "bg-danger" if s["severity"] == "중증" else "bg-success"
         seekers.append(d)
     qs_parts = []
     if q: qs_parts.append(f"q={q}")
@@ -389,6 +393,24 @@ async def mgr_seeker_detail(request: Request, user_id: int):
                 selected_devices = json.loads(profile["assistive_tech"])
             except (json.JSONDecodeError, TypeError):
                 pass
+        match_cat_ids = json.loads(profile["target_categories"]) if profile else []
+        match_cat_names = []
+        if match_cat_ids:
+            placeholders = ",".join("?" * len(match_cat_ids))
+            cat_rows = conn.execute(
+                f"SELECT id, minor_name_ko FROM job_categories WHERE id IN ({placeholders})",
+                match_cat_ids,
+            ).fetchall()
+            cat_name_map = {r["id"]: r["minor_name_ko"] for r in cat_rows}
+            match_cat_names = [cat_name_map[c] for c in match_cat_ids if c in cat_name_map]
+        match_devices = [{"name": n, "icon": _DEVICE_ICON_MAP.get(n, "fa-circle-dot")} for n in selected_devices]
+        match_needs = json.loads(profile["accommodation_needs"]) if profile else []
+        match_note = profile["match_note"] if profile else ""
+        match_updated_at = profile["match_updated_at"] if profile else None
+        match_updated_by_name = None
+        if profile and profile["match_updated_by"]:
+            updater = conn.execute("SELECT name FROM users WHERE id=?", (profile["match_updated_by"],)).fetchone()
+            match_updated_by_name = updater["name"] if updater else None
         dup = conn.execute(
             """SELECT 1 FROM access_log
                WHERE viewer_id=? AND seeker_user_id=? AND purpose=?
@@ -425,8 +447,108 @@ async def mgr_seeker_detail(request: Request, user_id: int):
             "consent_given": consent_given,
             "comm_pref": _parse_json_list(profile["communication_pref"]) if profile else '-',
             "accomm_needs": _parse_json_list(profile["accommodation_needs"]) if profile else '-',
+            "has_match_info": bool(match_cat_names or match_devices or match_needs or match_note),
+            "match_cat_names": match_cat_names,
+            "match_devices": match_devices,
+            "match_needs": match_needs,
+            "match_note": match_note,
+            "match_updated_at": match_updated_at,
+            "match_updated_by_name": match_updated_by_name,
         }
     )
+
+
+@router.get("/seekers/{user_id}/match-info", response_class=HTMLResponse)
+async def mgr_match_info_form(request: Request, user_id: int, next: str = Query(None)):
+    user = require_role(request, "manager")
+    conn = get_sqlite()
+    try:
+        assigned = conn.execute(
+            "SELECT 1 FROM manager_assignments WHERE manager_user_id=? AND seeker_user_id=?",
+            (user["id"], user_id),
+        ).fetchone()
+        if not assigned:
+            raise HTTPException(status_code=404)
+        seeker = conn.execute("SELECT * FROM users WHERE id=? AND role='seeker'", (user_id,)).fetchone()
+        if not seeker:
+            raise HTTPException(status_code=404)
+        profile = conn.execute("SELECT * FROM seeker_profiles WHERE user_id=?", (user_id,)).fetchone()
+        cat_rows = conn.execute(
+            "SELECT id, major_name_ko, minor_name_ko FROM job_categories ORDER BY major_code, minor_code"
+        ).fetchall()
+    finally:
+        conn.close()
+    category_groups = []
+    cur_major = None
+    for r in cat_rows:
+        if r["major_name_ko"] != cur_major:
+            category_groups.append({"major": r["major_name_ko"], "cats": []})
+            cur_major = r["major_name_ko"]
+        category_groups[-1]["cats"].append({"id": r["id"], "name": r["minor_name_ko"]})
+    next_url = next if next and next.startswith("/mgr/") else f"/mgr/seekers/{user_id}"
+    return templates.TemplateResponse(
+        request=request, name="manager/match_info_form.html", context={
+            "request": request, "page_title": f"매칭 정보 입력 - {seeker['name']}",
+            "user_name": user["name"], "user_role": "manager",
+            "seeker": seeker,
+            "category_groups": category_groups,
+            "assistive_devices": ASSISTIVE_DEVICES,
+            "accommodation_options": ACCOMMODATION_OPTIONS,
+            "selected_categories": json.loads(profile["target_categories"]) if profile else [],
+            "selected_devices": json.loads(profile["assistive_tech"]) if profile else [],
+            "selected_needs": json.loads(profile["accommodation_needs"]) if profile else [],
+            "match_note": profile["match_note"] if profile else "",
+            "next_url": next_url,
+        }
+    )
+
+
+@router.post("/seekers/{user_id}/match-info")
+async def mgr_match_info_save(request: Request, user_id: int):
+    user = require_role(request, "manager")
+    form = await request.form()
+    next_param = form.get("next", "")
+    match_note = form.get("match_note", "").strip()[:2000]
+    conn = get_sqlite()
+    try:
+        assigned = conn.execute(
+            "SELECT 1 FROM manager_assignments WHERE manager_user_id=? AND seeker_user_id=?",
+            (user["id"], user_id),
+        ).fetchone()
+        if not assigned:
+            raise HTTPException(status_code=404)
+        seeker = conn.execute("SELECT id FROM users WHERE id=? AND role='seeker'", (user_id,)).fetchone()
+        if not seeker:
+            raise HTTPException(status_code=404)
+
+        valid_cat_ids = {r["id"] for r in conn.execute("SELECT id FROM job_categories").fetchall()}
+        cats = [int(c) for c in form.getlist("target_categories") if c.isdigit() and int(c) in valid_cat_ids]
+
+        valid_devices = {name for devices in ASSISTIVE_DEVICES.values() for name, _ in devices}
+        devices = [d for d in form.getlist("assistive_tech") if d in valid_devices]
+
+        needs = [n for n in form.getlist("accommodation_needs") if n in ACCOMMODATION_OPTIONS]
+
+        conn.execute("INSERT OR IGNORE INTO seeker_profiles (user_id) VALUES (?)", (user_id,))
+        conn.execute(
+            "UPDATE seeker_profiles SET target_categories=?, assistive_tech=?, accommodation_needs=?, "
+            "match_note=?, match_updated_at=datetime('now','localtime'), match_updated_by=? "
+            "WHERE user_id=?",
+            (
+                json.dumps(cats, ensure_ascii=False),
+                json.dumps(devices, ensure_ascii=False),
+                json.dumps(needs, ensure_ascii=False),
+                match_note,
+                user["id"],
+                user_id,
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    next_url = next_param if next_param.startswith("/mgr/") else f"/mgr/seekers/{user_id}"
+    sep = "&" if "?" in next_url else "?"
+    return RedirectResponse(url=f"{next_url}{sep}matched=1", status_code=303)
 
 
 @router.post("/seekers/{user_id}/disability")

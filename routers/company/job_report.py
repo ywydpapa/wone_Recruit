@@ -23,7 +23,6 @@ async def job_report(request: Request, job_id: int):
         if job is None:
             raise HTTPException(status_code=404, detail="공고를 찾을 수 없습니다.")
 
-        # 장애유형별 분포
         dtype_rows = conn.execute(
             """SELECT dt.name AS dtype, COUNT(*) AS cnt
                FROM candidacies c
@@ -37,7 +36,6 @@ async def job_report(request: Request, job_id: int):
         dtype_labels = [r["dtype"] or "미등록" for r in dtype_rows]
         dtype_data = [r["cnt"] for r in dtype_rows]
 
-        # 중증도별 분포
         severity_rows = conn.execute(
             """SELECT sp.severity, COUNT(*) AS cnt
                FROM candidacies c
@@ -50,7 +48,6 @@ async def job_report(request: Request, job_id: int):
         severity_labels = [r["severity"] or "미등록" for r in severity_rows]
         severity_data = [r["cnt"] for r in severity_rows]
 
-        # 일별 지원 추이
         trend_rows = conn.execute(
             """SELECT DATE(c.created_at) AS day, COUNT(*) AS cnt
                FROM candidacies c
@@ -63,7 +60,6 @@ async def job_report(request: Request, job_id: int):
         trend_labels = [r["day"] for r in trend_rows]
         trend_data = [r["cnt"] for r in trend_rows]
 
-        # 파이프라인 전환
         pipeline_rows = conn.execute(
             """SELECT c.status, COUNT(*) AS cnt
                FROM candidacies c

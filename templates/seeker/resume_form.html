@@ -7,18 +7,21 @@
 
 <div class="page-header d-flex justify-content-between align-items-center">
     <h2>이력서 편집</h2>
-    <a href="/resumes" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>목록으로</a>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#voiceGuideModal"><i class="fas fa-microphone" aria-hidden="true"></i> 말로 작성 방법</button>
+        <a href="/resumes" class="btn btn-outline-secondary btn-sm">목록으로</a>
+    </div>
 </div>
 
 {% if success == '1' %}
 <div class="alert alert-success" role="alert">
-    <i class="fas fa-check-circle me-2"></i>이력서가 저장되었습니다.
+    이력서가 저장되었습니다.
 </div>
 {% endif %}
 
 {% if error == 'notfound' %}
 <div class="alert alert-danger" role="alert">
-    <i class="fas fa-exclamation-circle me-2"></i>이력서를 찾을 수 없습니다.
+    이력서를 찾을 수 없습니다.
 </div>
 {% endif %}
 
@@ -41,7 +44,7 @@
 {{ csrf_input }}
     <!-- 이력서 기본 정보 -->
     <fieldset class="form-section" id="sec-name">
-        <legend><i class="fas fa-tag"></i>이력서 정보</legend>
+        <legend>이력서 정보</legend>
         <div class="form-section-body">
             <div class="row g-3">
                 <div class="col-md-6">
@@ -58,7 +61,7 @@
 
     <!-- 기본 인적사항 -->
     <fieldset class="form-section" id="sec-basic">
-        <legend><i class="fas fa-user"></i>기본 정보</legend>
+        <legend>기본 정보</legend>
         <div class="form-section-body">
             <div class="d-flex gap-4 mb-3">
                 <div class="resume-photo-wrap">
@@ -302,15 +305,15 @@
 
     <!-- 학력 -->
     <fieldset class="form-section optional-section d-none" id="sec-education">
-        <legend><i class="fas fa-graduation-cap"></i>학력</legend>
+        <legend>학력</legend>
         <div class="form-section-body" id="edu-rows">
             {% for edu in education_list %}
-            <div class="edu-row border rounded p-3 mb-3 position-relative">
-                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+            <div class="edu-row border rounded p-3 mb-3 position-relative" role="group" aria-label="학력 {{ loop.index }}">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="학력 {{ loop.index }} 삭제">삭제</button>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">학교급</label>
-                        <select class="form-select" name="edu_level">
+                        <label class="form-label" for="edu_level_{{ loop.index0 }}">학교급</label>
+                        <select class="form-select" name="edu_level" id="edu_level_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for lv in education_levels_detail %}
                             <option value="{{ lv }}" {% if edu.education_level == lv %}selected{% endif %}>{{ lv }}</option>
@@ -318,24 +321,24 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">학교명</label>
-                        <input type="text" class="form-control" name="edu_school" value="{{ edu.school_name or '' }}" placeholder="학교명">
+                        <label class="form-label" for="edu_school_{{ loop.index0 }}">학교명</label>
+                        <input type="text" class="form-control" name="edu_school" id="edu_school_{{ loop.index0 }}" value="{{ edu.school_name or '' }}" placeholder="학교명">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">전공</label>
-                        <input type="text" class="form-control" name="edu_major" value="{{ edu.major or '' }}" placeholder="전공">
+                        <label class="form-label" for="edu_major_{{ loop.index0 }}">전공</label>
+                        <input type="text" class="form-control" name="edu_major" id="edu_major_{{ loop.index0 }}" value="{{ edu.major or '' }}" placeholder="전공">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">입학</label>
-                        <input type="month" class="form-control" name="edu_start" value="{{ edu.start_date or '' }}">
+                        <label class="form-label" for="edu_start_{{ loop.index0 }}">입학</label>
+                        <input type="month" class="form-control" name="edu_start" id="edu_start_{{ loop.index0 }}" value="{{ edu.start_date or '' }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">졸업(예정)</label>
-                        <input type="month" class="form-control" name="edu_end" value="{{ edu.end_date or '' }}">
+                        <label class="form-label" for="edu_end_{{ loop.index0 }}">졸업(예정)</label>
+                        <input type="month" class="form-control" name="edu_end" id="edu_end_{{ loop.index0 }}" value="{{ edu.end_date or '' }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">졸업상태</label>
-                        <select class="form-select" name="edu_grad_status">
+                        <label class="form-label" for="edu_grad_status_{{ loop.index0 }}">졸업상태</label>
+                        <select class="form-select" name="edu_grad_status" id="edu_grad_status_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for gs in graduation_status_list %}
                             <option value="{{ gs }}" {% if edu.graduation_status == gs %}selected{% endif %}>{{ gs }}</option>
@@ -345,12 +348,12 @@
                     <div class="col-12 edu-gpa-wrap {% if not edu.gpa %}d-none{% endif %}">
                         <div class="row g-3">
                             <div class="col-md-3">
-                                <label class="form-label">학점</label>
-                                <input type="text" class="form-control" name="edu_gpa" value="{{ edu.gpa or '' }}" placeholder="3.8">
+                                <label class="form-label" for="edu_gpa_{{ loop.index0 }}">학점</label>
+                                <input type="text" class="form-control" name="edu_gpa" id="edu_gpa_{{ loop.index0 }}" value="{{ edu.gpa or '' }}" placeholder="3.8">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">만점 기준</label>
-                                <select class="form-select gpa-scale-select" name="edu_gpa_scale">
+                                <label class="form-label" for="edu_gpa_scale_{{ loop.index0 }}">만점 기준</label>
+                                <select class="form-select gpa-scale-select" name="edu_gpa_scale" id="edu_gpa_scale_{{ loop.index0 }}">
                                     <option value="">선택</option>
                                     {% for sc in gpa_scales %}
                                     <option value="{{ sc }}" {% if edu.gpa_scale == sc %}selected{% endif %}>{{ sc }}</option>
@@ -360,38 +363,41 @@
                         </div>
                     </div>
                     <div class="col-12 {% if edu.gpa %}d-none{% endif %}">
-                        <button type="button" class="btn btn-outline-secondary btn-sm edu-gpa-toggle"><i class="fas fa-plus me-1"></i>학점 추가</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm edu-gpa-toggle">학점 추가</button>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addEduRow()"><i class="fas fa-plus me-1"></i>학력 추가</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="eduAddBtn" onclick="addEduRow()">학력 추가</button>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-1 resume-voice-btn" data-sec="edu" aria-label="학력 말로 입력" aria-pressed="false" aria-keyshortcuts="Alt+M"><i class="fas fa-microphone" aria-hidden="true"></i> 말로 입력</button>
     </fieldset>
 
     <!-- 경력 -->
     <fieldset class="form-section optional-section d-none" id="sec-career">
-        <legend><i class="fas fa-briefcase"></i>경력</legend>
+        <legend>경력</legend>
+        <datalist id="carPositionList">{% for p in career_positions %}<option value="{{ p }}">{% endfor %}</datalist>
+        <datalist id="carDeptList">{% for d in career_depts %}<option value="{{ d }}">{% endfor %}</datalist>
         <div class="form-section-body" id="career-rows">
             {% for car in career_list %}
-            <div class="career-row border rounded p-3 mb-3 position-relative">
-                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+            <div class="career-row border rounded p-3 mb-3 position-relative" role="group" aria-label="경력 {{ loop.index }}">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="경력 {{ loop.index }} 삭제">삭제</button>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">회사명</label>
-                        <input type="text" class="form-control" name="car_company" value="{{ car.company_name or '' }}" placeholder="회사명">
+                        <label class="form-label" for="car_company_{{ loop.index0 }}">회사명</label>
+                        <input type="text" class="form-control" name="car_company" id="car_company_{{ loop.index0 }}" value="{{ car.company_name or '' }}" placeholder="회사명">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">부서</label>
-                        <input type="text" class="form-control" name="car_dept" value="{{ car.department or '' }}" placeholder="부서">
+                        <label class="form-label" for="car_dept_{{ loop.index0 }}">부서</label>
+                        <input type="text" class="form-control" name="car_dept" id="car_dept_{{ loop.index0 }}" list="carDeptList" value="{{ car.department or '' }}" placeholder="부서">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">직책/직위</label>
-                        <input type="text" class="form-control" name="car_position" value="{{ car.position or '' }}" placeholder="직책">
+                        <label class="form-label" for="car_position_{{ loop.index0 }}">직책/직위</label>
+                        <input type="text" class="form-control" name="car_position" id="car_position_{{ loop.index0 }}" list="carPositionList" value="{{ car.position or '' }}" placeholder="직책">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">고용형태</label>
-                        <select class="form-select" name="car_emp_type">
+                        <label class="form-label" for="car_emp_type_{{ loop.index0 }}">고용형태</label>
+                        <select class="form-select" name="car_emp_type" id="car_emp_type_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for et in career_employment_types %}
                             <option value="{{ et }}" {% if car.employment_type == et %}selected{% endif %}>{{ et }}</option>
@@ -399,12 +405,12 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">입사</label>
-                        <input type="month" class="form-control" name="car_start" value="{{ car.start_date or '' }}">
+                        <label class="form-label" for="car_start_{{ loop.index0 }}">입사</label>
+                        <input type="month" class="form-control" name="car_start" id="car_start_{{ loop.index0 }}" value="{{ car.start_date or '' }}">
                     </div>
                     <div class="col-md-3 car-end-wrap">
-                        <label class="form-label">퇴사</label>
-                        <input type="month" class="form-control" name="car_end" value="{{ car.end_date or '' }}" {% if car.is_current %}disabled{% endif %}>
+                        <label class="form-label" for="car_end_{{ loop.index0 }}">퇴사</label>
+                        <input type="month" class="form-control" name="car_end" id="car_end_{{ loop.index0 }}" value="{{ car.end_date or '' }}" {% if car.is_current %}disabled{% endif %}>
                     </div>
                     <div class="col-md-2 d-flex align-items-end pb-1">
                         <div class="form-check">
@@ -413,54 +419,56 @@
                         </div>
                     </div>
                     <div class="col-12">
-                        <label class="form-label">업무 내용</label>
-                        <textarea class="form-control" name="car_desc" rows="2" placeholder="주요 업무를 간략히 작성하세요">{{ car.description or '' }}</textarea>
+                        <label class="form-label" for="car_desc_{{ loop.index0 }}">업무 내용</label>
+                        <textarea class="form-control" name="car_desc" id="car_desc_{{ loop.index0 }}" rows="2" placeholder="주요 업무를 간략히 작성하세요">{{ car.description or '' }}</textarea>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addCareerRow()"><i class="fas fa-plus me-1"></i>경력 추가</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="carAddBtn" onclick="addCareerRow()">경력 추가</button>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-1 resume-voice-btn" data-sec="car" aria-label="경력 말로 입력" aria-pressed="false" aria-keyshortcuts="Alt+M"><i class="fas fa-microphone" aria-hidden="true"></i> 말로 입력</button>
     </fieldset>
 
     <!-- 자격증 -->
     <fieldset class="form-section optional-section d-none" id="sec-cert">
-        <legend><i class="fas fa-certificate"></i>자격증</legend>
+        <legend>자격증</legend>
         <div class="form-section-body" id="cert-rows">
             {% for cert in certifications %}
-            <div class="cert-row border rounded p-3 mb-3 position-relative">
-                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+            <div class="cert-row border rounded p-3 mb-3 position-relative" role="group" aria-label="자격증 {{ loop.index }}">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="자격증 {{ loop.index }} 삭제">삭제</button>
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label">자격증명</label>
-                        <input type="text" class="form-control" name="cert_name" value="{{ cert.cert_name or '' }}" placeholder="자격증명">
+                        <label class="form-label" for="cert_name_{{ loop.index0 }}">자격증명</label>
+                        <input type="text" class="form-control" name="cert_name" id="cert_name_{{ loop.index0 }}" value="{{ cert.cert_name or '' }}" placeholder="자격증명">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">발급기관</label>
-                        <input type="text" class="form-control" name="cert_org" value="{{ cert.issuing_org or '' }}" placeholder="발급기관">
+                        <label class="form-label" for="cert_org_{{ loop.index0 }}">발급기관</label>
+                        <input type="text" class="form-control" name="cert_org" id="cert_org_{{ loop.index0 }}" value="{{ cert.issuing_org or '' }}" placeholder="발급기관">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">취득일</label>
-                        <input type="month" class="form-control" name="cert_date" value="{{ cert.cert_date or '' }}">
+                        <label class="form-label" for="cert_date_{{ loop.index0 }}">취득일</label>
+                        <input type="month" class="form-control" name="cert_date" id="cert_date_{{ loop.index0 }}" value="{{ cert.cert_date or '' }}">
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addCertRow()"><i class="fas fa-plus me-1"></i>자격증 추가</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="certAddBtn" onclick="addCertRow()">자격증 추가</button>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-1 resume-voice-btn" data-sec="cert" aria-label="자격증 말로 입력" aria-pressed="false" aria-keyshortcuts="Alt+M"><i class="fas fa-microphone" aria-hidden="true"></i> 말로 입력</button>
     </fieldset>
 
     <!-- 어학 -->
     <fieldset class="form-section optional-section d-none" id="sec-lang">
-        <legend><i class="fas fa-language"></i>어학</legend>
+        <legend>어학</legend>
         <div class="form-section-body" id="lang-rows">
             {% for lang in language_list %}
-            <div class="lang-row border rounded p-3 mb-3 position-relative">
-                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+            <div class="lang-row border rounded p-3 mb-3 position-relative" role="group" aria-label="어학 {{ loop.index }}">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="어학 {{ loop.index }} 삭제">삭제</button>
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">언어</label>
-                        <select class="form-select" name="lang_language">
+                        <label class="form-label" for="lang_language_{{ loop.index0 }}">언어</label>
+                        <select class="form-select" name="lang_language" id="lang_language_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for lo in language_options %}
                             <option value="{{ lo }}" {% if lang.language == lo %}selected{% endif %}>{{ lo }}</option>
@@ -468,16 +476,16 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">시험명</label>
-                        <input type="text" class="form-control" name="lang_test" value="{{ lang.test_name or '' }}" placeholder="TOEIC, JLPT 등">
+                        <label class="form-label" for="lang_test_{{ loop.index0 }}">시험명</label>
+                        <input type="text" class="form-control" name="lang_test" id="lang_test_{{ loop.index0 }}" value="{{ lang.test_name or '' }}" placeholder="TOEIC, JLPT 등">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">점수/등급</label>
-                        <input type="text" class="form-control" name="lang_score" value="{{ lang.score or '' }}" placeholder="890">
+                        <label class="form-label" for="lang_score_{{ loop.index0 }}">점수/등급</label>
+                        <input type="text" class="form-control" name="lang_score" id="lang_score_{{ loop.index0 }}" value="{{ lang.score or '' }}" placeholder="890">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">회화수준</label>
-                        <select class="form-select" name="lang_level">
+                        <label class="form-label" for="lang_level_{{ loop.index0 }}">회화수준</label>
+                        <select class="form-select" name="lang_level" id="lang_level_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for ll in language_levels %}
                             <option value="{{ ll }}" {% if lang.level == ll %}selected{% endif %}>{{ ll }}</option>
@@ -485,27 +493,27 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">취득일</label>
-                        <input type="month" class="form-control" name="lang_date" value="{{ lang.test_date or '' }}">
+                        <label class="form-label" for="lang_date_{{ loop.index0 }}">취득일</label>
+                        <input type="month" class="form-control" name="lang_date" id="lang_date_{{ loop.index0 }}" value="{{ lang.test_date or '' }}">
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addLangRow()"><i class="fas fa-plus me-1"></i>어학 추가</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="langAddBtn" onclick="addLangRow()">어학 추가</button>
     </fieldset>
 
     <!-- 수상/활동 -->
     <fieldset class="form-section optional-section d-none" id="sec-award">
-        <legend><i class="fas fa-trophy"></i>수상/활동</legend>
+        <legend>수상/활동</legend>
         <div class="form-section-body" id="award-rows">
             {% for aw in awards_list %}
-            <div class="award-row border rounded p-3 mb-3 position-relative">
-                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+            <div class="award-row border rounded p-3 mb-3 position-relative" role="group" aria-label="수상/활동 {{ loop.index }}">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="수상/활동 {{ loop.index }} 삭제">삭제</button>
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">구분</label>
-                        <select class="form-select" name="award_category">
+                        <label class="form-label" for="award_category_{{ loop.index0 }}">구분</label>
+                        <select class="form-select" name="award_category" id="award_category_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for ac in award_categories %}
                             <option value="{{ ac }}" {% if aw.category == ac %}selected{% endif %}>{{ ac }}</option>
@@ -513,39 +521,39 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">제목</label>
-                        <input type="text" class="form-control" name="award_title" value="{{ aw.title or '' }}" placeholder="수상명 또는 활동명">
+                        <label class="form-label" for="award_title_{{ loop.index0 }}">제목</label>
+                        <input type="text" class="form-control" name="award_title" id="award_title_{{ loop.index0 }}" value="{{ aw.title or '' }}" placeholder="수상명 또는 활동명">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">주최기관</label>
-                        <input type="text" class="form-control" name="award_org" value="{{ aw.organizer or '' }}" placeholder="주최기관">
+                        <label class="form-label" for="award_org_{{ loop.index0 }}">주최기관</label>
+                        <input type="text" class="form-control" name="award_org" id="award_org_{{ loop.index0 }}" value="{{ aw.organizer or '' }}" placeholder="주최기관">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">날짜</label>
-                        <input type="month" class="form-control" name="award_date" value="{{ aw.activity_date or '' }}">
+                        <label class="form-label" for="award_date_{{ loop.index0 }}">날짜</label>
+                        <input type="month" class="form-control" name="award_date" id="award_date_{{ loop.index0 }}" value="{{ aw.activity_date or '' }}">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">설명</label>
-                        <textarea class="form-control" name="award_desc" rows="2" placeholder="간략한 설명">{{ aw.description or '' }}</textarea>
+                        <label class="form-label" for="award_desc_{{ loop.index0 }}">설명</label>
+                        <textarea class="form-control" name="award_desc" id="award_desc_{{ loop.index0 }}" rows="2" placeholder="간략한 설명">{{ aw.description or '' }}</textarea>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addAwardRow()"><i class="fas fa-plus me-1"></i>항목 추가</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="awardAddBtn" onclick="addAwardRow()">항목 추가</button>
     </fieldset>
 
     <!-- 포트폴리오 -->
     <fieldset class="form-section optional-section d-none" id="sec-portfolio">
-        <legend><i class="fas fa-link"></i>포트폴리오</legend>
+        <legend>포트폴리오</legend>
         <div class="form-section-body" id="port-rows">
             {% for port in portfolio_list %}
-            <div class="port-row border rounded p-3 mb-3 position-relative">
-                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+            <div class="port-row border rounded p-3 mb-3 position-relative" role="group" aria-label="포트폴리오 {{ loop.index }}">
+                <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="포트폴리오 {{ loop.index }} 삭제">삭제</button>
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">유형</label>
-                        <select class="form-select" name="port_type">
+                        <label class="form-label" for="port_type_{{ loop.index0 }}">유형</label>
+                        <select class="form-select" name="port_type" id="port_type_{{ loop.index0 }}">
                             <option value="">선택</option>
                             {% for pt in portfolio_link_types %}
                             <option value="{{ pt }}" {% if port.link_type == pt %}selected{% endif %}>{{ pt }}</option>
@@ -553,23 +561,23 @@
                         </select>
                     </div>
                     <div class="col-md-5">
-                        <label class="form-label">URL</label>
-                        <input type="url" class="form-control" name="port_url" value="{{ port.url or '' }}" placeholder="https://...">
+                        <label class="form-label" for="port_url_{{ loop.index0 }}">URL</label>
+                        <input type="url" class="form-control" name="port_url" id="port_url_{{ loop.index0 }}" value="{{ port.url or '' }}" placeholder="https://...">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">설명</label>
-                        <input type="text" class="form-control" name="port_desc" value="{{ port.description or '' }}" placeholder="간단한 설명">
+                        <label class="form-label" for="port_desc_{{ loop.index0 }}">설명</label>
+                        <input type="text" class="form-control" name="port_desc" id="port_desc_{{ loop.index0 }}" value="{{ port.description or '' }}" placeholder="간단한 설명">
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addPortRow()"><i class="fas fa-plus me-1"></i>링크 추가</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="portAddBtn" onclick="addPortRow()">링크 추가</button>
     </fieldset>
 
     <!-- 자기소개서 -->
     <fieldset class="form-section optional-section d-none" id="sec-intro">
-        <legend><i class="fas fa-pen-nib"></i>자기소개서</legend>
+        <legend>자기소개서</legend>
         <div class="form-section-body">
             {% if intro_presets %}
             <div class="mb-3">
@@ -585,31 +593,43 @@
             {% endif %}
             <div id="intro-rows">
                 {% for intro in intro_list %}
-                <div class="intro-row border rounded p-3 mb-3 position-relative">
-                    <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>
+                <div class="intro-row border rounded p-3 mb-3 position-relative" role="group" aria-label="자기소개서 {{ loop.index }}">
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2" aria-label="자기소개서 {{ loop.index }} 삭제">삭제</button>
                     <div class="mb-2">
-                        <label class="form-label">항목 제목</label>
-                        <input type="text" class="form-control" name="intro_title" value="{{ intro.title or '' }}" placeholder="예: 지원동기">
+                        <label class="form-label" for="intro_title_{{ loop.index0 }}">항목 제목</label>
+                        <input type="text" class="form-control" name="intro_title" id="intro_title_{{ loop.index0 }}" value="{{ intro.title or '' }}" placeholder="예: 지원동기">
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">글자수 제한</label>
-                        <input type="number" class="form-control intro-limit-input" name="intro_char_limit" value="{{ intro.char_limit or '' }}" placeholder="0이면 제한 없음" min="0">
+                        <label class="form-label" for="intro_char_limit_{{ loop.index0 }}">글자수 제한</label>
+                        <input type="number" class="form-control intro-limit-input" name="intro_char_limit" id="intro_char_limit_{{ loop.index0 }}" value="{{ intro.char_limit or '' }}" placeholder="0이면 제한 없음" min="0">
                     </div>
                     <div>
-                        <label class="form-label">내용</label>
-                        <textarea class="form-control intro-textarea" name="intro_content" rows="6" placeholder="내용을 입력하세요" {% if intro.char_limit %}maxlength="{{ intro.char_limit }}"{% endif %}>{{ intro.content or '' }}</textarea>
+                        <label class="form-label" for="intro_content_{{ loop.index0 }}">내용</label>
+                        <textarea class="form-control intro-textarea" name="intro_content" id="intro_content_{{ loop.index0 }}" rows="6" placeholder="내용을 입력하세요" {% if intro.char_limit %}maxlength="{{ intro.char_limit }}"{% endif %}>{{ intro.content or '' }}</textarea>
                         <div class="form-text intro-counter text-end"></div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addIntroRow()"><i class="fas fa-plus me-1"></i>항목 추가</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="introAddBtn" onclick="addIntroRow()">항목 추가</button>
+            <button type="button" class="btn btn-outline-primary btn-sm mt-1 resume-voice-btn" data-sec="intro" aria-label="자기소개서 말로 받아쓰기" aria-pressed="false" aria-keyshortcuts="Alt+M"><i class="fas fa-microphone" aria-hidden="true"></i> 말로 받아쓰기</button>
         </div>
     </fieldset>
 
+    <div class="voice-confirm d-none" id="voiceConfirm" role="group" aria-labelledby="voiceConfirmTitle">
+        <p class="voice-confirm-title" id="voiceConfirmTitle">들은 내용</p>
+        <p class="voice-confirm-heard" id="voiceHeard"></p>
+        <dl class="voice-confirm-list" id="voiceFields"></dl>
+        <div class="voice-confirm-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="voiceApply">입력칸에 넣기</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="voiceRetry">다시 말하기</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="voiceCancel">취소</button>
+        </div>
+    </div>
+
     <!-- 파일 첨부 -->
     <fieldset class="form-section optional-section d-none" id="sec-resume">
-        <legend><i class="fas fa-file-pdf"></i>이력서 파일</legend>
+        <legend>이력서 파일</legend>
         <div class="form-section-body">
             {% if resume.resume_path %}
             <div class="mb-3">
@@ -626,7 +646,7 @@
 
     <!-- 근무 조건 -->
     <fieldset class="form-section optional-section d-none" id="sec-work">
-        <legend><i class="fas fa-building"></i>근무 조건</legend>
+        <legend>근무 조건</legend>
         <div class="form-section-body">
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
@@ -714,11 +734,39 @@
     </fieldset>
 
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i>저장</button>
+        <button type="submit" class="btn btn-primary px-4" id="resumeSaveBtn">저장</button>
         <a href="/resumes" class="btn btn-outline-secondary">취소</a>
     </div>
 
 </form>
+
+<div class="modal fade" id="voiceGuideModal" tabindex="-1" aria-labelledby="voiceGuideTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="voiceGuideTitle">말로 이력서 쓰기</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <p>항목마다 있는 <strong>말로 입력</strong> 버튼을 누르고 말하면 됩니다. 입력칸에서 <kbd>Alt</kbd>+<kbd>M</kbd>을 눌러도 됩니다.</p>
+                <table class="table table-sm voice-guide-table">
+                    <tbody>
+                        <tr><th scope="row">경력</th><td>"2019년 3월부터 2022년 2월까지 한빛테크에서 사무보조"</td></tr>
+                        <tr><th scope="row">자격증</th><td>"2021년 5월 컴퓨터활용능력 1급 취득"</td></tr>
+                        <tr><th scope="row">자기소개서</th><td>"지원동기 작성", "다음 항목 작성" 후 내용을 말하기</td></tr>
+                        <tr><th scope="row">고치기</th><td>"다시", "지우기", "사무를 회계로 바꿔줘"</td></tr>
+                        <tr><th scope="row">다시 보기</th><td>"지원동기 읽어줘", "지원동기 수정"</td></tr>
+                        <tr><th scope="row">마치기</th><td>"끝", "저장해줘"</td></tr>
+                    </tbody>
+                </table>
+                <p class="text-muted small mb-0">다른 화면에서는 마이크 버튼이나 <kbd>Alt</kbd>+<kbd>V</kbd>로 음성을 켜고 "이력서 작성"이라고 말하면 이 화면으로 옵니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="photoCropModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -732,9 +780,7 @@
                     <img id="cropImg" alt="">
                 </div>
                 <div class="crop-zoom-row">
-                    <i class="fas fa-search-minus crop-zoom-icon"></i>
                     <input type="range" class="crop-zoom-slider" id="cropZoomRange" min="0" max="200" value="0">
-                    <i class="fas fa-search-plus crop-zoom-icon"></i>
                 </div>
                 <div class="crop-ratio-row">
                     <button type="button" class="crop-ratio-btn active" data-ratio="0.75">3:4</button>
@@ -743,9 +789,9 @@
                     <button type="button" class="crop-ratio-btn" data-ratio="0">자유</button>
                 </div>
                 <div class="crop-controls">
-                    <button type="button" class="crop-ctrl-btn" id="cropRotateLeft"><i class="fas fa-rotate-left"></i> 좌회전</button>
-                    <button type="button" class="crop-ctrl-btn" id="cropRotateRight"><i class="fas fa-rotate-right"></i> 우회전</button>
-                    <button type="button" class="crop-ctrl-btn" id="cropReset"><i class="fas fa-arrows-rotate"></i> 초기화</button>
+                    <button type="button" class="crop-ctrl-btn" id="cropRotateLeft">좌회전</button>
+                    <button type="button" class="crop-ctrl-btn" id="cropRotateRight">우회전</button>
+                    <button type="button" class="crop-ctrl-btn" id="cropReset">초기화</button>
                 </div>
                 <div class="crop-size-info" id="cropSizeInfo"></div>
             </div>
@@ -781,7 +827,8 @@
 
     document.addEventListener('click', function (e) {
         if (e.target.classList.contains('delete-row')) {
-            e.target.closest('[class$="-row"]') && e.target.closest('[class$="-row"]').remove();
+            var delRow = e.target.closest('.edu-row, .career-row, .cert-row, .lang-row, .award-row, .port-row, .intro-row');
+            if (delRow) deleteRow(delRow);
         }
         if (e.target.closest('.edu-gpa-toggle')) {
             var row = e.target.closest('.edu-row');
@@ -832,6 +879,62 @@
     });
 }());
 
+var ROW_INFO = {
+    edu: { row: 'edu-row', label: '학력', addBtn: 'eduAddBtn' },
+    car: { row: 'career-row', label: '경력', addBtn: 'carAddBtn' },
+    cert: { row: 'cert-row', label: '자격증', addBtn: 'certAddBtn' },
+    lang: { row: 'lang-row', label: '어학', addBtn: 'langAddBtn' },
+    award: { row: 'award-row', label: '수상/활동', addBtn: 'awardAddBtn' },
+    port: { row: 'port-row', label: '포트폴리오', addBtn: 'portAddBtn' },
+    intro: { row: 'intro-row', label: '자기소개서', addBtn: 'introAddBtn' }
+};
+
+function announce(msg) {
+    document.getElementById('srLive').textContent = msg;
+}
+
+function renum(key) {
+    var info = ROW_INFO[key];
+    var rows = document.querySelectorAll('.' + info.row);
+    rows.forEach(function (row, i) {
+        var n = i + 1;
+        row.setAttribute('aria-label', info.label + ' ' + n);
+        var del = row.querySelector('.delete-row');
+        if (del) del.setAttribute('aria-label', info.label + ' ' + n + ' 삭제');
+    });
+    return rows.length;
+}
+
+function rowKeyOf(row) {
+    for (var k in ROW_INFO) {
+        if (row.classList.contains(ROW_INFO[k].row)) return k;
+    }
+    return null;
+}
+
+function focusFirstField(row) {
+    var field = row.querySelector('input, select, textarea');
+    if (field) field.focus();
+}
+
+function deleteRow(row) {
+    var key = rowKeyOf(row);
+    var info = ROW_INFO[key];
+    var label = row.getAttribute('aria-label') || info.label;
+    var prev = row.previousElementSibling;
+    if (!prev || !prev.classList.contains(info.row)) prev = null;
+    row.remove();
+    var left = renum(key);
+    if (prev) {
+        focusFirstField(prev);
+    } else if (left) {
+        focusFirstField(document.querySelector('.' + info.row));
+    } else {
+        document.getElementById(info.addBtn).focus();
+    }
+    announce(label + ' 삭제됨');
+}
+
 var _eduIdx = {{ education_list | length }};
 var _carIdx = {{ career_list | length }};
 var _certIdx = {{ certifications | length }};
@@ -842,125 +945,147 @@ var _introIdx = {{ intro_list | length }};
 
 function addEduRow() {
     var i = _eduIdx++;
-    var html = '<div class="edu-row border rounded p-3 mb-3 position-relative">' +
+    var html = '<div class="edu-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
-        '<div class="col-md-4"><label class="form-label">학교급</label>' +
-        '<select class="form-select" name="edu_level"><option value="">선택</option>' +
+        '<div class="col-md-4"><label class="form-label" for="edu_level_' + i + '">학교급</label>' +
+        '<select class="form-select" name="edu_level" id="edu_level_' + i + '"><option value="">선택</option>' +
         {% for lv in education_levels_detail %}'<option value="{{ lv }}">{{ lv }}</option>' + {% endfor %}
         '</select></div>' +
-        '<div class="col-md-4"><label class="form-label">학교명</label><input type="text" class="form-control" name="edu_school" placeholder="학교명"></div>' +
-        '<div class="col-md-4"><label class="form-label">전공</label><input type="text" class="form-control" name="edu_major" placeholder="전공"></div>' +
-        '<div class="col-md-3"><label class="form-label">입학</label><input type="month" class="form-control" name="edu_start"></div>' +
-        '<div class="col-md-3"><label class="form-label">졸업(예정)</label><input type="month" class="form-control" name="edu_end"></div>' +
-        '<div class="col-md-3"><label class="form-label">졸업상태</label>' +
-        '<select class="form-select" name="edu_grad_status"><option value="">선택</option>' +
+        '<div class="col-md-4"><label class="form-label" for="edu_school_' + i + '">학교명</label><input type="text" class="form-control" name="edu_school" id="edu_school_' + i + '" placeholder="학교명"></div>' +
+        '<div class="col-md-4"><label class="form-label" for="edu_major_' + i + '">전공</label><input type="text" class="form-control" name="edu_major" id="edu_major_' + i + '" placeholder="전공"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="edu_start_' + i + '">입학</label><input type="month" class="form-control" name="edu_start" id="edu_start_' + i + '"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="edu_end_' + i + '">졸업(예정)</label><input type="month" class="form-control" name="edu_end" id="edu_end_' + i + '"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="edu_grad_status_' + i + '">졸업상태</label>' +
+        '<select class="form-select" name="edu_grad_status" id="edu_grad_status_' + i + '"><option value="">선택</option>' +
         {% for gs in graduation_status_list %}'<option value="{{ gs }}">{{ gs }}</option>' + {% endfor %}
         '</select></div>' +
         '<div class="col-12 edu-gpa-wrap d-none"><div class="row g-3">' +
-        '<div class="col-md-3"><label class="form-label">학점</label><input type="text" class="form-control" name="edu_gpa" placeholder="3.8"></div>' +
-        '<div class="col-md-3"><label class="form-label">만점 기준</label><select class="form-select gpa-scale-select" name="edu_gpa_scale"><option value="">선택</option>' +
+        '<div class="col-md-3"><label class="form-label" for="edu_gpa_' + i + '">학점</label><input type="text" class="form-control" name="edu_gpa" id="edu_gpa_' + i + '" placeholder="3.8"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="edu_gpa_scale_' + i + '">만점 기준</label><select class="form-select gpa-scale-select" name="edu_gpa_scale" id="edu_gpa_scale_' + i + '"><option value="">선택</option>' +
         {% for sc in gpa_scales %}'<option value="{{ sc }}">{{ sc }}</option>' + {% endfor %}
         '</select></div></div></div>' +
-        '<div class="col-12"><button type="button" class="btn btn-outline-secondary btn-sm edu-gpa-toggle"><i class="fas fa-plus me-1"></i>학점 추가</button></div>' +
+        '<div class="col-12"><button type="button" class="btn btn-outline-secondary btn-sm edu-gpa-toggle">학점 추가</button></div>' +
         '</div></div>';
     document.getElementById('edu-rows').insertAdjacentHTML('beforeend', html);
+    var n = renum('edu');
+    document.getElementById('edu_level_' + i).focus();
+    announce(ROW_INFO.edu.label + ' ' + n + ' 추가됨');
 }
 
 function addCareerRow() {
     var i = _carIdx++;
-    var html = '<div class="career-row border rounded p-3 mb-3 position-relative">' +
+    var html = '<div class="career-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
-        '<div class="col-md-4"><label class="form-label">회사명</label><input type="text" class="form-control" name="car_company" placeholder="회사명"></div>' +
-        '<div class="col-md-4"><label class="form-label">부서</label><input type="text" class="form-control" name="car_dept" placeholder="부서"></div>' +
-        '<div class="col-md-4"><label class="form-label">직책/직위</label><input type="text" class="form-control" name="car_position" placeholder="직책"></div>' +
-        '<div class="col-md-4"><label class="form-label">고용형태</label>' +
-        '<select class="form-select" name="car_emp_type"><option value="">선택</option>' +
+        '<div class="col-md-4"><label class="form-label" for="car_company_' + i + '">회사명</label><input type="text" class="form-control" name="car_company" id="car_company_' + i + '" placeholder="회사명"></div>' +
+        '<div class="col-md-4"><label class="form-label" for="car_dept_' + i + '">부서</label><input type="text" class="form-control" name="car_dept" id="car_dept_' + i + '" list="carDeptList" placeholder="부서"></div>' +
+        '<div class="col-md-4"><label class="form-label" for="car_position_' + i + '">직책/직위</label><input type="text" class="form-control" name="car_position" id="car_position_' + i + '" list="carPositionList" placeholder="직책"></div>' +
+        '<div class="col-md-4"><label class="form-label" for="car_emp_type_' + i + '">고용형태</label>' +
+        '<select class="form-select" name="car_emp_type" id="car_emp_type_' + i + '"><option value="">선택</option>' +
         {% for et in career_employment_types %}'<option value="{{ et }}">{{ et }}</option>' + {% endfor %}
         '</select></div>' +
-        '<div class="col-md-3"><label class="form-label">입사</label><input type="month" class="form-control" name="car_start"></div>' +
-        '<div class="col-md-3 car-end-wrap"><label class="form-label">퇴사</label><input type="month" class="form-control" name="car_end"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="car_start_' + i + '">입사</label><input type="month" class="form-control" name="car_start" id="car_start_' + i + '"></div>' +
+        '<div class="col-md-3 car-end-wrap"><label class="form-label" for="car_end_' + i + '">퇴사</label><input type="month" class="form-control" name="car_end" id="car_end_' + i + '"></div>' +
         '<div class="col-md-2 d-flex align-items-end pb-1"><div class="form-check">' +
         '<input class="form-check-input car-current-cb" type="checkbox" name="car_current_' + i + '" id="car_current_' + i + '" value="1">' +
         '<label class="form-check-label" for="car_current_' + i + '">재직중</label>' +
         '</div></div>' +
-        '<div class="col-12"><label class="form-label">업무 내용</label>' +
-        '<textarea class="form-control" name="car_desc" rows="2" placeholder="주요 업무를 간략히 작성하세요"></textarea></div>' +
+        '<div class="col-12"><label class="form-label" for="car_desc_' + i + '">업무 내용</label>' +
+        '<textarea class="form-control" name="car_desc" id="car_desc_' + i + '" rows="2" placeholder="주요 업무를 간략히 작성하세요"></textarea></div>' +
         '</div></div>';
     document.getElementById('career-rows').insertAdjacentHTML('beforeend', html);
+    var n = renum('car');
+    document.getElementById('car_company_' + i).focus();
+    announce(ROW_INFO.car.label + ' ' + n + ' 추가됨');
 }
 
 function addCertRow() {
-    var html = '<div class="cert-row border rounded p-3 mb-3 position-relative">' +
+    var i = _certIdx++;
+    var html = '<div class="cert-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
-        '<div class="col-md-5"><label class="form-label">자격증명</label><input type="text" class="form-control" name="cert_name" placeholder="자격증명"></div>' +
-        '<div class="col-md-4"><label class="form-label">발급기관</label><input type="text" class="form-control" name="cert_org" placeholder="발급기관"></div>' +
-        '<div class="col-md-3"><label class="form-label">취득일</label><input type="month" class="form-control" name="cert_date"></div>' +
+        '<div class="col-md-5"><label class="form-label" for="cert_name_' + i + '">자격증명</label><input type="text" class="form-control" name="cert_name" id="cert_name_' + i + '" placeholder="자격증명"></div>' +
+        '<div class="col-md-4"><label class="form-label" for="cert_org_' + i + '">발급기관</label><input type="text" class="form-control" name="cert_org" id="cert_org_' + i + '" placeholder="발급기관"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="cert_date_' + i + '">취득일</label><input type="month" class="form-control" name="cert_date" id="cert_date_' + i + '"></div>' +
         '</div></div>';
     document.getElementById('cert-rows').insertAdjacentHTML('beforeend', html);
+    var n = renum('cert');
+    document.getElementById('cert_name_' + i).focus();
+    announce(ROW_INFO.cert.label + ' ' + n + ' 추가됨');
 }
 
 function addLangRow() {
-    var html = '<div class="lang-row border rounded p-3 mb-3 position-relative">' +
+    var i = _langIdx++;
+    var html = '<div class="lang-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
-        '<div class="col-md-3"><label class="form-label">언어</label>' +
-        '<select class="form-select" name="lang_language"><option value="">선택</option>' +
+        '<div class="col-md-3"><label class="form-label" for="lang_language_' + i + '">언어</label>' +
+        '<select class="form-select" name="lang_language" id="lang_language_' + i + '"><option value="">선택</option>' +
         {% for lo in language_options %}'<option value="{{ lo }}">{{ lo }}</option>' + {% endfor %}
         '</select></div>' +
-        '<div class="col-md-3"><label class="form-label">시험명</label><input type="text" class="form-control" name="lang_test" placeholder="TOEIC, JLPT 등"></div>' +
-        '<div class="col-md-2"><label class="form-label">점수/등급</label><input type="text" class="form-control" name="lang_score" placeholder="890"></div>' +
-        '<div class="col-md-2"><label class="form-label">회화수준</label>' +
-        '<select class="form-select" name="lang_level"><option value="">선택</option>' +
+        '<div class="col-md-3"><label class="form-label" for="lang_test_' + i + '">시험명</label><input type="text" class="form-control" name="lang_test" id="lang_test_' + i + '" placeholder="TOEIC, JLPT 등"></div>' +
+        '<div class="col-md-2"><label class="form-label" for="lang_score_' + i + '">점수/등급</label><input type="text" class="form-control" name="lang_score" id="lang_score_' + i + '" placeholder="890"></div>' +
+        '<div class="col-md-2"><label class="form-label" for="lang_level_' + i + '">회화수준</label>' +
+        '<select class="form-select" name="lang_level" id="lang_level_' + i + '"><option value="">선택</option>' +
         {% for ll in language_levels %}'<option value="{{ ll }}">{{ ll }}</option>' + {% endfor %}
         '</select></div>' +
-        '<div class="col-md-2"><label class="form-label">취득일</label><input type="month" class="form-control" name="lang_date"></div>' +
+        '<div class="col-md-2"><label class="form-label" for="lang_date_' + i + '">취득일</label><input type="month" class="form-control" name="lang_date" id="lang_date_' + i + '"></div>' +
         '</div></div>';
     document.getElementById('lang-rows').insertAdjacentHTML('beforeend', html);
+    var n = renum('lang');
+    document.getElementById('lang_language_' + i).focus();
+    announce(ROW_INFO.lang.label + ' ' + n + ' 추가됨');
 }
 
 function addAwardRow() {
-    var html = '<div class="award-row border rounded p-3 mb-3 position-relative">' +
+    var i = _awardIdx++;
+    var html = '<div class="award-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
-        '<div class="col-md-3"><label class="form-label">구분</label>' +
-        '<select class="form-select" name="award_category"><option value="">선택</option>' +
+        '<div class="col-md-3"><label class="form-label" for="award_category_' + i + '">구분</label>' +
+        '<select class="form-select" name="award_category" id="award_category_' + i + '"><option value="">선택</option>' +
         {% for ac in award_categories %}'<option value="{{ ac }}">{{ ac }}</option>' + {% endfor %}
         '</select></div>' +
-        '<div class="col-md-4"><label class="form-label">제목</label><input type="text" class="form-control" name="award_title" placeholder="수상명 또는 활동명"></div>' +
-        '<div class="col-md-3"><label class="form-label">주최기관</label><input type="text" class="form-control" name="award_org" placeholder="주최기관"></div>' +
-        '<div class="col-md-2"><label class="form-label">날짜</label><input type="month" class="form-control" name="award_date"></div>' +
-        '<div class="col-12"><label class="form-label">설명</label><textarea class="form-control" name="award_desc" rows="2" placeholder="간략한 설명"></textarea></div>' +
+        '<div class="col-md-4"><label class="form-label" for="award_title_' + i + '">제목</label><input type="text" class="form-control" name="award_title" id="award_title_' + i + '" placeholder="수상명 또는 활동명"></div>' +
+        '<div class="col-md-3"><label class="form-label" for="award_org_' + i + '">주최기관</label><input type="text" class="form-control" name="award_org" id="award_org_' + i + '" placeholder="주최기관"></div>' +
+        '<div class="col-md-2"><label class="form-label" for="award_date_' + i + '">날짜</label><input type="month" class="form-control" name="award_date" id="award_date_' + i + '"></div>' +
+        '<div class="col-12"><label class="form-label" for="award_desc_' + i + '">설명</label><textarea class="form-control" name="award_desc" id="award_desc_' + i + '" rows="2" placeholder="간략한 설명"></textarea></div>' +
         '</div></div>';
     document.getElementById('award-rows').insertAdjacentHTML('beforeend', html);
+    var n = renum('award');
+    document.getElementById('award_category_' + i).focus();
+    announce(ROW_INFO.award.label + ' ' + n + ' 추가됨');
 }
 
 function addPortRow() {
-    var html = '<div class="port-row border rounded p-3 mb-3 position-relative">' +
+    var i = _portIdx++;
+    var html = '<div class="port-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
-        '<div class="col-md-3"><label class="form-label">유형</label>' +
-        '<select class="form-select" name="port_type"><option value="">선택</option>' +
+        '<div class="col-md-3"><label class="form-label" for="port_type_' + i + '">유형</label>' +
+        '<select class="form-select" name="port_type" id="port_type_' + i + '"><option value="">선택</option>' +
         {% for pt in portfolio_link_types %}'<option value="{{ pt }}">{{ pt }}</option>' + {% endfor %}
         '</select></div>' +
-        '<div class="col-md-5"><label class="form-label">URL</label><input type="url" class="form-control" name="port_url" placeholder="https://..."></div>' +
-        '<div class="col-md-4"><label class="form-label">설명</label><input type="text" class="form-control" name="port_desc" placeholder="간단한 설명"></div>' +
+        '<div class="col-md-5"><label class="form-label" for="port_url_' + i + '">URL</label><input type="url" class="form-control" name="port_url" id="port_url_' + i + '" placeholder="https://..."></div>' +
+        '<div class="col-md-4"><label class="form-label" for="port_desc_' + i + '">설명</label><input type="text" class="form-control" name="port_desc" id="port_desc_' + i + '" placeholder="간단한 설명"></div>' +
         '</div></div>';
     document.getElementById('port-rows').insertAdjacentHTML('beforeend', html);
+    var n = renum('port');
+    document.getElementById('port_type_' + i).focus();
+    announce(ROW_INFO.port.label + ' ' + n + ' 추가됨');
 }
 
 function addIntroRow(title, content) {
     var i = _introIdx++;
-    var html = '<div class="intro-row border rounded p-3 mb-3 position-relative">' +
+    var html = '<div class="intro-row border rounded p-3 mb-3 position-relative" role="group">' +
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
-        '<div class="mb-2"><label class="form-label">항목 제목</label>' +
-        '<input type="text" class="form-control" name="intro_title" placeholder="예: 지원동기" value="' + (title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label">글자수 제한</label>' +
-        '<input type="number" class="form-control intro-limit-input" name="intro_char_limit" placeholder="0이면 제한 없음" min="0"></div>' +
-        '<div><label class="form-label">내용</label>' +
-        '<textarea class="form-control intro-textarea" name="intro_content" rows="6" placeholder="내용을 입력하세요">' + (content || '') + '</textarea>' +
+        '<div class="mb-2"><label class="form-label" for="intro_title_' + i + '">항목 제목</label>' +
+        '<input type="text" class="form-control" name="intro_title" id="intro_title_' + i + '" placeholder="예: 지원동기" value="' + (title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label" for="intro_char_limit_' + i + '">글자수 제한</label>' +
+        '<input type="number" class="form-control intro-limit-input" name="intro_char_limit" id="intro_char_limit_' + i + '" placeholder="0이면 제한 없음" min="0"></div>' +
+        '<div><label class="form-label" for="intro_content_' + i + '">내용</label>' +
+        '<textarea class="form-control intro-textarea" name="intro_content" id="intro_content_' + i + '" rows="6" placeholder="내용을 입력하세요">' + (content || '') + '</textarea>' +
         '<div class="form-text intro-counter text-end"></div>' +
         '</div></div>';
     document.getElementById('intro-rows').insertAdjacentHTML('beforeend', html);
@@ -969,7 +1094,14 @@ function addIntroRow(title, content) {
     if (last) {
         last.dispatchEvent(new Event('input'));
     }
+    var n = renum('intro');
+    document.getElementById('intro_title_' + i).focus();
+    announce(ROW_INFO.intro.label + ' ' + n + ' 추가됨');
 }
 </script>
 
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/ref-search.js"></script>
+<script src="/static/js/resume-voice.js?v=4"></script>
 {% endblock %}

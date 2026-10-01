@@ -6,7 +6,7 @@
 
 {% if job and job['status'] == 'rejected' and job['rejection_reason'] %}
 <div class="alert alert-danger mb-3">
-    <strong><i class="fas fa-ban me-1"></i>공고가 반려되었습니다.</strong>
+    <strong>공고가 반려되었습니다.</strong>
     <div class="mt-1">반려 사유: {{ job['rejection_reason'] }}</div>
     <div class="mt-1 small text-muted">내용을 수정한 후 다시 공개 신청하면 재검토됩니다.</div>
 </div>
@@ -28,7 +28,7 @@
                                 <optgroup label="{{ cat['major_name_ko'] }}">
                                 {% set current_major.val = cat['major_name_ko'] %}
                             {% endif %}
-                            <option value="{{ cat['id'] }}" {% if job and job['category_id'] == cat['id'] %}selected{% endif %}>
+                            <option value="{{ cat['id'] }}" {% if (job['category_id'] if job else duty_prefill.get('category_id')) == cat['id'] %}selected{% endif %}>
                                 {{ cat['minor_name_ko'] }}
                             </option>
                         {% endfor %}
@@ -40,7 +40,7 @@
 
                 <div class="mb-3">
                     <label for="title" class="form-label fw-semibold">공고 제목 <span class="text-danger">*</span></label>
-                    <input type="text" id="title" name="title" class="form-control" required value="{{ job['title'] if job else '' }}">
+                    <input type="text" id="title" name="title" class="form-control" required value="{{ job['title'] if job else duty_prefill.get('title', '') }}">
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -78,8 +78,8 @@
                     <label for="remote_available" class="form-check-label">재택/원격근무 가능</label>
                 </div>
 
-                <fieldset id="sec-work" class="border rounded p-3 mb-3">
-                    <legend class="fs-6 fw-semibold px-2 w-auto">근무 시간</legend>
+                <fieldset id="sec-work" class="form-fieldset">
+                    <legend>근무 시간</legend>
                     <div class="row g-3 mb-2">
                         <div class="col-md-3">
                             <label for="work_start_time" class="form-label">시작 시간</label>
@@ -109,8 +109,8 @@
                     </div>
                 </fieldset>
 
-                <fieldset id="sec-accom" class="border rounded p-3 mb-3">
-                    <legend class="fs-6 fw-semibold px-2 w-auto">편의 제공</legend>
+                <fieldset id="sec-accom" class="form-fieldset">
+                    <legend>편의 제공</legend>
                     <div class="mb-2">
                         <label class="form-label">제공 편의시설</label>
                         <div class="row g-2">
@@ -132,8 +132,8 @@
                     </div>
                 </fieldset>
 
-                <fieldset class="border rounded p-3 mb-3">
-                    <legend class="fs-6 fw-semibold px-2 w-auto">우대 장애 유형</legend>
+                <fieldset class="form-fieldset">
+                    <legend>우대 장애 유형</legend>
                     <div class="mb-2">
                         <label class="form-label">우대 장애유형 (미선택 시 전체 환영)</label>
                         <div class="row g-2">
@@ -177,12 +177,12 @@
 
                 <div id="sec-duties" class="mb-3">
                     <label for="tasks" class="form-label fw-semibold">주요 업무</label>
-                    <textarea id="tasks" name="tasks" class="form-control" rows="4" placeholder="줄바꿈으로 구분하여 입력하세요">{{ job['tasks'] if job else '' }}</textarea>
+                    <textarea id="tasks" name="tasks" class="form-control" rows="4" placeholder="줄바꿈으로 구분하여 입력하세요">{{ job['tasks'] if job else duty_prefill.get('tasks', '') }}</textarea>
                 </div>
 
                 <div class="mb-3">
                     <label for="tools" class="form-label fw-semibold">사용 도구</label>
-                    <textarea id="tools" name="tools" class="form-control" rows="2" placeholder="쉼표로 구분 (예: Excel, Photoshop, Jira)">{{ job['tools'] if job else '' }}</textarea>
+                    <textarea id="tools" name="tools" class="form-control" rows="2" placeholder="쉼표로 구분 (예: Excel, Photoshop, Jira)">{{ job['tools'] if job else duty_prefill.get('tools', '') }}</textarea>
                 </div>
 
                 <div class="mb-3">
@@ -240,7 +240,7 @@
                         <option value="filled" {% if job and job['status'] == 'filled' %}selected{% endif %}>채용완료</option>
                     </select>
                     {% if job and job['status'] == 'pending_review' %}
-                    <div class="form-text text-info"><i class="fas fa-hourglass-half me-1"></i>현재 운영자 검토 중입니다.</div>
+                    <div class="form-text text-info">현재 운영자 검토 중입니다.</div>
                     {% endif %}
                 </div>
 
@@ -248,9 +248,7 @@
                     <button type="submit" class="btn btn-primary">저장</button>
                     <a href="/company/jobs" class="btn btn-outline-secondary">취소</a>
                     {% if job %}
-                    <a href="/company/jobs/{{ job['id'] }}/preview" target="_blank" class="btn btn-outline-info ms-auto">
-                        <i class="fas fa-eye me-1"></i>미리보기
-                    </a>
+                    <a href="/company/jobs/{{ job['id'] }}/preview" target="_blank" class="btn btn-outline-info ms-auto">미리보기</a>
                     {% endif %}
                 </div>
             </form>

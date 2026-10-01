@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>{{ page_title }}</h2></div>
+
+<div class="container">
+    <div class="content-card">
+        <div class="p-3">
+            {% if error_msg %}
+            <div class="alert alert-danger" role="alert">{{ error_msg }}</div>
+            {% endif %}
+            <form method="post" action="{% if notice %}/op/notices/{{ notice['id'] }}{% else %}/op/notices{% endif %}">
+                {{ csrf_input }}
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label for="title" class="form-label">제목</label>
+                        <input type="text" id="title" name="title" class="form-control" required maxlength="200"
+                               value="{{ notice['title'] if notice else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="audience" class="form-label">대상</label>
+                        <select id="audience" name="audience" class="form-select">
+                            {% for key, label in audience_labels.items() %}
+                            <option value="{{ key }}" {% if notice and notice['audience'] == key or (not notice and key == 'all') %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label for="content" class="form-label">내용</label>
+                        <textarea id="content" name="content" class="form-control" rows="10" required maxlength="5000">{{ notice['content'] if notice else '' }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" id="pinned" name="pinned" class="form-check-input"
+                                   {% if notice and notice['pinned'] %}checked{% endif %}>
+                            <label for="pinned" class="form-check-label">상단 고정</label>
+                        </div>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">{% if notice %}수정{% else %}등록{% endif %}</button>
+                        <a href="/op/notices" class="btn btn-outline-secondary">취소</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

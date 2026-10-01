@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>상담 요청 상세</h2>
+    <a href="/mgr/consult-requests" class="btn btn-outline-secondary btn-sm">목록</a>
+</div>
+
+<div class="container narrow-form">
+    <section class="home-section">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+                <a href="/mgr/seekers/{{ req.seeker_user_id }}" class="fw-bold fs-5">{{ req.seeker_name }}</a>
+                {% if req.seeker_phone %}<span class="text-muted small ms-2">{{ req.seeker_phone }}</span>{% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/mgr/seekers/{{ req.seeker_user_id }}/match-info?next=/mgr/consult-requests/{{ req.id }}" class="btn btn-outline-secondary btn-sm">매칭 정보 입력</a>
+                <span class="badge bg-{{ req.status_color }}">{{ req.status_label }}</span>
+            </div>
+        </div>
+        <dl class="row mb-0 small">
+            <dt class="col-3 text-muted">분류</dt>
+            <dd class="col-9">{{ req.category_label }}</dd>
+            <dt class="col-3 text-muted">방법</dt>
+            <dd class="col-9">{{ req.method_label }}</dd>
+            <dt class="col-3 text-muted">희망 시간</dt>
+            <dd class="col-9">{{ req.preferred_time or '-' }}</dd>
+            <dt class="col-3 text-muted">신청일</dt>
+            <dd class="col-9">{{ req.created_at|fdatetime }}</dd>
+            {% if req.handled_at %}
+            <dt class="col-3 text-muted">처리일</dt>
+            <dd class="col-9">{{ req.handled_at|fdatetime }}</dd>
+            {% endif %}
+        </dl>
+        <hr>
+        <p class="mb-0 consult-content-full">{{ req.content }}</p>
+    </section>
+
+    {% if req.reply %}
+    <section class="home-section">
+        <div class="home-section-head"><h2 class="dash-section-title mb-0">답변</h2></div>
+        <div class="consult-reply-box">{{ req.reply }}</div>
+    </section>
+    {% endif %}
+
+    {% if req.status in ('pending', 'accepted') %}
+    <div class="content-card mb-4">
+        <h3 class="dash-section-title mb-3">처리</h3>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            {% if req.status == 'pending' %}
+            <form method="post" action="/mgr/consult-requests/{{ req.id }}/accept" class="d-inline">
+                {{ csrf_input }}
+                <button type="submit" class="btn btn-primary btn-sm">확인</button>
+            </form>
+            {% endif %}
+            <a href="/mgr/consultations/new?seeker_id={{ req.seeker_user_id }}&request_id={{ req.id }}" class="btn btn-outline-primary btn-sm">일정 잡기</a>
+        </div>
+        <form method="post" action="/mgr/consult-requests/{{ req.id }}/reply">
+            {{ csrf_input }}
+            <label for="reply" class="form-label">답변 후 종료</label>
+            <textarea id="reply" name="reply" class="form-control mb-2" rows="4" maxlength="2000" required placeholder="답변 내용을 입력하세요"></textarea>
+            <button type="submit" class="btn btn-outline-secondary btn-sm">답변 후 종료</button>
+        </form>
+    </div>
+    {% elif req.status == 'scheduled' and req.session_id %}
+    <p class="mb-4">상담 일정이 확정되었습니다. <a href="/mgr/consultations/{{ req.session_id }}/edit">상담 일정 보기</a></p>
+    {% endif %}
+
+    <div class="home-section">
+        <h3 class="dash-section-title mb-3">이전 상담 요청</h3>
+        {% if history %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <caption class="visually-hidden">해당 구직자의 이전 상담 요청 내역</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">신청일</th>
+                        <th scope="col">분류</th>
+                        <th scope="col">상태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in history %}
+                    <tr>
+                        <td class="text-muted small">{{ h.created_at|fdate }}</td>
+                        <td>{{ h.category_label }}</td>
+                        <td><span class="badge bg-{{ h.status_color }}">{{ h.status_label }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="home-empty">이전 상담 요청 내역이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

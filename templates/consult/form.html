@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}상담 신청 - WONE Recruit{% endblock %}
+{% block content %}
+<div class="page-header"><h2>상담</h2></div>
+
+<div class="container">
+    {% include "consult/_tabs.html" %}
+    <div class="content-card">
+        {% if error_msg %}
+        <div class="alert alert-danger" role="alert">{{ error_msg }}</div>
+        {% endif %}
+        <form method="post" action="/consult">
+            {{ csrf_input }}
+            <fieldset class="mb-4">
+                <legend class="form-label">상담 분야</legend>
+                <div class="consult-cat-grid">
+                    {% for key, label in categories.items() %}
+                    <input type="radio" class="consult-cat-check" name="category" value="{{ key }}" id="cat_{{ key }}"
+                        {% if key == selected_category or (not selected_category and key == 'job') %}checked{% endif %}>
+                    <label class="consult-cat-item" for="cat_{{ key }}">
+                        <i class="fas {{ category_icons[key] }}" aria-hidden="true"></i>
+                        <span>{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <div class="mb-3">
+                <label for="content" class="form-label">상담 내용</label>
+                <textarea id="content" name="content" class="form-control" rows="6" required maxlength="2000" placeholder="어떤 도움이 필요하신지 자세히 적어 주세요."></textarea>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="method" class="form-label">희망 상담 방법</label>
+                    <select id="method" name="method" class="form-select">
+                        {% for key, label in methods.items() %}
+                        <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="preferred_time" class="form-label">희망 시간대</label>
+                    <input type="text" id="preferred_time" name="preferred_time" class="form-control" maxlength="100" placeholder="예: 평일 오후">
+                </div>
+            </div>
+
+            <div class="text-end">
+                <a href="/consult" class="btn btn-outline-secondary me-2">취소</a>
+                <button type="submit" class="btn btn-primary">상담 신청</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

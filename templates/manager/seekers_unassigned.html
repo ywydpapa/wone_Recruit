@@ -36,7 +36,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -45,70 +45,56 @@
 </div>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">미배정 구직자 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}명)</span></h4>
+    <p class="text-muted small mb-3">{{ pagination.total }}명</p>
+    {% if seekers %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>장애유형</th>
+                    <th>중증도</th>
+                    <th>지역</th>
+                    <th>근무형태</th>
+                    <th>동의</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in seekers %}
+                <tr>
+                    <td class="fw-semibold">{{ s['name'] }}</td>
+                    <td>
+                        {% if s['device_icons'] %}
+                        {% for d in s['device_icons'] %}{{ d['name'] }}{% if not loop.last %}, {% endif %}{% endfor %}{% if s['device_overflow'] %} 외 {{ s['device_overflow'] }}{% endif %}
+                        {% elif s['disability_name'] %}
+                        {{ s['disability_name'] }}
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{% if s['severity'] %}<span class="badge {{ s['severity_class'] }}">{{ s['severity'] }}</span>{% else %}-{% endif %}</td>
+                    <td>{{ s|region('-') }}</td>
+                    <td>{{ s['work_pref'] or '-' }}</td>
+                    <td>
+                        {% if s['consent_sensitive'] %}
+                        <span class="badge bg-success">동의</span>
+                        {% else %}
+                        <span class="badge bg-secondary">미동의</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="/mgr/seekers/{{ s['id'] }}/claim">
+                            {{ csrf_input }}
+                            <button type="submit" class="btn btn-primary btn-sm">담당하기</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <div class="content-card">
-        {% if seekers %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>이름</th>
-                        <th>장애유형</th>
-                        <th>중증도</th>
-                        <th>지역</th>
-                        <th>근무형태</th>
-                        <th>동의</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in seekers %}
-                    <tr>
-                        <td class="fw-semibold">{{ s['name'] }}</td>
-                        <td>
-                            {% if s['device_icons'] %}
-                            <span class="device-icon-row">
-                                {% for d in s['device_icons'] %}<i class="fas {{ d['icon'] }} me-1" title="{{ d['name'] }}"></i>{% endfor %}
-                                {% if s['device_overflow'] %}<span class="text-muted small">+{{ s['device_overflow'] }}</span>{% endif %}
-                            </span>
-                            {% elif s['disability_name'] %}
-                            <i class="fas {{ disability_icons.get(s['disability_name'], 'fa-user') }}" title="{{ s['disability_name'] }}"></i>
-                            <span class="ms-1">{{ s['disability_name'] }}</span>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td>
-                            {% if s['severity'] == '중증' %}
-                            <span class="badge bg-danger">중증</span>
-                            {% elif s['severity'] %}
-                            <span class="badge bg-success">{{ s['severity'] }}</span>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td>{{ s|region('-') }}</td>
-                        <td>{{ s['work_pref'] or '-' }}</td>
-                        <td>
-                            {% if s['consent_sensitive'] %}
-                            <span class="badge bg-success">동의</span>
-                            {% else %}
-                            <span class="badge bg-secondary">미동의</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <form method="post" action="/mgr/seekers/{{ s['id'] }}/claim">
-                                {{ csrf_input }}
-                                <button type="submit" class="btn btn-primary btn-sm">담당하기</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-center py-3 text-muted mb-0">모든 구직자가 배정되었습니다.</p>
-        {% endif %}
-    </div>
+    {% else %}
+    <p class="home-empty">모든 구직자가 배정되었습니다.</p>
+    {% endif %}
     {% if seekers %}
     {% include "common/pagination.html" %}
     {% endif %}

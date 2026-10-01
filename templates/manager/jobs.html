@@ -37,7 +37,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-search"><i class="fas fa-search me-2"></i>검색</button>
+                    <button type="submit" class="btn btn-search">검색</button>
                 </div>
             </div>
             </fieldset>
@@ -46,10 +46,11 @@
 </div>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">공고 <span class="text-muted fs-6 fw-normal">({{ pagination.total }}건)</span></h4>
-    </div>
-    <div class="content-card">
+    <div class="home-section">
+        <div class="home-section-head">
+            <h2>공고</h2>
+            <span class="text-muted small">{{ pagination.total }}건</span>
+        </div>
         {% if jobs %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -64,14 +65,7 @@
                         <td>{{ j['employment_type'] or '-' }}</td>
                         <td>{{ j|region('-') }}</td>
                         <td>{{ j['applicant_count'] }}</td>
-                        <td>
-                            {% if j['status'] == 'open' %}게시중
-                            {% elif j['status'] == 'closed' %}마감
-                            {% elif j['status'] == 'rejected' %}반려
-                            {% elif j['status'] == 'pending' %}심사중
-                            {% else %}{{ j['status'] }}
-                            {% endif %}
-                        </td>
+                        <td>{{ j['status_label'] }}</td>
                         <td class="text-muted small">{{ j['deadline'] or '-' }}</td>
                     </tr>
                     {% endfor %}
@@ -79,7 +73,7 @@
             </table>
         </div>
         {% else %}
-        <p class="text-center py-3 text-muted mb-0">등록된 공고가 없습니다.</p>
+        <p class="home-empty">등록된 공고가 없습니다.</p>
         {% endif %}
     </div>
     {% if jobs %}
