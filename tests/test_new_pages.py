@@ -28,7 +28,7 @@ def test_calendar_renders(client):
     login(client, "comp1")
     r = client.get("/company/calendar")
     assert r.status_code == 200
-    assert "면접 캘린더" in r.text
+    assert "내 일정" in r.text
 
 
 def test_calendar_with_month(client):

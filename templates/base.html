@@ -301,12 +301,12 @@
                 <button type="button" class="a11y-btn" id="a11yWSrMode" aria-pressed="{{ 'true' if _a11y.get('sr_mode') else 'false' }}">스크린리더 모드</button>
             </div>
             <div class="a11y-select-row">
-                <label for="a11yTtsVoice">보이스</label>
+                <label for="a11yTtsVoice">음성 종류</label>
                 <select id="a11yTtsVoice">
                     <option value="F1" {% if _a11y.get('tts_voice', 'F1') == 'F1' %}selected{% endif %}>여성</option>
                     <option value="M1" {% if _a11y.get('tts_voice', 'F1') == 'M1' %}selected{% endif %}>남성</option>
                 </select>
-                <label for="a11yTtsSpeed">속도</label>
+                <label for="a11yTtsSpeed">읽기 속도</label>
                 <select id="a11yTtsSpeed">
                     <option value="slow" {% if _a11y.get('tts_speed', 'normal') == 'slow' %}selected{% endif %}>느리게</option>
                     <option value="normal" {% if _a11y.get('tts_speed', 'normal') == 'normal' %}selected{% endif %}>보통</option>
@@ -521,11 +521,14 @@ document.querySelectorAll('[data-delete-url]').forEach(function(el) {
 </script>
 {% block scripts %}{% endblock %}
 {% if request.session.get('logined') %}
-<script src="/static/js/a11y-widget.js?v=2"></script>
+<script src="/static/js/a11y-widget.js?v=3"></script>
 <script src="/static/vendor/vad/ort.wasm.min.js"></script>
 <script src="/static/vendor/vad/bundle.min.js"></script>
-<script src="/static/js/voice-parse.js?v=7"></script>
-<script src="/static/js/voice.js?v=14"></script>
+<script src="/static/js/voice-parse.js?v=12"></script>
+<script src="/static/js/voice.js?v=20"></script>
+{% if user_role == 'seeker' %}
+<script src="/static/js/seeker-voice.js?v=2"></script>
+{% endif %}
 {% if _a11y.get('head_mouse') %}
 <script type="module" src="/static/js/headmouse.js"></script>
 {% endif %}

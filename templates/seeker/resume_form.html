@@ -461,6 +461,7 @@
     <!-- 어학 -->
     <fieldset class="form-section optional-section d-none" id="sec-lang">
         <legend>어학</legend>
+        <datalist id="langList">{% for lo in language_options %}<option value="{{ lo }}">{% endfor %}</datalist>
         <div class="form-section-body" id="lang-rows">
             {% for lang in language_list %}
             <div class="lang-row border rounded p-3 mb-3 position-relative" role="group" aria-label="어학 {{ loop.index }}">
@@ -468,12 +469,7 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label" for="lang_language_{{ loop.index0 }}">언어</label>
-                        <select class="form-select" name="lang_language" id="lang_language_{{ loop.index0 }}">
-                            <option value="">선택</option>
-                            {% for lo in language_options %}
-                            <option value="{{ lo }}" {% if lang.language == lo %}selected{% endif %}>{{ lo }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="text" class="form-control" name="lang_language" id="lang_language_{{ loop.index0 }}" list="langList" value="{{ lang.language or '' }}" placeholder="영어">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label" for="lang_test_{{ loop.index0 }}">시험명</label>
@@ -501,6 +497,7 @@
             {% endfor %}
         </div>
         <button type="button" class="btn btn-outline-secondary btn-sm mt-1" id="langAddBtn" onclick="addLangRow()">어학 추가</button>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-1 resume-voice-btn" data-sec="lang" aria-label="어학 말로 입력" aria-pressed="false" aria-keyshortcuts="Alt+M"><i class="fas fa-microphone" aria-hidden="true"></i> 말로 입력</button>
     </fieldset>
 
     <!-- 수상/활동 -->
@@ -1021,9 +1018,7 @@ function addLangRow() {
         '<button type="button" class="btn btn-sm btn-outline-danger delete-row position-absolute top-0 end-0 m-2">삭제</button>' +
         '<div class="row g-3">' +
         '<div class="col-md-3"><label class="form-label" for="lang_language_' + i + '">언어</label>' +
-        '<select class="form-select" name="lang_language" id="lang_language_' + i + '"><option value="">선택</option>' +
-        {% for lo in language_options %}'<option value="{{ lo }}">{{ lo }}</option>' + {% endfor %}
-        '</select></div>' +
+        '<input type="text" class="form-control" name="lang_language" id="lang_language_' + i + '" list="langList" placeholder="영어"></div>' +
         '<div class="col-md-3"><label class="form-label" for="lang_test_' + i + '">시험명</label><input type="text" class="form-control" name="lang_test" id="lang_test_' + i + '" placeholder="TOEIC, JLPT 등"></div>' +
         '<div class="col-md-2"><label class="form-label" for="lang_score_' + i + '">점수/등급</label><input type="text" class="form-control" name="lang_score" id="lang_score_' + i + '" placeholder="890"></div>' +
         '<div class="col-md-2"><label class="form-label" for="lang_level_' + i + '">회화수준</label>' +
@@ -1103,5 +1098,6 @@ function addIntroRow(title, content) {
 {% endblock %}
 {% block scripts %}
 <script src="/static/js/ref-search.js"></script>
-<script src="/static/js/resume-voice.js?v=4"></script>
+<script id="otherResumes" type="application/json">{{ other_resumes|tojson }}</script>
+<script src="/static/js/resume-voice.js?v=11"></script>
 {% endblock %}

@@ -3,18 +3,18 @@ from core.db import get_sqlite
 from tests.conftest import login
 
 
-def test_job_card_shows_salary_icon(client):
+def test_job_card_shows_salary(client):
     login(client, "seeker1")
     r = client.get("/jobs")
     assert r.status_code == 200
-    assert "fa-won-sign" in r.text
+    assert "월 210만원" in r.text
 
 
-def test_job_card_shows_deadline_icon(client):
+def test_job_card_shows_deadline(client):
     login(client, "seeker1")
     r = client.get("/jobs")
     assert r.status_code == 200
-    assert "fa-clock" in r.text
+    assert "~ 20" in r.text
 
 
 def test_job_card_shows_remote_badge(client):

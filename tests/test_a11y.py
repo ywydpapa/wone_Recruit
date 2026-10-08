@@ -40,3 +40,13 @@ def test_tts_validation(client):
     login(client, "seeker1")
     r = client.post("/api/tts", data={"text": "안녕", "voice": "X1", "speed": "normal"})
     assert r.status_code == 400
+
+
+def test_seeker_voice_only_for_seeker(client):
+    login(client, "seeker1")
+    assert "seeker-voice.js" in client.get("/").text
+    client.get("/logout")
+    login(client, "counsel1")
+    r = client.get("/mgr/")
+    assert r.status_code == 200 and "voice.js" in r.text
+    assert "seeker-voice.js" not in r.text

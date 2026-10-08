@@ -19,6 +19,7 @@
         clear: ['전부지우기', '다지우기', '전부지워', '다지워', '모두지워', '전부삭제', '다삭제', '모두삭제', '전체삭제'],
         fix: ['수정', '고쳐', '다시', '다시말할게', '다시쓰기', '마지막문장수정', '마지막문장다시', '틀렸어', '잘못됐어'],
         newline: ['줄바꿈', '엔터', '다음줄'],
+        next: ['다음칸', '다음칸으로', '다음칸으로가', '다음입력칸'],
         read: ['다시읽어', '읽어'],
         send: ['전송', '보내기', '보내', '제출'],
         end: ['끝', '받아쓰기끝', '그만', '멈춰'],
@@ -58,6 +59,11 @@
         ['와이', 'Y'], ['제트', 'Z'], ['브이', 'V'], ['케이', 'K'], ['제이', 'J'], ['아이', 'I'], ['엘', 'L'], ['엠', 'M'],
         ['엔', 'N'], ['알', 'R'], ['큐', 'Q'], ['비', 'B'], ['씨', 'C'], ['디', 'D'], ['이', 'E'], ['지', 'G'], ['오', 'O'],
         ['피', 'P'], ['티', 'T'], ['유', 'U'], ['앤', '&']];
+    // 긴 발음부터 비교함
+    const URL_WORDS = [['에이치티티피에스', 'https'], ['에이치티티피', 'http'], ['깃허브', 'github'], ['깃헙', 'github'],
+        ['티스토리', 'tistory'], ['벨로그', 'velog'], ['노션', 'notion'], ['네이버', 'naver'], ['블로그', 'blog'], ['닷컴', '.com'],
+        ['슬래시', '/'], ['슬러시', '/'], ['언더바', '_'], ['하이픈', '-'], ['골뱅이', '@'], ['콜론', ':'], ['대시', '-'], ['닷', '.'],
+        ['쩜', '.'], ['점', '.']];
     const PUNCT_WORD = { 마침표: '.', 온점: '.', 쉼표: ',', 콤마: ',', 물음표: '?', 느낌표: '!' };
     const JUNK = ['시청해주셔서감사합니다', '구독과좋아요', '좋아요와구독', '알림설정', 'mbc뉴스'];
 
@@ -401,6 +407,26 @@
         return out;
     }
 
+    // 영문 주소는 알파벳 발음 기준. 한글 잔존 시 실패 처리
+    function url(v) {
+        let k = v.replace(/\s/g, '').toLowerCase(), out = '';
+        while (k) {
+            const w = URL_WORDS.find(([r]) => k.startsWith(r)) || LETTERS.find(([r]) => k.startsWith(r));
+            if (w) {
+                out += w[1];
+                k = k.slice(w[0].length);
+            } else if (/^[a-z0-9.:/_@-]/.test(k)) {
+                out += k[0];
+                k = k.slice(1);
+            } else {
+                return null;
+            }
+        }
+        out = out.toLowerCase().replace(/^(https?):?\/*/, '$1://');
+        if (!/^https?:\/\//.test(out)) out = 'https://' + out;
+        return /^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/.test(out) ? out : null;
+    }
+
     // 목록 중 발음이 가장 가까운 항목으로 보정함
     function closest(v, opts) {
         const k = squash(v).replace(/(.{2,})님$/, '$1');
@@ -443,6 +469,7 @@
         let s = text;
         const current = s.search(NOW_RE) >= 0;
         s = s.replace(NOW_RE, ' ');
+        s = s.replace(/(재작년|작년|올해)\s*/g, (all, w) => (today.getFullYear() - YREL[w]) + '년 ');
         s = s.replace(YM_RE, (all, y, m, ny, nm, mo) => {
             toks.push([y || ny, m || nm || mo]);
             return ' ';
@@ -511,10 +538,48 @@
 
     function certRow(text, today) {
         const p = period(text, today, [1]);
-        // Whisper가 숫자 등급을 한글로 표기하는 경우에 대응함
-        const name = p.words.map(stem).filter(w => w !== '자격증').join(' ')
-            .replace(/([일이삼])\s*급/g, (all, n) => money(n) + '급');
-        return { date: p.start, name };
+        return { date: p.start, name: certName(p.words.map(stem).filter(w => w !== '자격증').join(' ')) };
+    }
+
+    // Whisper가 숫자 등급을 한글로 표기하는 경우에 대응함
+    function certName(s) {
+        return s.replace(/([일이삼])\s*급/g, (all, n) => money(n) + '급');
+    }
+
+    // [발음, 표기, 언어]. 긴 발음부터 비교함
+    const LANG_TESTS = [['토익스피킹', 'TOEIC Speaking', '영어'], ['토익', 'TOEIC', '영어'], ['toeic', 'TOEIC', '영어'],
+        ['토플', 'TOEFL', '영어'], ['toefl', 'TOEFL', '영어'], ['텝스', 'TEPS', '영어'], ['teps', 'TEPS', '영어'],
+        ['오픽', 'OPIc', '영어'], ['opic', 'OPIc', '영어'], ['아이엘츠', 'IELTS', '영어'], ['ielts', 'IELTS', '영어'],
+        ['제이엘피티', 'JLPT', '일본어'], ['jlpt', 'JLPT', '일본어'], ['제이피티', 'JPT', '일본어'], ['jpt', 'JPT', '일본어'],
+        ['에이치에스케이', 'HSK', '중국어'], ['hsk', 'HSK', '중국어'], ['델레', 'DELE', '스페인어'], ['dele', 'DELE', '스페인어'],
+        ['델프', 'DELF', '프랑스어'], ['delf', 'DELF', '프랑스어']];
+    // 서버 LANGUAGE_LEVELS 값 기준
+    const LANG_LEVEL = [['네이티브', /네이티브|원어민/], ['비즈니스', /비즈니스/], ['일상회화', /회화/], ['기초', /기초|초급/]];
+
+    // 시험명 기준 언어 추정. 언어 직접 발화 시 우선
+    function langRow(text, today) {
+        const p = period(text, today, [1]);
+        const out = { language: '', test: '', score: '', level: '', date: p.start };
+        const rest = [];
+        p.words.map(stem).forEach(w => {
+            const k = w.toLowerCase();
+            const t = !out.test && LANG_TESTS.find(([r]) => k === r);
+            const lv = slot(w, LANG_LEVEL);
+            if (t) {
+                out.test = t[1];
+                out.language ||= t[2];
+            } else if (/.어$/.test(w)) {
+                out.language = w;
+            } else if (lv) {
+                out.level = lv;
+            } else if (!out.score && /^([0-9]{2,3}|n[1-5]|[1-6]급|[abc][12]|al|ih|im[1-3]|il|nh|nm|nl)점?$/i.test(k)) {
+                out.score = k.replace(/점$/, '').toUpperCase();
+            } else {
+                rest.push(w);
+            }
+        });
+        if (!out.test && rest.length) out.test = rest.join(' ');
+        return out;
     }
 
     // 받침에 따라 조사를 선택함. ㄹ받침 뒤에서는 으로 대신 로를 사용함
@@ -528,12 +593,48 @@
     function resumeRow(kind, text, today) {
         if (kind === 'car') return careerRow(text, today);
         if (kind === 'edu') return eduRow(text, today);
+        if (kind === 'lang') return langRow(text, today);
         return certRow(text, today);
+    }
+
+    // 서버 CONSULT_CATEGORIES, CONSULT_METHODS 키 기준
+    const CONSULT_CAT = [['job', /취업|구직|일자리|면접|이력서/], ['device', /보조기기|보조장비|장비|기기/],
+        ['work', /근무|직장|회사생활|업무/], ['rights', /권익|권리|차별|부당/], ['etc', /기타|그냥|다른거/]];
+    const CONSULT_METHOD = [['phone', /전화|통화/], ['video', /화상|영상|비대면|줌/], ['in_person', /대면|만나|방문|직접/],
+        ['chat', /메시지|메세지|문자|채팅/]];
+    const IMPORT_SEC = [['career', /경력/], ['education', /학력/], ['cert', /자격/], ['lang', /어학|외국어/],
+        ['award', /수상|대외활동|봉사|활동/], ['portfolio', /포트폴리오|링크/]];
+
+    function slot(text, table) {
+        const s = squash(text);
+        const hit = table.find(([, re]) => re.test(s));
+        return hit ? hit[0] : '';
+    }
+
+    function consultCmd(text) {
+        const s = squash(text);
+        if (!/상담/.test(s) || !/(신청|요청|예약|받고싶|하고싶|잡아)/.test(s) || /(내역|목록|현황|취소)/.test(s)) return null;
+        return { category: slot(text, CONSULT_CAT), method: slot(text, CONSULT_METHOD) };
+    }
+
+    // 음성 메시지는 담당 매니저 한정. 다른 대상 지목 시 other
+    function messageCmd(text) {
+        const s = squash(text);
+        if (!/(메시지|메세지|문자|쪽지)/.test(s) || !/(보내|전송|남겨|남길|쓸래|쓸게)/.test(s)) return null;
+        const to = s.match(/^(.+?)(한테|에게|께)/);
+        return { other: !!to && !/(매니저|담당|상담사|선생님)/.test(to[1]) };
+    }
+
+    function importCmd(text) {
+        const s = squash(text);
+        if (!/(불러|가져)(와|오)/.test(s)) return null;
+        return { sec: slot(text, IMPORT_SEC) };
     }
 
     const api = {
         squash, stripWake, money, date, dateText, match, yesno, classify, splitLabel,
-        dictCmd, cmdLike, replaceCmd, key, navAlias, punct, dropSentence, isJunk, sentences, month, monthText, rowPrefix, ORD, resumeRow, josa, valueText, closest,
+        dictCmd, cmdLike, replaceCmd, key, navAlias, punct, dropSentence, isJunk, sentences, month, monthText, rowPrefix, ORD, resumeRow, certName, josa, valueText, closest, url,
+        consultCmd, consultCat: t => slot(t, CONSULT_CAT), consultMethod: t => slot(t, CONSULT_METHOD), messageCmd, importCmd, importSec: t => slot(t, IMPORT_SEC),
     };
     if (typeof module !== 'undefined') module.exports = api;
     else root.VoiceParse = api;

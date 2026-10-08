@@ -286,6 +286,44 @@ async def resume_new(
     return RedirectResponse(url=f"/resumes/{new_id}/edit", status_code=303)
 
 
+# 컬럼 별칭은 화면 입력칸 name 기준
+SECTION_COLS = {
+    "career": ("resume_careers", "company_name AS car_company, department AS car_dept, position AS car_position, "
+               "employment_type AS car_emp_type, start_date AS car_start, end_date AS car_end, "
+               "is_current AS car_current, description AS car_desc"),
+    "education": ("resume_educations", "education_level AS edu_level, school_name AS edu_school, major AS edu_major, "
+                  "start_date AS edu_start, end_date AS edu_end, graduation_status AS edu_grad_status, "
+                  "gpa AS edu_gpa, gpa_scale AS edu_gpa_scale"),
+    "cert": ("resume_certifications", "cert_name, issuing_org AS cert_org, cert_date"),
+    "lang": ("resume_languages", "language AS lang_language, test_name AS lang_test, score AS lang_score, "
+             "level AS lang_level, test_date AS lang_date"),
+    "award": ("resume_awards", "category AS award_category, title AS award_title, organizer AS award_org, "
+              "activity_date AS award_date, description AS award_desc"),
+    "portfolio": ("resume_portfolios", "link_type AS port_type, url AS port_url, description AS port_desc"),
+}
+
+
+@router.get("/resumes/{resume_id}/sections/{sec}")
+async def resume_section(request: Request, resume_id: int, sec: str):
+    user = require_role(request, "seeker")
+    if sec not in SECTION_COLS:
+        return JSONResponse({"error": "bad_section"}, status_code=400)
+    table, cols = SECTION_COLS[sec]
+    conn = get_sqlite()
+    try:
+        src = conn.execute(
+            "SELECT name FROM resumes WHERE id=? AND user_id=?", (resume_id, user["id"])
+        ).fetchone()
+        if not src:
+            return JSONResponse({"error": "not_found"}, status_code=404)
+        rows = conn.execute(
+            f"SELECT {cols} FROM {table} WHERE resume_id=? ORDER BY sort_order", (resume_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    return JSONResponse({"name": src["name"], "rows": [dict(r) for r in rows]})
+
+
 @router.get("/resumes/{resume_id}/edit", response_class=HTMLResponse)
 async def resume_edit(request: Request, resume_id: int, success: str = "", error: str = ""):
     user = require_role(request, "seeker")
@@ -320,6 +358,10 @@ async def resume_edit(request: Request, resume_id: int, success: str = "", error
         ).fetchall()
         intro_presets = conn.execute(
             "SELECT * FROM self_intro_presets WHERE is_active=1 ORDER BY sort_order"
+        ).fetchall()
+        others = conn.execute(
+            "SELECT id, name FROM resumes WHERE user_id=? AND id<>? ORDER BY updated_at DESC",
+            (user["id"], resume_id),
         ).fetchall()
         accommodation_needs = json.loads(resume["accommodation_needs"]) if resume["accommodation_needs"] else []
         profile = conn.execute(
@@ -356,6 +398,7 @@ async def resume_edit(request: Request, resume_id: int, success: str = "", error
             "portfolio_list": portfolio_list,
             "intro_list": intro_list,
             "intro_presets": intro_presets,
+            "other_resumes": [dict(r) for r in others],
             "accommodation_needs": accommodation_needs,
             "education_levels_detail": EDUCATION_LEVELS_DETAIL,
             "graduation_status_list": GRADUATION_STATUS,

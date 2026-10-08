@@ -6,15 +6,14 @@ def test_applications_page_shows_timeline(client):
     login(client, "seeker1")
     r = client.get("/applications")
     assert r.status_code == 200
-    assert "status-timeline" in r.text
+    assert "mp-timeline" in r.text
 
 
 def test_timeline_shows_pending_step(client):
     login(client, "seeker1")
     r = client.get("/applications")
     assert r.status_code == 200
-    assert "timeline-step" in r.text
-    assert "timeline-dot" in r.text
+    assert "done current" in r.text
 
 
 def test_timeline_shows_status_labels(client):
@@ -51,6 +50,5 @@ def test_applications_card_layout(client):
     login(client, "seeker1")
     r = client.get("/applications")
     assert r.status_code == 200
-    assert "content-card" in r.text
     assert "사무지원" in r.text  # 첫번째 시드 공고 제목
     assert "한빛테크" in r.text

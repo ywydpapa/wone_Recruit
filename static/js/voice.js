@@ -272,6 +272,8 @@
 
     async function onVadSpeechEnd(pcm) {
         talking = false;
+        // voice_auto 시 탭마다 마이크 활성화, STT는 직렬 처리. 숨은 탭 발화는 전송 제외
+        if (document.hidden) return;
         if (!listening()) {
             if (dict && inflight) dict.queue.push(pcm);
             return;
@@ -721,6 +723,11 @@
         if (!val) {
             el.focus();
             const ans = await ask(V.josa(name, '을', '를') + ' 말씀하세요');
+            // 답변이 명령이면 값 입력 제외. 명령어가 칸에 입력되는 문제 방지
+            if (ans && known(ans)) {
+                await run(ans);
+                return true;
+            }
             val = ans && V.valueText(ans);
             if (!val) return true;
         }
@@ -768,12 +775,21 @@
             }
             setField(el, o.value);
             said = optLabel(o);
+        } else if (el.type === 'url') {
+            const u = V.url(val);
+            if (!u) {
+                await speak('주소를 못 알아들었어요. 깃허브 닷컴 슬래시 다음에 아이디를 알파벳으로 불러 주세요');
+                return true;
+            }
+            setField(el, u);
+            said = u;
         } else if (el.type === 'checkbox' || el.type === 'radio') {
             const yn = V.yesno(val);
             if (!yn) return false;
             if (el.checked !== (yn === 'yes')) el.click();
             said = yn === 'yes' ? '선택' : '해제';
         } else {
+            if (el.name === 'cert_name') val = V.certName(val);
             said = el.list ? V.closest(val, [...el.list.options].map(o => o.value)) : val;
             setField(el, said);
         }
@@ -825,6 +841,7 @@
         clearTimeout(dict.timer);
         dict.el.classList.remove('dictating');
         dict.el.removeEventListener('input', onManualEdit);
+        dict.el.removeEventListener('keydown', onDictKey);
         dict.btn.classList.remove('dictating');
         dict.btn.setAttribute('aria-pressed', 'false');
         dict = null;
@@ -844,6 +861,7 @@
         el.focus();
         el.setSelectionRange(el.value.length, el.value.length);
         el.addEventListener('input', onManualEdit);
+        el.addEventListener('keydown', onDictKey);
         resetDictTimer();
         await speak(fieldName(el) + ', 말씀하세요');
     }
@@ -963,8 +981,34 @@
         return speak(V.josa(from, '을', '를') + ' ' + V.josa(to, '으로', '로') + ' 바꿨어요', true);
     }
 
+    // 한 줄 입력칸에서 엔터는 다음 칸 이동 처리. 한글 조합 중 엔터 제외
+    function onDictKey(e) {
+        if (e.key !== 'Enter' || e.isComposing || dict.el.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+        dictMove();
+    }
+
+    // 대상 미지정 시 다음 받아쓰기 칸으로 이동
+    function dictMove(to) {
+        const all = dictTargets();
+        const next = to || all[all.indexOf(dict.el) + 1];
+        if (!next) return endDict('마지막 칸이에요. 받아쓰기를 끝낼게요');
+        const own = next.nextElementSibling;
+        const btn = own && own.classList.contains('dict-btn') ? own : dict.btn;
+        endDict(null, true);
+        return start(() => beginDict(next, btn));
+    }
+
+    // 행마다 칸 이름 중복. 같은 묶음 내 칸으로 한정
+    function dictSwitchTarget(raw) {
+        const m = V.squash(raw).match(/^(.+?)(을|를|은|는)?(말할[게께]|말하기|입력할[게께]|쓸[게께]|적을게|작성할게)(요)?$/);
+        if (!m) return null;
+        const g = dict.el.closest('[role=group]') || document;
+        return dictTargets().find(el => el !== dict.el && g.contains(el) && V.squash(fieldName(el)) === m[1]) || null;
+    }
+
     function dictNewline() {
-        if (dict.el.tagName !== 'TEXTAREA') return speak('한 줄 입력칸이에요');
+        if (dict.el.tagName !== 'TEXTAREA') return dictMove();
         setField(dict.el, dict.el.value + '\n');
         dict.stack.push('\n');
         resetDictTimer();
@@ -1039,6 +1083,14 @@
         if (c === 'send') return dictSend();
         if (c === 'end') return endDict('받아쓰기를 끝낼게요');
         if (c === 'fix') return dictFix();
+        if (c === 'next') return dictMove();
+        const to = dictSwitchTarget(raw);
+        if (to) return dictMove(to);
+        // 한 줄 입력칸은 칸 이름으로 시작 시 해당 칸 입력 명령 처리. 여러 줄 칸은 본문 가능성으로 제외
+        if (dict.el.tagName === 'INPUT' && V.splitLabel(raw, labelNames())) {
+            endDict(null, true);
+            return start(() => run(raw));
+        }
         const r = V.replaceCmd(raw);
         if (r) return dictReplace(r.from, r.to);
         if (V.cmdLike(raw)) {
@@ -1125,7 +1177,8 @@
         if (await nav(c.arg, true) || await press(c.arg, true) || await fill(c.arg)) return;
         // 값만 말한 경우 커서가 있는 칸에 입력함
         const cur = document.activeElement;
-        const val = V.valueText(c.arg);
+        let val = V.valueText(c.arg);
+        if (cur && cur.name === 'cert_name') val = V.certName(val);
         const chat = quiet && CHAT.test(V.squash(val));
         if (val && !chat && cur && cur.closest('#main') && cur.matches('input[type=text], input:not([type]), input[type=search]')) {
             const said = cur.list ? V.closest(val, [...cur.list.options].map(o => o.value)) : val;
@@ -1224,6 +1277,7 @@
 
     window.Voice = {
         ask: (q, enterYes) => new Promise(res => start(async () => res(await ask(q, enterYes)))),
+        pick: (els, labelOf) => new Promise(res => start(async () => res(await pick(null, els, labelOf)))),
         dictate: toggleDict,
         speak,
         stop,

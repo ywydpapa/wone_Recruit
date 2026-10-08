@@ -83,6 +83,8 @@ test('받아쓰기 명령', () => {
     assert.strictEqual(V.dictCmd('지우기'), 'undo');
     assert.strictEqual(V.dictCmd('방금거지워'), 'undo');
     assert.strictEqual(V.dictCmd('방금지워'), 'undo');
+    assert.strictEqual(V.dictCmd('다음 칸으로'), 'next');
+    assert.strictEqual(V.dictCmd('다음 칸'), 'next');
     assert.strictEqual(V.dictCmd('문장지우기'), 'sentence');
     assert.strictEqual(V.dictCmd('마지막 문장 지우기'), 'sentence');
     assert.strictEqual(V.dictCmd('전부지우기'), 'clear');
@@ -327,4 +329,82 @@ test('목록 칸 보정', () => {
     const deptCases = { 의자구매: '외자구매', 엠엘씨씨: 'MLCC', 에이치알디: 'HRD', 이에스에스디: 'eSSD', 정보보완: '정보보안', 양산기술: '양산기술' };
     for (const [said, want] of Object.entries(deptCases)) assert.strictEqual(V.closest(said, depts), want, said);
     for (const t of ['인사팀', '메모리사업부', '반도체연구소']) assert.strictEqual(V.closest(t, depts), t, t);
+});
+
+test('URL 발음 변환', () => {
+    const cases = {
+        '깃허브 닷컴 슬래시 에이치 오 엔 지': 'https://github.com/hong',
+        'github.com/hong': 'https://github.com/hong',
+        '에이치티티피에스 콜론 슬래시 슬래시 노션 점 에스 오': 'https://notion.so',
+        '블로그 점 네이버 닷컴 슬래시 케이 아이 엠 언더바 1': 'https://blog.naver.com/kim_1',
+        '에이치티티피에스 깃허브 닷컴': 'https://github.com',
+        '벨로그 점 아이 오 슬래시 골뱅이 디 이 브이': 'https://velog.io/@dev',
+    };
+    for (const [said, want] of Object.entries(cases)) assert.strictEqual(V.url(said), want, said);
+    for (const t of ['깃허브 닷컴 슬래시 홍길동', '깃허브', '']) assert.strictEqual(V.url(t), null, t);
+});
+
+test('어학 한 문장 입력', () => {
+    const t = new Date(2026, 9, 7);
+    const row = s => V.resumeRow('lang', s, t);
+    assert.deepStrictEqual(row('토익 890 24년1월'), { language: '영어', test: 'TOEIC', score: '890', level: '', date: '2024-01' });
+    assert.deepStrictEqual(row('JLPT N2 작년 7월'), { language: '일본어', test: 'JLPT', score: 'N2', level: '', date: '2025-07' });
+    assert.deepStrictEqual(row('오픽 IH 비즈니스'), { language: '영어', test: 'OPIc', score: 'IH', level: '비즈니스', date: '' });
+    assert.deepStrictEqual(row('스페인어 델레 B2'), { language: '스페인어', test: 'DELE', score: 'B2', level: '', date: '' });
+    assert.strictEqual(row('HSK 5급').score, '5급');
+});
+
+test('행 입력 상대 연도', () => {
+    const t = new Date(2026, 9, 7);
+    assert.deepStrictEqual(V.resumeRow('cert', '정보처리기사 작년 7월', t), { date: '2025-07', name: '정보처리기사' });
+    assert.strictEqual(V.resumeRow('car', '삼성전자 올해 3월부터 재직중', t).start, '2026-03');
+});
+
+test('부서 오인식 보정', () => {
+    const depts = ['인사', '인사총무', '총무', '재무', '회계', '경영지원', '기획', '전략기획', '경영기획', '사업기획',
+        '영업', '국내영업', '해외영업', '기술영업', '영업관리', '마케팅', '구매', '외자구매', '자재', '물류', '물류관리',
+        '생산', '생산관리', '품질', '품질관리', '고객지원'];
+    const cases = { 해외용업: '해외영업', 국내용업: '국내영업', 구메: '구매', 전략기혹: '전략기획', 경영지언: '경영지원',
+        생산관니: '생산관리', 물뉴: '물류', 자제: '자재', 회개: '회계', 마캐팅: '마케팅' };
+    for (const [said, want] of Object.entries(cases)) assert.strictEqual(V.closest(said, depts), want, said);
+    for (const t of ['인사팀', '영업2팀', '메모리사업부']) assert.strictEqual(V.closest(t, depts), t, t);
+});
+
+test('상담 신청 명령', () => {
+    assert.deepStrictEqual(V.consultCmd('채용매니저한테 상담신청해줘'), { category: '', method: '' });
+    assert.deepStrictEqual(V.consultCmd('보조기기 상담 전화로 신청할래'), { category: 'device', method: 'phone' });
+    assert.deepStrictEqual(V.consultCmd('메시지로 상담 신청해줘'), { category: '', method: 'chat' });
+    assert.deepStrictEqual(V.consultCmd('면접 상담 받고 싶어요'), { category: 'job', method: '' });
+    assert.strictEqual(V.consultCmd('상담 신청 내역 보여줘'), null);
+    assert.strictEqual(V.consultCmd('상담 취소해줘'), null);
+    assert.strictEqual(V.consultCmd('상담 열어줘'), null);
+});
+
+test('상담 슬롯 답변', () => {
+    assert.strictEqual(V.consultCat('근무 중 어려움이요'), 'work');
+    assert.strictEqual(V.consultCat('차별 받은 거요'), 'rights');
+    assert.strictEqual(V.consultCat('글쎄요'), '');
+    assert.strictEqual(V.consultMethod('화상으로 할게요'), 'video');
+    assert.strictEqual(V.consultMethod('직접 만나서요'), 'in_person');
+    assert.strictEqual(V.consultMethod('문자로'), 'chat');
+});
+
+test('메시지 명령', () => {
+    assert.deepStrictEqual(V.messageCmd('채용매니저한테 메시지 보내줘'), { other: false });
+    assert.deepStrictEqual(V.messageCmd('메시지 보내줘'), { other: false });
+    assert.deepStrictEqual(V.messageCmd('담당자에게 문자 남길래'), { other: false });
+    assert.deepStrictEqual(V.messageCmd('김철수한테 메시지 보내줘'), { other: true });
+    assert.strictEqual(V.messageCmd('메시지 열어줘'), null);
+    assert.strictEqual(V.messageCmd('메시지로 상담 신청해줘'), null);
+});
+
+test('이력서 항목 불러오기', () => {
+    assert.deepStrictEqual(V.importCmd('예전 이력서 경력 불러와서 넣어줘'), { sec: 'career' });
+    assert.deepStrictEqual(V.importCmd('예전 이력서 경력 불러와줘'), { sec: 'career' });
+    assert.deepStrictEqual(V.importCmd('다른 이력서에서 자격증 가져와줘'), { sec: 'cert' });
+    assert.deepStrictEqual(V.importCmd('외국어 불러와'), { sec: 'lang' });
+    assert.deepStrictEqual(V.importCmd('봉사활동 가져와 줘'), { sec: 'award' });
+    assert.deepStrictEqual(V.importCmd('예전 이력서 불러와줘'), { sec: '' });
+    assert.strictEqual(V.importCmd('경력 추가'), null);
+    assert.strictEqual(V.importSec('학력이요'), 'education');
 });

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from core.db import get_sqlite
-from core.deps import check_login, templates
+from core.deps import check_login, require_role, templates
 
 router = APIRouter()
 
@@ -171,3 +171,21 @@ async def unread_count(request: Request):
         conn.close()
 
     return JSONResponse({"count": cnt})
+
+
+# 음성 메시지 수신자는 발화 이름 대신 배정 정보 기준으로 결정
+@router.get("/api/messages/manager")
+async def my_manager(request: Request):
+    user = require_role(request, "seeker")
+    conn = get_sqlite()
+    try:
+        mgr = conn.execute(
+            "SELECT u.id, u.name FROM manager_assignments ma JOIN users u ON u.id = ma.manager_user_id "
+            "WHERE ma.seeker_user_id=?",
+            (user["id"],),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not mgr:
+        return JSONResponse({"error": "no_manager"}, status_code=404)
+    return JSONResponse({"id": mgr["id"], "name": mgr["name"]})

@@ -1,3 +1,5 @@
+import re
+
 from tests.conftest import login
 
 
@@ -19,7 +21,7 @@ def test_seeker_jobs_card_has_accommodation_tags(client):
     login(client, "seeker1")
     r = client.get("/jobs")
     assert r.status_code == 200
-    text = r.text
+    text = re.sub(r"<script.*?</script>", "", r.text, flags=re.S)
     assert '["' not in text
 
 

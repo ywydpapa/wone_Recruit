@@ -110,7 +110,7 @@ async def tts(
     if not text or len(text) > 300:
         return JSONResponse({"error": "내용이 없거나 너무 깁니다"}, status_code=400)
     if voice not in TTS_VOICES:
-        return JSONResponse({"error": "지원하지 않는 보이스입니다"}, status_code=400)
+        return JSONResponse({"error": "지원하지 않는 음성입니다"}, status_code=400)
     if speed not in TTS_SPEEDS:
         return JSONResponse({"error": "지원하지 않는 속도입니다"}, status_code=400)
     try:

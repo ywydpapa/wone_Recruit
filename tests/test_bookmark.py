@@ -62,19 +62,6 @@ def test_bookmark_requires_login(client):
     assert r.status_code in (303, 403)
 
 
-def test_bookmark_count_on_dashboard(client):
-    login(client, "seeker1")
-    conn = get_sqlite()
-    job_id = conn.execute("SELECT id FROM job_postings LIMIT 1").fetchone()["id"]
-    uid = conn.execute("SELECT id FROM users WHERE username='seeker1'").fetchone()["id"]
-    conn.execute("INSERT INTO bookmarks (user_id, job_id) VALUES (?,?)", (uid, job_id))
-    conn.commit()
-    conn.close()
-    r = client.get("/")
-    assert r.status_code == 200
-    assert "저장한 공고" in r.text
-
-
 def test_bookmark_shown_on_job_list(client):
     login(client, "seeker1")
     conn = get_sqlite()

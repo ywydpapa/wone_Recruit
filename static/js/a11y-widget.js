@@ -5,7 +5,7 @@
     var NAMES = { high_contrast: '고대비', large_target: '큰 조작 영역', easy_mode: '쉬운 화면', head_mouse: '머리로 조작', dwell_read: '응시 읽기', click_read: '클릭 읽기', sr_mode: '스크린리더 모드' };
     var OPT_LABELS = {
         font_size: { 100: '보통 글자 크기', 150: '글자 크기 150%', 200: '글자 크기 200%' },
-        tts_voice: { F1: '여성 보이스', M1: '남성 보이스' },
+        tts_voice: { F1: '여성 음성', M1: '남성 음성' },
         tts_speed: { slow: '느리게', normal: '보통 속도', fast: '빠르게' }
     };
 

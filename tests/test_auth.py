@@ -42,7 +42,7 @@ def test_dashboard_seeker(client):
     login(client, "seeker1")
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 200
-    assert "구직자 대시보드" in r.text
+    assert "반가워요" in r.text
 
 
 def test_dashboard_company(client):

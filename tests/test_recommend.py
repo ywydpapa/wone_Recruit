@@ -57,7 +57,7 @@ def test_recommended_on_dashboard(client):
     login(client, "seeker1")
     r = client.get("/")
     assert r.status_code == 200
-    assert "맞춤 공고" in r.text
+    assert "나에게 맞는 공고" in r.text
 
 
 def test_no_profile_no_recommendations(client):

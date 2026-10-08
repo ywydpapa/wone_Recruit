@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -11,6 +13,7 @@ _COMMUNITY_ROLES = ("seeker", "operator")
 router = APIRouter()
 
 PER_PAGE = 10
+MSG_MAX = 2000
 
 
 def _get_session_user(request):
@@ -356,38 +359,52 @@ async def message_thread(request: Request, with_name: str = Query(...)):
     return JSONResponse(result)
 
 
+def can_message(conn, me, to):
+    pair = {me["role"], to["role"]}
+    if pair == {"seeker", "operator"}:
+        return True
+    if pair != {"seeker", "manager"}:
+        return False
+    seeker, mgr = (me, to) if me["role"] == "seeker" else (to, me)
+    return conn.execute(
+        "SELECT 1 FROM manager_assignments WHERE seeker_user_id=? AND manager_user_id=?",
+        (seeker["id"], mgr["id"]),
+    ).fetchone() is not None
+
+
 @router.post("/api/messages/send")
 async def send_message(
     request: Request,
-    to_name: str = Form(...),
+    to_id: int = Form(...),
     body: str = Form(...),
 ):
     user = require_role(request, "seeker", "company", "manager", "operator")
+    body = body.strip()
+    if not body or len(body) > MSG_MAX:
+        return JSONResponse({"ok": False, "error": "bad_body"}, status_code=400)
     conn = get_sqlite()
     try:
-        from datetime import datetime
+        to = conn.execute("SELECT id, name, role FROM users WHERE id=?", (to_id,)).fetchone()
+        if not to or not can_message(conn, user, to):
+            return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         conn.execute(
             "INSERT INTO messages (user_id, sender, recipient, body, time_label, direction) "
             "VALUES (?,?,?,?,?,?)",
-            (user["id"], user["name"], to_name, body, now, "out"),
+            (user["id"], user["name"], to["name"], body, now, "out"),
         )
-        recipient = conn.execute(
-            "SELECT id FROM users WHERE name=?", (to_name,)
-        ).fetchone()
-        if recipient:
-            conn.execute(
-                "INSERT INTO messages (user_id, sender, recipient, body, time_label, direction) "
-                "VALUES (?,?,?,?,?,?)",
-                (recipient["id"], user["name"], to_name, body, now, "in"),
-            )
-            preview = body[:30] + "..." if len(body) > 30 else body
-            create_notification(
-                conn, recipient["id"],
-                f"{user['name']}님이 메시지를 보냈습니다: {preview}",
-                f"/messages/{user['id']}",
-                kind="message",
-            )
+        conn.execute(
+            "INSERT INTO messages (user_id, sender, recipient, body, time_label, direction) "
+            "VALUES (?,?,?,?,?,?)",
+            (to["id"], user["name"], to["name"], body, now, "in"),
+        )
+        preview = body[:30] + "..." if len(body) > 30 else body
+        create_notification(
+            conn, to["id"],
+            f"{user['name']}님이 메시지를 보냈습니다: {preview}",
+            f"/messages/{user['id']}",
+            kind="message",
+        )
         conn.commit()
     finally:
         conn.close()
