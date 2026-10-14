@@ -26,17 +26,14 @@ uvicorn main:app --reload
 
 ## 환경변수 설정
 
-`.env`는 비밀키 노출을 막기 위해 저장소에서 제외되어 있습니다. 저장소를 복제한 뒤 `.env.example`을 복사하여 서버별로 직접 작성해야 합니다.
+`.env.example`을 `.env`로 복사한 뒤 값을 입력합니다.
+`SESSION_SECRET_KEY`는 필수이며, 아래 명령으로 생성할 수 있습니다.
 
-- `SESSION_SECRET_KEY`: 필수 항목입니다. 설정하지 않으면 서버가 기동되지 않습니다. 로그인 세션 서명에 사용되며, 서버마다 별도로 생성하여 사용합니다. 타인에게 전달하지 않아야 합니다.
-  ```bash
-  python -c "import secrets; print(secrets.token_hex(32))"
-  ```
-- `ENVIRONMENT`: 운영 서버는 `production`으로 설정합니다. 이 경우 로그인 쿠키가 HTTPS에서만 전송되므로 도메인에 SSL 인증서를 먼저 적용해야 합니다. 적용하지 않으면 별도 오류 없이 로그인이 유지되지 않습니다.
-- `BASE_URL`: 운영 도메인 주소를 입력합니다(예: `https://example.com`). 비밀번호 재설정 메일의 링크 주소로 사용됩니다.
-- 그 외 메일, 사업자번호 조회, 음성 기능 항목은 선택 사항입니다. 설정하지 않으면 해당 기능만 제한되며 기본 기능은 정상 동작합니다.
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
 
-호스팅 업체 관리 화면에서 환경변수를 입력하는 방식도 사용할 수 있으며, 이 경우 `.env` 파일은 작성하지 않아도 됩니다.
+운영 서버는 `ENVIRONMENT=production`으로 설정합니다. 이 경우 HTTPS가 적용되어 있어야 로그인이 유지됩니다.
 
 ## 구조
 
