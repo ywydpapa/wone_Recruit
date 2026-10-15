@@ -54,6 +54,9 @@ test('명령 분류', () => {
     assert.deepStrictEqual(V.classify('그만'), { kind: 'stop' });
     assert.deepStrictEqual(V.classify('취소'), { kind: 'cancel' });
     assert.deepStrictEqual(V.classify('지금 어디야?'), { kind: 'where' });
+    assert.deepStrictEqual(V.classify('화면 다크모드로 바꿔줘'), { kind: 'theme', arg: 'dark' });
+    assert.deepStrictEqual(V.classify('라이트모드로 바꿔줘'), { kind: 'theme', arg: 'light' });
+    assert.strictEqual(V.classify('고용형태 일반으로 바꿔줘').kind, 'any');
     assert.deepStrictEqual(V.classify('화면 읽어줘'), { kind: 'read' });
     assert.deepStrictEqual(V.classify('공고 검색 열어줘'), { kind: 'nav', arg: '공고 검색' });
     assert.deepStrictEqual(V.classify('공고 검색로 가줘'), { kind: 'nav', arg: '공고 검색' });
@@ -215,7 +218,7 @@ test('이력서 자격증 문장', () => {
 test('화면 이동 별칭', () => {
     const cases = {
         '채용정보로 가줘': '채용정보', '공고 보여줘': '채용정보', '일자리 찾기': '채용정보', '채용공고 열어 주세요': '채용정보',
-        '이력서 작성하기': '이력서 작성', '이력서 쓰기': '이력서 작성', '새 이력서': '이력서 작성',
+        '이력서 작성하기': '이력서 작성', '이력서 쓰기': '이력서 작성',
         '내 이력서': '이력서 관리', '이력서 보여줘': '이력서 관리',
         '지원 내역 보여줘': '지원 현황', '면접 일정': '내 일정', '찜한 공고': '저장 공고',
         '메인으로 가줘': '홈', '처음 화면': '홈', '마이페이지': '계정', '쪽지함으로': null,
@@ -407,4 +410,224 @@ test('이력서 항목 불러오기', () => {
     assert.deepStrictEqual(V.importCmd('예전 이력서 불러와줘'), { sec: '' });
     assert.strictEqual(V.importCmd('경력 추가'), null);
     assert.strictEqual(V.importSec('학력이요'), 'education');
+});
+
+test('이력서 목록 명령', () => {
+    const cases = {
+        '이력서 2 삭제해줘': { act: 'del', target: '이력서2', ord: 2 },
+        '두 번째 이력서 지워줘': { act: 'del', target: '두번째이력서', ord: 2 },
+        '개발자용 이력서 복사해줘': { act: 'copy', target: '개발자용이력서', ord: 0 },
+        '마지막 이력서 수정': { act: 'edit', target: '마지막이력서', ord: -1 },
+        '이력서 1 보여줘': { act: 'view', target: '이력서1', ord: 1 },
+        '이력서 2번 열어줘': { act: 'view', target: '이력서2번', ord: 2 },
+        '이력서 2를 기본으로 설정해줘': { act: 'default', target: '이력서2', ord: 2 },
+        '사무직 이력서 대표 이력서로 해줘': { act: 'default', target: '사무직이력서', ord: 0 },
+        '세 번째 이력서 기본으로': { act: 'default', target: '세번째이력서', ord: 3 },
+        '기본 이력서 수정해줘': { act: 'edit', target: '기본이력서', ord: 0 },
+        '이력서 삭제해줘': { act: 'del', target: '', ord: 0 },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.resumeCmd(said), want, said);
+    for (const said of ['새 이력서', '새 이력서 만들어줘', '이력서 하나 만들어줘', '이력서 추가해줘', '이력서 만들기']) {
+        assert.deepStrictEqual(V.resumeCmd(said), { act: 'new' }, said);
+    }
+    for (const said of ['이력서 목록 읽어줘', '내 이력서 뭐 있어', '이력서 몇 개야']) {
+        assert.deepStrictEqual(V.resumeCmd(said), { act: 'list' }, said);
+    }
+    assert.strictEqual(V.resumeCmd('이력서 작성'), null);
+    assert.strictEqual(V.resumeCmd('기본 이력서'), null);
+});
+
+test('다른 화면 이력서 항목 추가', () => {
+    assert.strictEqual(V.secAdd('경력 추가해줘'), '경력');
+    assert.strictEqual(V.secAdd('어학 추가'), '어학');
+    assert.strictEqual(V.secAdd('새 자격증 입력'), '자격증');
+    assert.strictEqual(V.secAdd('경력 삭제'), null);
+    assert.strictEqual(V.secAdd('자기소개서 작성'), null);
+    for (const said of ['파일 첨부', '파일 첨부해줘', '이력서 파일 올려줘', 'PDF 업로드', '첨부파일 추가']) {
+        assert.ok(V.fileCmd(said), said);
+    }
+    assert.ok(!V.fileCmd('파일첨부 칸 열어줘'));
+});
+
+test('항목명만 말한 추가 명령', () => {
+    assert.deepStrictEqual(V.itemAdd('토익 추가'), { sec: 'lang', item: '토익' });
+    assert.deepStrictEqual(V.itemAdd('토익 900점 추가해줘'), { sec: 'lang', item: '토익 900점' });
+    assert.deepStrictEqual(V.itemAdd('TOEIC 추가.'), { sec: 'lang', item: 'TOEIC' });
+    assert.deepStrictEqual(V.itemAdd('유통관리사 추가'), { sec: 'cert', item: '유통관리사' });
+    assert.deepStrictEqual(V.itemAdd('비서 1급 넣어줘'), { sec: 'cert', item: '비서 1급' });
+    assert.strictEqual(V.resumeRow('cert', '비서일급', today).name, '비서1급');
+    assert.strictEqual(V.resumeRow('lang', '토익 900점', today).score, '900');
+    assert.deepStrictEqual(V.itemAdd('토익 800'), { sec: 'lang', item: '토익 800' });
+    assert.deepStrictEqual(V.itemAdd('토익 800점이요.'), { sec: 'lang', item: '토익 800점' });
+    assert.deepStrictEqual(V.itemAdd('오픽 IH'), { sec: 'lang', item: '오픽 IH' });
+    assert.strictEqual(V.resumeRow('lang', '토익 800', today).test, 'TOEIC');
+    assert.strictEqual(V.resumeRow('lang', '토익 800', today).score, '800');
+    for (const said of ['토익', '토익 몇 점이야?', '유통관리사', '자격증 추가', '경력 추가해줘', '새 이력서 추가', '첨부파일 추가', '토익 삭제']) {
+        assert.strictEqual(V.itemAdd(said), null, said);
+    }
+});
+
+test('이력서 대상 답변', () => {
+    assert.deepStrictEqual(V.resumeTarget('두 번째요'), { target: '두번째', ord: 2 });
+    assert.deepStrictEqual(V.resumeTarget('2번이요'), { target: '2번', ord: 2 });
+    assert.deepStrictEqual(V.resumeTarget('개발자용'), { target: '개발자용', ord: 0 });
+    assert.deepStrictEqual(V.resumeTarget('이력서'), { target: '', ord: 0 });
+});
+
+test('채용 제안 명령', () => {
+    const cases = {
+        '추천인재 찾아서 우리 회사 저장한 메시지 양식으로 보내줘': { name: '', tpl: '' },
+        '추천 인재한테 양식으로 제안 보내줘': { name: '', tpl: '' },
+        '홍길동한테 제안 보내줘': { name: '홍길동', tpl: '' },
+        '홍길동 님께 면접안내 양식으로 보내줘': { name: '홍길동', tpl: '면접안내' },
+        '이 사람한테 제안 보내줘': { name: '', tpl: '' },
+        '제안 보내줘': { name: '', tpl: '' },
+        '김영희에게 메시지 전송해줘': { name: '김영희', tpl: '' },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.offerCmd(said), want, said);
+    assert.strictEqual(V.offerCmd('추천 인재 보여줘'), null);
+    assert.ok(V.tplListCmd('양식 뭐 있어'));
+    assert.ok(V.tplListCmd('메시지 양식 읽어줘'));
+    assert.ok(!V.tplListCmd('양식 관리 열어줘'));
+    assert.strictEqual(V.navAlias('양식 관리 열어줘'), '메시지 양식');
+});
+
+test('양식 치환', () => {
+    const vals = { 이름: '홍길동', 회사명: '원리크루트', 공고명: '' };
+    assert.strictEqual(V.fillTpl('[{회사명}] {이름}님께', vals), '[원리크루트] 홍길동님께');
+    assert.strictEqual(V.fillTpl('{공고명} 면접 {날짜}', vals), '{공고명} 면접 {날짜}');
+    assert.deepStrictEqual(V.tplKeys('{공고명} 면접 {날짜} {날짜}'), ['공고명', '날짜']);
+});
+
+test('공고 검색 명령', () => {
+    const cases = {
+        '맞춤 공고 찾아줘': { fit: true, value: '' },
+        '나한테 맞는 공고 찾아줘': { fit: true, value: '' },
+        '내 조건에 맞는 일자리 찾아줘': { fit: true, value: '' },
+        '추천 공고 보여줘': { fit: true, value: '' },
+        '맞춤 공고': { fit: true, value: '' },
+        '나한테 어울리는 일자리 있어?': { fit: true, value: '' },
+        '내가 할 만한 일 찾아줘': { fit: true, value: '' },
+        '재택 공고 찾아줘': { fit: false, value: '재택' },
+        '집에서 하는 일 찾아줘': { fit: false, value: '집에서 하는' },
+        '서울 사무직 정규직 찾아줘': { fit: false, value: '서울 사무직 정규직' },
+        '하루 4시간 일자리': { fit: false, value: '하루 4시간' },
+        '부산 계약직 공고 있어?': { fit: false, value: '부산 계약직' },
+        '맞춤 재택 공고': { fit: true, value: '재택' },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.jobCmd(said), want, said);
+    // '있어?' 류 범용 질문은 공고 명사가 없으면 job_search로 보지 않음(일정/메시지 명령과 겹침 방지)
+    for (const said of ['채용정보 가줘', '공고 목록 열어줘', '오늘 뭐 있어', '새 메시지 있어?', '새 알림 있어?']) {
+        assert.strictEqual(V.jobCmd(said), null, said);
+    }
+    // 보여줘는 공고 명사가 있을 때만, 메뉴명은 메뉴 이동으로 넘김
+    for (const said of ['이력서 보여줘', '메시지 보여줘', '일정 보여줘', '지원 현황 보여줘', '도움말 보여줘',
+        '채용정보 보여줘', '저장 공고 보여줘', '이력서 찾아줘']) {
+        assert.strictEqual(V.jobCmd(said), null, said);
+    }
+});
+
+test('목록 항목 열기/읽기 명령', () => {
+    const cases = {
+        '첫 번째 열어줘': { act: 'open', ord: 1 },
+        '두 번째 공고 보여줘': { act: 'open', ord: 2 },
+        '세 번째 거 들어가줘': { act: 'open', ord: 3 },
+        '마지막 거 열어': { act: 'open', ord: -1 },
+        '첫 번째 읽어줘': { act: 'read', ord: 1 },
+        '두 번째 공고 뭐야': { act: 'read', ord: 2 },
+        '세 번째 내용 알려줘': { act: 'read', ord: 3 },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.itemCmd(said), want, said);
+    for (const said of ['채용정보 열어줘', '이력서 관리 열어줘', '두 번째 이력서 보여줘']) assert.strictEqual(V.itemCmd(said), null, said);
+});
+
+test('공고 저장 명령', () => {
+    for (const said of ['이 공고 저장해줘', '찜해줘', '스크랩해줘', '관심 공고에 넣어줘', '나중에 볼래']) {
+        assert.ok(V.bookmarkCmd(said), said);
+    }
+    for (const said of ['공고 목록 열어줘', '저장', '저장해줘', '저장하기']) assert.ok(!V.bookmarkCmd(said), said);
+});
+
+test('지원 현황 명령', () => {
+    for (const said of ['지원 현황 알려줘', '지원한 거 어떻게 됐어', '합격했어?', '서류 결과 나왔어?', '내 지원 상황 알려줘']) {
+        assert.ok(V.statusCmd(said), said);
+    }
+    assert.ok(!V.statusCmd('지원 현황 가줘'));
+});
+
+test('지원 취소 명령', () => {
+    const cases = {
+        '두 번째 지원 취소해줘': { ord: 2, value: '' },
+        '삼성전자 지원 취소할래': { ord: 0, value: '삼성전자' },
+        '지원 철회해줘': { ord: 0, value: '' },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.withdrawCmd(said), want, said);
+    assert.strictEqual(V.withdrawCmd('지원 현황 가줘'), null);
+});
+
+test('매칭 제안 응답 명령', () => {
+    const cases = {
+        '첫 번째 제안 수락해줘': { act: 'accept', ord: 1, value: '' },
+        '카카오 제안 거절할게': { act: 'reject', ord: 0, value: '카카오' },
+        '제안 받을게': { act: 'accept', ord: 0, value: '' },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.proposalCmd(said), want, said);
+    assert.strictEqual(V.proposalCmd('받은 제안 가줘'), null);
+});
+
+test('일정 조회 명령', () => {
+    const cases = {
+        '내일 일정 뭐야': { period: '내일' },
+        '이번 주 면접 언제야': { period: '이번주' },
+        '오늘 뭐 있어': { period: '오늘' },
+        '다음 주 일정 알려줘': { period: '다음주' },
+        '내 일정 알려줘': { period: '' },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.scheduleCmd(said), want, said);
+    assert.strictEqual(V.scheduleCmd('내 일정 가줘'), null);
+});
+
+test('메시지/알림 요약 명령', () => {
+    const cases = {
+        '새 메시지 있어?': { kind: 'message' },
+        '메시지 읽어줘': { kind: 'message' },
+        '매니저가 뭐라고 했어?': { kind: 'message' },
+        '알림 읽어줘': { kind: 'notif' },
+        '새 알림 있어?': { kind: 'notif' },
+    };
+    for (const [said, want] of Object.entries(cases)) assert.deepStrictEqual(V.inboxCmd(said), want, said);
+    assert.strictEqual(V.inboxCmd('메시지 가줘'), null);
+});
+
+test('접근성 설정 명령', () => {
+    const cases = {
+        '글자 크게 해줘': 'font_big',
+        '글씨 키워줘': 'font_big',
+        '글자 원래대로': 'font_normal',
+        '고대비로 해줘': 'contrast_on',
+        '화면 잘 안 보여': 'contrast_on',
+        '쉬운 화면으로 바꿔줘': 'easy_on',
+    };
+    for (const [said, want] of Object.entries(cases)) assert.strictEqual(V.a11yCmd(said), want, said);
+    assert.strictEqual(V.a11yCmd('어둡게 해줘'), null);
+    for (const said of ['매니저한테 글자 크게 해달라고 메시지 보내줘', '글자 크게 해달라고 메시지 보내줘']) {
+        assert.strictEqual(V.a11yCmd(said), null, said);
+    }
+    assert.deepStrictEqual(V.classify('어둡게 해줘'), { kind: 'theme', arg: 'dark' });
+});
+
+test('이전 이력서와 똑같이 명령', () => {
+    for (const said of ['이전 이력서랑 똑같이 해줘', '이전에 작성한 이력서랑 똑같이 해줘', '지난번 이력서 그대로 써줘',
+        '예전 이력서 복사해서 만들어줘', '전에 쓴 거랑 똑같이 채워줘']) {
+        assert.ok(V.copyCmd(said), said);
+    }
+    assert.ok(!V.copyCmd('이력서 작성해줘'));
+});
+
+test('자격증명 단독 판정', () => {
+    const list = [{ name: '컴퓨터활용능력' }, { name: '정보처리기사' }, { name: '유통관리사' }, { name: '워드프로세서' }];
+    assert.strictEqual(V.certHit('유통관리사', list).name, '유통관리사');
+    assert.strictEqual(V.certHit('워드 프로세서', list).name, '워드프로세서');
+    assert.strictEqual(V.certHit('컴퓨터활용', list).name, '컴퓨터활용능력');
+    for (const q of ['컴퓨터', '정보', '사회']) assert.strictEqual(V.certHit(q, list), null, q);
 });

@@ -43,6 +43,7 @@ def init():
         agreed_terms_at TEXT,
         agreed_privacy_at TEXT,
         agreed_marketing_at TEXT,
+        agreed_age_at TEXT,
         created_at TEXT DEFAULT (datetime('now','localtime')),
         is_deleted INTEGER NOT NULL DEFAULT 0,
         deleted_at TEXT,
@@ -1990,6 +1991,18 @@ def migrate():
                     );
                     CREATE INDEX IF NOT EXISTS idx_company_duties_company ON company_duties(company_id);
         """,
+        "offer_templates": """
+            CREATE TABLE IF NOT EXISTS offer_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                contact TEXT NOT NULL DEFAULT '',
+                updated_at TEXT DEFAULT (datetime('now','localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_offer_templates_company ON offer_templates(company_user_id);
+        """,
     }
     existing_tables = {
         row[0] for row in conn.execute(
@@ -2056,6 +2069,7 @@ def migrate():
         ("companies", "flexible_ok", "ALTER TABLE companies ADD COLUMN flexible_ok INTEGER NOT NULL DEFAULT 0"),
         ("companies", "shared_office_ok", "ALTER TABLE companies ADD COLUMN shared_office_ok INTEGER NOT NULL DEFAULT 0"),
         ("companies", "work_env_note", "ALTER TABLE companies ADD COLUMN work_env_note TEXT NOT NULL DEFAULT ''"),
+        ("users", "agreed_age_at", "ALTER TABLE users ADD COLUMN agreed_age_at TEXT"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:

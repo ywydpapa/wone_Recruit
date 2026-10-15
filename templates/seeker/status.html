@@ -20,7 +20,7 @@
         {% for app in apps %}
         <li>
             <a href="/jobs/{{ app['job_id'] }}">{{ app['title'] }}</a>
-            <span class="home-list-sub">{{ app['company_name'] }} &middot; {{ app['created_at']|fdate }}</span>
+            <span class="home-list-sub"><a href="/companies/{{ app['company_id'] }}" class="link-plain">{{ app['company_name'] }}</a> &middot; {{ app['created_at']|fdate }}</span>
             <span class="home-list-end">{{ app['status_label'] }}</span>
         </li>
         {% endfor %}
@@ -39,7 +39,7 @@
     <ul class="home-list">
         {% for iv in ivs %}
         <li>
-            <span class="home-list-title">{{ iv['company_name'] }}</span>
+            <span class="home-list-title"><a href="/companies/{{ iv['company_id'] }}" class="link-plain">{{ iv['company_name'] }}</a></span>
             <span class="home-list-sub">{{ iv['job_title'] }} &middot; {{ iv['type_label'] }}{% if iv['location'] %} &middot; {{ iv['location'] }}{% endif %}</span>
             <span class="home-list-end">{{ iv['interview_date']|fdate }} {{ iv['interview_time'] }}</span>
         </li>
@@ -86,7 +86,7 @@
         {% for p in places %}
         <div class="mp-place">
             <div class="mp-place-head">
-                <span class="home-list-title">{{ p['company_name'] }}</span>
+                <span class="home-list-title"><a href="/companies/{{ p['company_id'] }}" class="link-plain">{{ p['company_name'] }}</a></span>
                 <span class="home-list-sub">{{ p['job_title'] }} &middot; 입사일 {{ p['start_date']|fdate }}{% if p['end_date'] %} &middot; 종료일 {{ p['end_date']|fdate }}{% endif %}</span>
                 <span class="home-list-end">{{ p['status_label'] }}</span>
             </div>

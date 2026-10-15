@@ -2,12 +2,14 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import secrets
 import sqlite3
 from urllib.parse import quote
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from core.bizno import check_bizno, checksum_ok
 from core.constants import PURPOSE_LABELS
 from core.db import get_sqlite
 from core.deps import check_login, require_role, templates
@@ -18,24 +20,31 @@ from core.security import check_password, hash_password, verify_password
 router = APIRouter()
 
 RESET_TTL_MIN = 30
+USERNAME_RE = re.compile(r"^[a-z][a-z0-9]{3,19}$")
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _safe_next(path):
+    return path.startswith("/") and not path.startswith("//") and not path.startswith("/\\")
 
 
 @router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, error: str = ""):
+async def login_page(request: Request, error: str = "", next: str = ""):
     if check_login(request):
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url=next if _safe_next(next) else "/", status_code=303)
     return templates.TemplateResponse(
         request=request, name="/login/login.html", context={
-            "request": request, "page_title": "로그인", "error": error,
+            "request": request, "page_title": "로그인", "error": error, "next": next,
         }
     )
 
 
 @router.post("/login_check")
-async def login_check(request: Request, username: str = Form(...), password: str = Form(...)):
+async def login_check(request: Request, username: str = Form(...), password: str = Form(...), next: str = Form("")):
     ip = get_client_ip(request)
+    extra = f"&next={quote(next)}" if next else ""
     if check_login_rate(ip):
-        return RedirectResponse(url="/login?error=rate_limit", status_code=303)
+        return RedirectResponse(url=f"/login?error=rate_limit{extra}", status_code=303)
     record_login_attempt(ip)
     conn = get_sqlite()
     try:
@@ -46,9 +55,9 @@ async def login_check(request: Request, username: str = Form(...), password: str
         conn.close()
     if row and verify_password(password, row["password"]):
         if row["is_deleted"]:
-            return RedirectResponse(url="/login?error=deleted", status_code=303)
+            return RedirectResponse(url=f"/login?error=deleted{extra}", status_code=303)
         clear_login_attempts(ip)
-        request.session.pop("csrf_token", None)
+        request.session.clear()
         request.session["logined"] = True
         request.session["id"] = row["id"]
         request.session["username"] = row["username"]
@@ -57,8 +66,8 @@ async def login_check(request: Request, username: str = Form(...), password: str
         if row["must_change_password"]:
             request.session["must_change_password"] = True
             return RedirectResponse(url="/change-password", status_code=303)
-        return RedirectResponse(url="/", status_code=303)
-    return RedirectResponse(url="/login?error=1", status_code=303)
+        return RedirectResponse(url=next if _safe_next(next) else "/", status_code=303)
+    return RedirectResponse(url=f"/login?error=1{extra}", status_code=303)
 
 
 @router.get("/forgot-password", response_class=HTMLResponse)
@@ -119,6 +128,68 @@ async def forgot_password_submit(
             "본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.",
         )
     return RedirectResponse(url="/forgot-password?sent=1", status_code=303)
+
+
+@router.get("/find-id", response_class=HTMLResponse)
+async def find_id_page(request: Request, error: str = "", sent: str = ""):
+    if check_login(request):
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse(
+        request=request, name="login/find_id.html", context={
+            "request": request, "page_title": "아이디 찾기",
+            "error": error, "sent": sent,
+        }
+    )
+
+
+@router.post("/find-id")
+async def find_id_submit(request: Request, name: str = Form(...), email: str = Form(...)):
+    key = "findid:" + get_client_ip(request)
+    if check_login_rate(key):
+        return RedirectResponse(url="/find-id?error=rate_limit", status_code=303)
+    record_login_attempt(key)
+
+    name = name.strip()
+    email = email.strip()
+    conn = get_sqlite()
+    try:
+        rows = conn.execute(
+            "SELECT username FROM users WHERE name=? AND LOWER(email)=LOWER(?) AND email<>'' AND is_deleted=0",
+            (name, email),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    # 계정 존재 여부가 드러나지 않도록 결과와 관계없이 동일하게 안내함
+    if rows:
+        usernames = ", ".join(r["username"] for r in rows)
+        await asyncio.to_thread(
+            send_mail, email, "[WONE Recruit] 아이디 안내",
+            f"가입하신 아이디는 다음과 같습니다.\n\n{usernames}\n\n"
+            "본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.",
+        )
+    return RedirectResponse(url="/find-id?sent=1", status_code=303)
+
+
+@router.get("/api/usernames/{username}")
+async def check_username(request: Request, username: str):
+    # 공유오피스는 동일 IP 사용. 로그인 기준보다 완화
+    key = "uname:" + get_client_ip(request)
+    if check_login_rate(key, 30):
+        return JSONResponse({"error": "rate_limit"}, status_code=429)
+    record_login_attempt(key)
+
+    username = username.strip().lower()
+    valid = bool(USERNAME_RE.fullmatch(username))
+    available = True
+    if valid:
+        conn = get_sqlite()
+        try:
+            row = conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+        finally:
+            conn.close()
+        available = row is None
+    return JSONResponse({"valid": valid, "available": available})
 
 
 def _hash_token(token):
@@ -225,11 +296,36 @@ async def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
+def _signup_form(request, code, username, name, phone, email, role, agree_marketing, company_name="", biz_no=""):
+    return templates.TemplateResponse(
+        request=request, name="/login/signup.html", status_code=400, context={
+            "request": request, "page_title": "회원가입", "error": code,
+            "username": username, "name": name, "phone": phone, "email": email,
+            "role": role, "agree_marketing": agree_marketing,
+            "company_name": company_name, "biz_no": biz_no,
+        }
+    )
+
+
+def _format_phone(digits):
+    if digits.startswith("02"):
+        rest = digits[2:]
+        mid, last = (rest[:3], rest[3:]) if len(rest) == 7 else (rest[:4], rest[4:])
+        return f"02-{mid}-{last}"
+    rest = digits[3:]
+    mid, last = (rest[:3], rest[3:]) if len(rest) == 7 else (rest[:4], rest[4:])
+    return f"{digits[:3]}-{mid}-{last}"
+
+
 @router.get("/signup", response_class=HTMLResponse)
-async def signup_page(request: Request, error: str = ""):
+async def signup_page(request: Request, type: str = ""):
+    role = "company" if type == "company" else "seeker"
     return templates.TemplateResponse(
         request=request, name="/login/signup.html", context={
-            "request": request, "page_title": "회원가입", "error": error,
+            "request": request, "page_title": "회원가입", "error": "",
+            "username": "", "name": "", "phone": "", "email": "",
+            "role": role, "agree_marketing": False,
+            "company_name": "", "biz_no": "",
         }
     )
 
@@ -244,37 +340,86 @@ async def signup_submit(
     phone: str = Form(""),
     email: str = Form(""),
     role: str = Form("seeker"),
+    company_name: str = Form(""),
+    biz_no: str = Form(""),
     agree_terms: str = Form(""),
     agree_privacy: str = Form(""),
+    agree_age: str = Form(""),
     agree_marketing: str = Form(""),
 ):
-    if role not in ("seeker", "company"):
-        return RedirectResponse(url="/signup?error=invalid_role", status_code=303)
-    if not agree_terms or not agree_privacy:
-        return RedirectResponse(url="/signup?error=agree_required", status_code=303)
+    username = username.strip().lower()
+    name = name.strip()
     email = email.strip()
-    if "@" not in email:
-        return RedirectResponse(url="/signup?error=email_required", status_code=303)
+    company_name = company_name.strip()
+    biz_no = biz_no.strip()
+    digits = re.sub(r"\D", "", phone)
+    biz_digits = re.sub(r"\D", "", biz_no)
+    args = (username, name, phone, email, role, bool(agree_marketing), company_name, biz_no)
+
+    if role not in ("seeker", "company"):
+        return _signup_form(request, "invalid_role", *args)
+    if not USERNAME_RE.fullmatch(username):
+        return _signup_form(request, "id_format", *args)
+    if not name:
+        return _signup_form(request, "name_required", *args)
+
+    if role == "company":
+        if not company_name:
+            return _signup_form(request, "company_required", *args)
+        if len(biz_digits) != 10 or not checksum_ok(biz_digits):
+            return _signup_form(request, "bizno_format", *args)
+        if not digits:
+            return _signup_form(request, "phone_required", *args)
+        if await check_bizno(biz_no) is False:
+            return _signup_form(request, "bizno_closed", *args)
+        conn = get_sqlite()
+        try:
+            dup = conn.execute(
+                "SELECT 1 FROM companies c JOIN users u ON c.user_id=u.id "
+                "WHERE REPLACE(c.biz_no, '-', '')=? AND u.is_deleted=0",
+                (biz_digits,),
+            ).fetchone()
+        finally:
+            conn.close()
+        if dup:
+            return _signup_form(request, "bizno_dup", *args)
+        biz_no = f"{biz_digits[:3]}-{biz_digits[3:5]}-{biz_digits[5:]}"
+
+    if digits and (len(digits) < 9 or len(digits) > 11 or not digits.startswith("0")):
+        return _signup_form(request, "phone_format", *args)
+    if not EMAIL_RE.fullmatch(email):
+        return _signup_form(request, "email_required", *args)
+    if not agree_terms or not agree_privacy or not agree_age:
+        return _signup_form(request, "agree_required", *args)
     if password != confirm_password:
-        return RedirectResponse(url="/signup?error=mismatch", status_code=303)
+        return _signup_form(request, "mismatch", *args)
     pw_err = check_password(password)
     if pw_err:
-        return RedirectResponse(url=f"/signup?error={pw_err}", status_code=303)
+        return _signup_form(request, pw_err, *args)
+
+    phone = _format_phone(digits) if digits else ""
     from datetime import datetime
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     marketing_at = now if agree_marketing else None
     conn = get_sqlite()
     try:
-        conn.execute(
-            "INSERT INTO users (username, password, name, phone, email, role, agreed_terms_at, agreed_privacy_at, agreed_marketing_at) VALUES (?,?,?,?,?,?,?,?,?)",
-            (username, hash_password(password), name, phone, email, role, now, now, marketing_at)
+        cur = conn.execute(
+            "INSERT INTO users (username, password, name, phone, email, role, "
+            "agreed_terms_at, agreed_privacy_at, agreed_marketing_at, agreed_age_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (username, hash_password(password), name, phone, email, role, now, now, marketing_at, now)
         )
+        if role == "company":
+            conn.execute(
+                "INSERT INTO companies (user_id, company_name, biz_no) VALUES (?,?,?)",
+                (cur.lastrowid, company_name, biz_no),
+            )
         conn.commit()
     except sqlite3.IntegrityError:
-        return RedirectResponse(url="/signup?error=dup", status_code=303)
+        return _signup_form(request, "dup", username, name, phone, email, role, bool(agree_marketing), company_name, biz_no)
     finally:
         conn.close()
-    return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse(url=f"/login?joined=1&u={quote(username)}", status_code=303)
 
 
 @router.get("/account/mypage", response_class=HTMLResponse)

@@ -18,6 +18,7 @@
             --primary-hover: #004494;
             --text: #222;
             --text-muted: #999;
+            --text-secondary: #555;
             --border: #e5e5e5;
             --bg: #f7f8fa;
         }
@@ -47,6 +48,19 @@
         .login-title {
             text-align: center; color: var(--text-muted); font-weight: 500;
             font-size: 0.95rem; margin-bottom: 32px;
+        }
+        /* 회원 유형 탭 */
+        .signup-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .signup-tab {
+            flex: 1; text-align: center; padding: 10px 0;
+            font-weight: 600; font-size: 0.95rem;
+            color: var(--text-muted); text-decoration: none;
+            border-bottom: 2px solid transparent;
+        }
+        .signup-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .signup-section-title {
+            font-size: 0.9rem; font-weight: 700; color: var(--text-secondary);
+            margin: 20px 0 12px;
         }
         .input-icon-wrapper { position: relative; }
         .input-icon-wrapper i {
@@ -131,7 +145,7 @@
         .form-check-input { cursor: pointer; }
 
         [data-theme="dark"] {
-            --text: #D1D5DB; --text-muted: #6B7280; --border: #2D333B; --bg: #161B22;
+            --text: #D1D5DB; --text-muted: #6B7280; --text-secondary: #9CA3AF; --border: #2D333B; --bg: #161B22;
             --primary: #4a9eff; --primary-hover: #3a8ae6;
             color-scheme: dark;
         }
@@ -151,10 +165,33 @@
         <a href="/login" class="brand-logo"><span>WONE</span> Recruit</a>
         <div class="login-title">새 계정 만들기</div>
 
+        <div class="signup-tabs">
+            <a href="/signup" class="signup-tab{% if role == 'seeker' %} active{% endif %}"{% if role == 'seeker' %} aria-current="page"{% endif %}>개인회원</a>
+            <a href="/signup?type=company" class="signup-tab{% if role == 'company' %} active{% endif %}"{% if role == 'company' %} aria-current="page"{% endif %}>기업회원</a>
+        </div>
+
         {% if error == 'dup' %}
         <div class="alert alert-danger py-2 small mb-3">이미 사용 중인 아이디입니다. 다른 아이디를 사용해 주세요.</div>
+        {% elif error == 'invalid_role' %}
+        <div class="alert alert-danger py-2 small mb-3">회원 유형을 선택해 주세요.</div>
+        {% elif error == 'id_format' %}
+        <div class="alert alert-danger py-2 small mb-3">아이디는 영문 소문자로 시작하는 4~20자 영문 소문자, 숫자 조합이어야 합니다.</div>
+        {% elif error == 'name_required' %}
+        <div class="alert alert-danger py-2 small mb-3">이름을 입력해 주세요.</div>
+        {% elif error == 'company_required' %}
+        <div class="alert alert-danger py-2 small mb-3">회사명을 입력해 주세요.</div>
+        {% elif error == 'bizno_format' %}
+        <div class="alert alert-danger py-2 small mb-3">사업자등록번호 10자리를 정확히 입력해 주세요.</div>
+        {% elif error == 'bizno_closed' %}
+        <div class="alert alert-danger py-2 small mb-3">휴업 또는 폐업 상태이거나 국세청에 등록되지 않은 사업자등록번호입니다.</div>
+        {% elif error == 'bizno_dup' %}
+        <div class="alert alert-danger py-2 small mb-3">이미 가입된 사업자등록번호입니다. 기존 담당자 계정으로 로그인하거나 운영자에게 문의해 주세요.</div>
+        {% elif error == 'phone_required' %}
+        <div class="alert alert-danger py-2 small mb-3">담당자 연락처를 입력해 주세요.</div>
+        {% elif error == 'phone_format' %}
+        <div class="alert alert-danger py-2 small mb-3">전화번호 형식이 올바르지 않습니다.</div>
         {% elif error == 'agree_required' %}
-        <div class="alert alert-danger py-2 small mb-3">이용약관과 개인정보 수집 및 이용에 동의해 주세요.</div>
+        <div class="alert alert-danger py-2 small mb-3">이용약관, 개인정보 수집 및 이용, 만 14세 이상 확인에 동의해 주세요.</div>
         {% elif error == 'email_required' %}
         <div class="alert alert-danger py-2 small mb-3">이메일을 정확히 입력해 주세요. 비밀번호를 잊었을 때 재설정 링크를 받는 데 사용됩니다.</div>
         {% endif %}
@@ -162,10 +199,13 @@
 
         <form action="/signup" method="post">
             {{ csrf_input }}
-            <div class="mb-3 input-icon-wrapper">
-                <input type="text" name="username" class="form-control form-control-lg" placeholder="아이디" required>
+            <input type="hidden" name="role" value="{{ role }}">
+            <div class="mb-1 input-icon-wrapper">
+                <input type="text" name="username" id="username" class="form-control form-control-lg" placeholder="아이디" value="{{ username }}" pattern="^[a-z][a-z0-9]{3,19}$" maxlength="20" autocomplete="username" autocapitalize="off" required>
                 <i class="far fa-user"></i>
             </div>
+            <p class="text-muted small mb-1">영문 소문자로 시작하는 4~20자, 영문 소문자와 숫자 조합</p>
+            <div id="usernameCheck" class="small mb-3" aria-live="polite"></div>
             <div class="mb-3 input-icon-wrapper">
                 <input type="password" name="password" class="form-control form-control-lg" placeholder="비밀번호" aria-label="비밀번호" aria-describedby="pwHint" autocomplete="new-password" minlength="12" data-pw-new required>
                 <i class="fas fa-lock" aria-hidden="true"></i>
@@ -175,30 +215,44 @@
                 <i class="fas fa-lock" aria-hidden="true"></i>
             </div>
             {% include "common/pw_help.html" %}
+            {% if role == 'company' %}
+            <div class="signup-section-title">기업 정보</div>
             <div class="mb-3 input-icon-wrapper">
-                <input type="text" name="name" class="form-control form-control-lg" placeholder="이름" required>
+                <input type="text" name="company_name" class="form-control form-control-lg" placeholder="회사명" value="{{ company_name }}" maxlength="100" autocomplete="organization" required>
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="mb-1 input-icon-wrapper">
+                <input type="text" name="biz_no" id="bizNo" class="form-control form-control-lg" placeholder="사업자등록번호 (000-00-00000)" value="{{ biz_no }}" inputmode="numeric" maxlength="12" required>
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div id="biznoCheck" class="small mb-3" aria-live="polite"></div>
+            <div class="signup-section-title">담당자 정보</div>
+            <div class="mb-3 input-icon-wrapper">
+                <input type="text" name="name" class="form-control form-control-lg" placeholder="담당자 이름" value="{{ name }}" maxlength="30" autocomplete="name" required>
                 <i class="fas fa-id-card"></i>
             </div>
             <div class="mb-3 input-icon-wrapper">
-                <input type="text" name="phone" class="form-control form-control-lg" placeholder="전화번호">
+                <input type="text" name="phone" class="form-control form-control-lg" placeholder="담당자 연락처" value="{{ phone }}" inputmode="tel" autocomplete="tel" required>
                 <i class="fas fa-phone"></i>
             </div>
             <div class="mb-3 input-icon-wrapper">
-                <input type="email" name="email" class="form-control form-control-lg" placeholder="이메일 (비밀번호 찾기에 사용)" required>
+                <input type="email" name="email" class="form-control form-control-lg" placeholder="담당자 이메일" value="{{ email }}" maxlength="100" autocomplete="email" required>
                 <i class="fas fa-envelope"></i>
             </div>
-            <div class="mb-4">
-                <div class="d-flex gap-4 justify-content-center py-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="role" id="role_seeker" value="seeker" checked>
-                        <label class="form-check-label fw-600" for="role_seeker">구직자(장애인)</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="role" id="role_company" value="company">
-                        <label class="form-check-label fw-600" for="role_company">기업</label>
-                    </div>
-                </div>
+            {% else %}
+            <div class="mb-3 input-icon-wrapper">
+                <input type="text" name="name" class="form-control form-control-lg" placeholder="이름" value="{{ name }}" maxlength="30" autocomplete="name" required>
+                <i class="fas fa-id-card"></i>
             </div>
+            <div class="mb-3 input-icon-wrapper">
+                <input type="text" name="phone" class="form-control form-control-lg" placeholder="전화번호" value="{{ phone }}" inputmode="tel" autocomplete="tel">
+                <i class="fas fa-phone"></i>
+            </div>
+            <div class="mb-3 input-icon-wrapper">
+                <input type="email" name="email" class="form-control form-control-lg" placeholder="이메일 (비밀번호 찾기에 사용)" value="{{ email }}" maxlength="100" autocomplete="email" required>
+                <i class="fas fa-envelope"></i>
+            </div>
+            {% endif %}
             <div class="agree-box">
                 <div class="agree-all-row">
                     <input class="form-check-input" type="checkbox" id="agree_all">
@@ -206,21 +260,27 @@
                 </div>
                 <div class="agree-item">
                     <div class="d-flex align-items-center">
-                        <input class="form-check-input" type="checkbox" name="agree_terms" id="agree_terms" value="1">
+                        <input class="form-check-input" type="checkbox" name="agree_terms" id="agree_terms" value="1" required>
                         <label for="agree_terms">[필수] 이용약관 동의</label>
                     </div>
                     <a href="/terms" target="_blank" class="view-link">보기</a>
                 </div>
                 <div class="agree-item">
                     <div class="d-flex align-items-center">
-                        <input class="form-check-input" type="checkbox" name="agree_privacy" id="agree_privacy" value="1">
+                        <input class="form-check-input" type="checkbox" name="agree_privacy" id="agree_privacy" value="1" required>
                         <label for="agree_privacy">[필수] 개인정보 수집 및 이용 동의</label>
                     </div>
                     <a href="/privacy" target="_blank" class="view-link">보기</a>
                 </div>
                 <div class="agree-item">
                     <div class="d-flex align-items-center">
-                        <input class="form-check-input" type="checkbox" name="agree_marketing" id="agree_marketing" value="1">
+                        <input class="form-check-input" type="checkbox" name="agree_age" id="agree_age" value="1" required>
+                        <label for="agree_age">[필수] 만 14세 이상입니다</label>
+                    </div>
+                </div>
+                <div class="agree-item">
+                    <div class="d-flex align-items-center">
+                        <input class="form-check-input" type="checkbox" name="agree_marketing" id="agree_marketing" value="1" {% if agree_marketing %}checked{% endif %}>
                         <label for="agree_marketing">[선택] 마케팅 정보 수신 동의</label>
                     </div>
                 </div>
@@ -239,9 +299,9 @@
     const agreeAll = document.getElementById('agree_all');
     const agreeTerms = document.getElementById('agree_terms');
     const agreePrivacy = document.getElementById('agree_privacy');
+    const agreeAge = document.getElementById('agree_age');
     const agreeMarketing = document.getElementById('agree_marketing');
-    const required = [agreeTerms, agreePrivacy];
-    const all = [agreeTerms, agreePrivacy, agreeMarketing];
+    const all = [agreeTerms, agreePrivacy, agreeAge, agreeMarketing];
 
     agreeAll.addEventListener('change', () => {
         all.forEach(c => c.checked = agreeAll.checked);
@@ -251,12 +311,56 @@
         agreeAll.checked = all.every(x => x.checked);
     }));
 
-    document.querySelector('form').addEventListener('submit', e => {
-        if (!agreeTerms.checked || !agreePrivacy.checked) {
-            e.preventDefault();
-            alert('이용약관과 개인정보 수집 및 이용에 동의해 주세요.');
-        }
+    document.querySelector('form').addEventListener('submit', () => {
+        document.querySelector('button[type=submit]').disabled = true;
     });
+
+    const unameInput = document.getElementById('username');
+    const unameMsg = document.getElementById('usernameCheck');
+    unameInput.addEventListener('input', () => { unameMsg.textContent = ''; });
+    unameInput.addEventListener('blur', () => {
+        const v = unameInput.value.trim().toLowerCase();
+        if (!v) return;
+        fetch('/api/usernames/' + encodeURIComponent(v))
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data) return;
+                if (!data.valid) {
+                    unameMsg.textContent = '아이디는 영문 소문자로 시작하는 4~20자 영문 소문자, 숫자 조합이어야 합니다.';
+                    unameMsg.className = 'small mb-3 text-danger';
+                } else if (!data.available) {
+                    unameMsg.textContent = '이미 사용 중인 아이디입니다.';
+                    unameMsg.className = 'small mb-3 text-danger';
+                } else {
+                    unameMsg.textContent = '사용 가능한 아이디입니다.';
+                    unameMsg.className = 'small mb-3 text-success';
+                }
+            })
+            .catch(() => {});
+    });
+
+    const bizInput = document.getElementById('bizNo');
+    const bizMsg = document.getElementById('biznoCheck');
+    if (bizInput) {
+        bizInput.addEventListener('input', () => { bizMsg.textContent = ''; });
+        bizInput.addEventListener('blur', () => {
+            const v = bizInput.value.trim();
+            if (!v) return;
+            fetch('/api/bizno/check?biz_no=' + encodeURIComponent(v))
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (!data || data.valid === null) return;
+                    if (data.valid) {
+                        bizMsg.textContent = '유효한 사업자등록번호입니다.';
+                        bizMsg.className = 'small mb-3 text-success';
+                    } else {
+                        bizMsg.textContent = '유효하지 않은 사업자등록번호입니다.';
+                        bizMsg.className = 'small mb-3 text-danger';
+                    }
+                })
+                .catch(() => {});
+        });
+    }
 </script>
 <script src="/static/js/pw-field.js"></script>
 </body>

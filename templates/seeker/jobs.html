@@ -116,8 +116,8 @@
 {% if jobs %}
 <div class="home-jobs">
     {% for job in jobs %}
-    <article class="home-job item-card">
-        <p class="home-job-company">{{ job['company_name'] }}</p>
+    <article class="home-job item-card" data-voice-item data-voice-text="{{ job['company_name'] }}, {{ job['title'] }}, {{ job|region('전국') }}, {{ job['employment_type'] }}">
+        <p class="home-job-company"><a href="/companies/{{ job['company_id'] }}" class="link-plain">{{ job['company_name'] }}</a></p>
         <h3><a href="/jobs/{{ job['id'] }}">{{ job['title'] }}</a></h3>
         <p class="home-job-meta">
             <span>{{ job|region('전국') }}</span>

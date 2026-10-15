@@ -42,7 +42,7 @@
         '상담': ['상담신청', '상담사', '상담내역'],
         '내 프로필': ['프로필', '내정보수정'],
         '이력서 관리': ['이력서목록', '내이력서', '이력서', '이력서보기'],
-        '이력서 작성': ['이력서쓰기', '이력서만들기', '이력서작성', '새이력서'],
+        '이력서 작성': ['이력서쓰기', '이력서작성'],
         '열람 현황': ['열람', '누가봤어', '이력서열람'],
         '저장 공고': ['관심공고', '찜', '찜한공고', '스크랩', '북마크'],
         '최근 본 공고': ['최근공고', '최근본거', '최근본공고'],
@@ -53,6 +53,7 @@
         '접근성': ['접근성설정', '보조기능'],
         '알림 설정': ['알림설정'],
         '알림': ['알림목록', '새소식'],
+        '메시지 양식': ['양식', '양식관리', '제안양식', '메시지양식관리'],
     };
     // 알파벳 발음표임. 긴 발음부터 비교함
     const LETTERS = [['더블유', 'W'], ['에이치', 'H'], ['에이', 'A'], ['에프', 'F'], ['에스', 'S'], ['엑스', 'X'],
@@ -318,6 +319,8 @@
         if (/^(그만|멈춰|중지|스톱)/.test(f)) return { kind: 'stop' };
         if (/^취소/.test(f)) return { kind: 'cancel' };
         if (/어디야|어디예요|어디지|어디에있/.test(f)) return { kind: 'where' };
+        if (/^(화면(을|를)?)?(다크|어두운|어둡게|검은)(모드|테마|화면|색)?(으로|로)?(바꿔|변경|전환|해|켜|설정)/.test(f)) return { kind: 'theme', arg: 'dark' };
+        if (/^(화면(을|를)?)?(라이트|밝은|밝게|흰|하얀|일반)(모드|테마|화면|색)?(으로|로)?(바꿔|변경|전환|해|켜|설정)/.test(f)) return { kind: 'theme', arg: 'light' };
         // STT 오인식 표기(일거)를 포함함
         if (/^(화면(을|를)?)?(좀)?(읽어|일거)/.test(f)) return { kind: 'read' };
         if (/^(도움말|명령어|사용법|뭐라고말해|뭐할수있)/.test(f)) return { kind: 'help' };
@@ -631,10 +634,251 @@
         return { sec: slot(text, IMPORT_SEC) };
     }
 
+    // 이력서 목록 명령임. 기본 설정은 보기, 수정보다 뒤에 판정함
+    const RES_ACT = [
+        ['del', /(을|를)?(삭제|지워|지우기|빼)(해줘|해주세요|하기|버려|해|줘|주세요)?$/],
+        ['copy', /(을|를)?(복사|복제)(해줘|해주세요|하기|해|줘|주세요)?$/],
+        ['edit', /(을|를)?(수정|편집|고쳐)(해줘|해주세요|하기|해|줘|주세요)?$/],
+        ['view', /(을|를)?(보기|보여줘|보여주세요|열어줘|열어|볼래|봐줘|봐)$/],
+        ['default', /(을|를|이|가)?(기본|대표)(이력서)?(으로|로)?(설정|지정|바꿔|변경|만들어|해)(해|줘|주세요)*$|(을|를)?(기본|대표)(이력서)?(으로|로)$/],
+    ];
+
+    function resumeCmd(text) {
+        const s = squash(text);
+        if (/^(내)?이력서(목록|리스트)?(읽어|알려|뭐뭐?있|몇개|뭐야)|^목록(읽어|알려)/.test(s)) return { act: 'list' };
+        if (/^(새|새로운|새로)이력서(만들|작성|추가|쓰|써|하나)?|^이력서(새로|하나)?(만들|추가)/.test(s)) return { act: 'new' };
+        for (const [act, re] of RES_ACT) {
+            const m = s.match(re);
+            if (!m) continue;
+            return { act, ...resumeTarget(s.slice(0, m.index)) };
+        }
+        return null;
+    }
+
+    // 이름 비교용 원문과 순서를 함께 반환함. 마지막은 -1
+    function resumeTarget(target) {
+        const full = squash(target).replace(/(이에요|예요|이요|요)$/, '');
+        const t = full.replace(/^이력서|이력서$/g, '');
+        const o = ORD[t.replace(/번째?$/, '')];
+        let ord = 0;
+        if (/^마지막/.test(t)) ord = -1;
+        else if (/^[0-9]+번?째?$/.test(t)) ord = parseInt(t, 10);
+        else if (o && /번/.test(t)) ord = o;
+        return { target: t && full, ord };
+    }
+
+    // 다른 화면에서 이력서 항목 추가 시 사용함. 자기소개서는 항목 제목 명령으로 처리함
+    function secAdd(text) {
+        const m = squash(text).match(/^(새)?(학력|경력|자격증|자격|어학|외국어|수상|대외활동|봉사활동|포트폴리오)(을|를)?(추가|입력|작성|쓰기|써)(해줘|해주세요|하기|할게|해|줘|주세요)?$/);
+        return m ? m[2] : null;
+    }
+
+    const LANG_SCORE = /([0-9]{2,3}|n[1-5]|[1-6]급|레벨[1-8]|[abc][12]|al|ih|im[1-3]|il|nh|nm|nl)점?(이요|요|입니다|이에요|예요)?[.!]?$/i;
+
+    // 섹션명 없이 자격증명, 시험명만 말한 추가 명령임. 시험명이면 어학, 그 외는 자격증으로 처리함
+    // 동사 없는 발화는 시험명과 점수가 모두 있는 경우만 어학 추가로 처리함
+    function itemAdd(text) {
+        const s = squash(text).toLowerCase();
+        const lang = LANG_TESTS.some(([r]) => s.startsWith(r));
+        if (lang && LANG_SCORE.test(s)) {
+            return { sec: 'lang', item: text.trim().replace(/\s*(이요|요|입니다|이에요|예요)?\s*[.!]?$/, '') };
+        }
+        const m = text.trim().match(/^(.+?)\s*(을|를)?\s*(추가|넣어|등록)\s*(해\s*줘|해\s*주세요|하기|할게|해|줘|주세요)?\s*[.!?]?$/);
+        if (!m) return null;
+        const item = m[1].trim();
+        if (/^(새)?(이력서|학력|경력|자격증?|어학|외국어|수상|대외활동|봉사활동|활동|포트폴리오|링크|자기소개서|자소서|파일|첨부파일|항목|칸|행)$/.test(squash(item))) return null;
+        const k = squash(item).toLowerCase();
+        return { sec: LANG_TESTS.some(([r]) => k.startsWith(r)) ? 'lang' : 'cert', item };
+    }
+
+    function fileCmd(text) {
+        const s = squash(text);
+        return /^(이력서)?(파일|첨부파일|pdf)(을|를)?(첨부|올려|올리기|업로드|추가|넣어|선택)(해줘|해주세요|하기|할게|해|줘|주세요)?$/.test(s)
+            || /^(이력서)?파일첨부(해줘|해주세요|하기|할게|해|줘|주세요)?$/.test(s);
+    }
+
+    // 기업 채용 제안 명령임. 받는 사람이 추천 인재 등 일반 명칭이면 이름 없음으로 처리함
+    function offerCmd(text) {
+        const s = squash(text);
+        if (!/(제안|메시지|메세지|양식)/.test(s) || !/(보내|전송|발송)/.test(s)) return null;
+        const to = s.match(/^(.+?)(님)?(한테|에게|께)/);
+        const name = to && !/(추천|인재|사람|지원자|후보|이분|그분)/.test(to[1]) ? to[1] : '';
+        const t = text.match(/(\S+)\s*양식\s*(으로|로)/);
+        // 조사로 끝나는 단어는 양식 이름이 아닌 앞 문장 성분임
+        const tpl = t && !/^(메시지|메세지|저장한|저장된|저장해둔|우리|회사|제안|그|기본)$|(한테|에게|께|을|를|은|는)$/.test(t[1]) ? squash(t[1]) : '';
+        return { name, tpl };
+    }
+
+    function tplListCmd(text) {
+        return /^(메시지|메세지|제안)?양식(목록|리스트)?(뭐뭐?있|읽어|알려|몇개)/.test(squash(text));
+    }
+
+    // 값이 없는 치환 표시는 그대로 둠
+    function fillTpl(s, vals) {
+        return s.replace(/\{([^{}]+)\}/g, (m, k) => vals[k] || m);
+    }
+
+    function tplKeys(s) {
+        return [...new Set([...s.matchAll(/\{([^{}]+)\}/g)].map(m => m[1]))];
+    }
+
+    // 맞춤/조건 공고 검색 명령임. 값의 지역, 고용형태 등 변환은 실행부(seeker-voice.js)에서 처리함
+    // 질문형 어미는 범용 질문과 겹치므로 공고 명사가 있을 때만 인정함
+    const JOB_FIT_WORDS = /(맞춤|나한테\s*맞는|내\s*조건에\s*맞는|추천|어울리는|할\s*만한|나한테\s*어울리는)/;
+    // 보여줘는 이력서, 메시지 등 다른 화면 요청과 겹치므로 공고 명사가 있을 때만 인정함
+    const JOB_TAIL_FIND = /(공고|일자리|일거리|자리|직장|일)?\s*(을|를)?\s*(찾아\s*줘|찾아\s*주세요|찾아|찾기)$/;
+    const JOB_TAIL_SHOW = /(공고|일자리|일거리|자리|직장|일)\s*(을|를)?\s*(보여\s*줘|보여\s*주세요)$/;
+    const JOB_TAIL_HARD = /(공고|일자리|일거리|자리|직장|일)\s*(을|를)?\s*(있\s*어\s*요?|있\s*나\s*요?|있\s*지)$/;
+    const JOB_BARE = /^(.+?)\s*(공고|일자리|일거리|자리|직장)$/;
+
+    function jobCmd(text) {
+        const s = text.trim().replace(/[.!?]+$/, '');
+        if (/^맞춤\s*공고$/.test(s)) return { fit: true, value: '' };
+        const tail = [JOB_TAIL_FIND, JOB_TAIL_SHOW, JOB_TAIL_HARD].find(re => re.test(s));
+        // 메뉴명(저장 공고, 이력서 등)은 메뉴 이동으로 넘김
+        if (tail && navAlias(s.replace(/\s*(을|를)?\s*(찾아\s*줘|찾아\s*주세요|찾아|찾기|보여\s*줘|보여\s*주세요)$/, ''))) return null;
+        if (!tail) {
+            const b = s.match(JOB_BARE);
+            if (!b) return null;
+            return { fit: JOB_FIT_WORDS.test(s), value: b[1].replace(JOB_FIT_WORDS, '').trim() };
+        }
+        const fit = JOB_FIT_WORDS.test(s);
+        const value = s.replace(tail, '').replace(JOB_FIT_WORDS, '')
+            .replace(/^(나한테|내게|저한테|나는|내가|저는)\s*/, '').trim();
+        return { fit, value };
+    }
+
+    // 서수는 문장 맨 앞에만 옴. 마지막은 -1
+    function itemOrd(s) {
+        if (s.startsWith('마지막')) return [-1, s.slice(3)];
+        return parseOrd(s);
+    }
+
+    const ITEM_OPEN_TAIL = /(을|를)?(열어줘|열어주세요|열어|들어가줘|들어가주세요|들어가|보여줘|보여주세요)$/;
+    const ITEM_READ_TAIL = /(을|를)?(읽어줘|읽어주세요|읽어|뭐야|뭐예요|내용알려줘|내용알려주세요|알려줘)$/;
+
+    // 목록 항목 열기/읽기 명령임. 대상은 [data-voice-item]
+    function itemCmd(text) {
+        const s = squash(text.replace(/[.!?]+$/, ''));
+        const openM = s.match(ITEM_OPEN_TAIL);
+        const readM = !openM && s.match(ITEM_READ_TAIL);
+        if (!openM && !readM) return null;
+        const tail = (openM || readM)[0];
+        const rest = s.slice(0, s.length - tail.length).replace(/(공고|거|것|내용)$/, '');
+        const o = itemOrd(rest);
+        // 서수 뒤에 이력서 등 대상 명사가 남으면 해당 명령에서 처리함
+        if (!o || o[1]) return null;
+        return { act: openM ? 'open' : 'read', ord: o[0] };
+    }
+
+    function bookmarkCmd(text) {
+        const s = squash(text);
+        // 저장만 말한 경우는 화면의 저장 버튼 명령임
+        return /^이공고(을|를)?(저장|찜|스크랩)(해줘|해주세요|하기|해|줘|주세요)?$/.test(s)
+            || /^(찜|스크랩)(해줘|해주세요|하기|해|줘|주세요)?$/.test(s)
+            || /^관심공고에?넣어(줘|주세요)?$/.test(s)
+            || /^나중에볼래요?$/.test(s);
+    }
+
+    function statusCmd(text) {
+        const s = squash(text);
+        return /^(내)?지원(현황|상황)(을|를)?(알려줘|알려주세요|알려|어때)$/.test(s)
+            || /^지원한거(어떻게됐어|어때)요?$/.test(s)
+            || /^합격했어요?$/.test(s)
+            || /^서류결과나왔어요?$/.test(s);
+    }
+
+    // 지원 취소 명령임. 대상은 순서 또는 회사명 원문
+    function withdrawCmd(text) {
+        const s = squash(text);
+        const m = s.match(/^(.*?)지원(을|를)?(취소|철회)(해줘|해주세요|할래|하기|해|줘|주세요)?$/);
+        if (!m) return null;
+        const pre = m[1];
+        if (!pre) return { ord: 0, value: '' };
+        if (pre.startsWith('마지막')) return { ord: -1, value: pre.slice(3) };
+        const o = parseOrd(pre);
+        if (o && !o[1]) return { ord: o[0], value: '' };
+        return { ord: 0, value: pre };
+    }
+
+    function proposalCmd(text) {
+        const s = squash(text);
+        const m = s.match(/^(.*?)제안(을|를)?(수락|거절|받을게|받겠)(해줘|해주세요|할게|하기|해|줘|주세요)?$/);
+        if (!m) return null;
+        const act = /거절/.test(m[3]) ? 'reject' : 'accept';
+        const pre = m[1];
+        if (!pre) return { act, ord: 0, value: '' };
+        if (pre.startsWith('마지막')) return { act, ord: -1, value: pre.slice(3) };
+        const o = parseOrd(pre);
+        if (o && !o[1]) return { act, ord: o[0], value: '' };
+        return { act, ord: 0, value: pre };
+    }
+
+    // 일정 조회 명령임. 기간 없으면 다가오는 일정 기준으로 실행부에서 처리함
+    const SCHED_PERIOD = ['오늘', '내일', '이번주', '다음주'];
+    function scheduleCmd(text) {
+        const s = text.trim().replace(/[.!?]+$/, '');
+        let m = s.match(/^(.*?)\s*일정\s*(을|를)?\s*(알려\s*줘|알려\s*주세요|알려|뭐야|뭐예요|어때)$/);
+        if (m) {
+            const pre = squash(m[1]);
+            return { period: SCHED_PERIOD.includes(pre) ? pre : '' };
+        }
+        m = s.match(/^(오늘|내일|이번\s*주|다음\s*주)\s*(면접)?\s*언제야\s*요?$/);
+        if (m) return { period: squash(m[1]) };
+        m = s.match(/^(오늘|내일|이번\s*주|다음\s*주)\s*뭐\s*있어\s*요?$/);
+        if (m) return { period: squash(m[1]) };
+        return null;
+    }
+
+    function inboxCmd(text) {
+        const s = squash(text);
+        if (/^(새)?메시지(가|이)?(있어|있나요?|왔어)요?$/.test(s)) return { kind: 'message' };
+        if (/^(새)?메시지(를|을)?읽어(줘|주세요)?$/.test(s)) return { kind: 'message' };
+        if (/^매니저가?뭐라고했어요?$/.test(s)) return { kind: 'message' };
+        if (/^(새)?알림(이|가)?(있어|있나요?|왔어)요?$/.test(s)) return { kind: 'notif' };
+        if (/^(새)?알림(을|를)?읽어(줘|주세요)?$/.test(s)) return { kind: 'notif' };
+        return null;
+    }
+
+    // 접근성 설정 명령임. 다크모드/라이트모드는 기존 theme 분류를 그대로 재사용함
+    // 메시지 본문 속 설정 낱말 오인식 방지로 문장 앞부분 기준 판정, 메시지/상담 문장 제외
+    const A11Y_SET = [
+        ['font_big', /^(글자|글씨).*(크게|키워|확대)/],
+        ['font_normal', /^(글자|글씨).*(보통|원래|기본)/],
+        ['contrast_off', /^고대비.*(끄|해제|그만|꺼)/],
+        ['contrast_on', /^고대비|^화면.*안보여/],
+        ['easy_off', /^쉬운화면.*(끄|해제|그만|꺼)/],
+        ['easy_on', /^쉬운화면/],
+    ];
+    function a11yCmd(text) {
+        const s = squash(text);
+        if (/(보내|전송|메시지|메세지|상담)/.test(s)) return null;
+        const hit = A11Y_SET.find(([, re]) => re.test(s));
+        return hit ? hit[0] : null;
+    }
+
+    function copyCmd(text) {
+        const s = squash(text);
+        return /^(이전|예전|지난번|전)(에작성한|에쓴)?(이력서|거)?(랑|이랑|과|와)?(똑같이|그대로|동일하게)(해줘|해주세요|써줘|써주세요|채워줘|채워주세요|만들어줘|만들어주세요)?$/.test(s)
+            || /^(이전|예전|지난번|전)이력서(를)?복사해서만들어줘요?$/.test(s);
+    }
+
+    // 자격증명 단독 발화 판정임. 짧은 일반 낱말(컴퓨터, 정보 등)의 앞부분 일치 오인식 방지로 이름의 60% 이상 일치만 인정함
+    function certHit(q, list) {
+        const sq = squash(q);
+        if (sq.length < 3) return null;
+        return list.find(c => {
+            const n = squash(c.name);
+            return n === sq || (n.startsWith(sq) && sq.length >= n.length * 0.6) || (n.length >= 3 && sq.startsWith(n));
+        }) || null;
+    }
+
     const api = {
         squash, stripWake, money, date, dateText, match, yesno, classify, splitLabel,
         dictCmd, cmdLike, replaceCmd, key, navAlias, punct, dropSentence, isJunk, sentences, month, monthText, rowPrefix, ORD, resumeRow, certName, josa, valueText, closest, url,
         consultCmd, consultCat: t => slot(t, CONSULT_CAT), consultMethod: t => slot(t, CONSULT_METHOD), messageCmd, importCmd, importSec: t => slot(t, IMPORT_SEC),
+        resumeCmd, resumeTarget, secAdd, itemAdd, fileCmd, offerCmd, tplListCmd, fillTpl, tplKeys,
+        jobCmd, itemCmd, bookmarkCmd, statusCmd, withdrawCmd, proposalCmd, scheduleCmd, inboxCmd, a11yCmd, copyCmd, certHit,
     };
     if (typeof module !== 'undefined') module.exports = api;
     else root.VoiceParse = api;

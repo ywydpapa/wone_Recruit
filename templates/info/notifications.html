@@ -29,7 +29,7 @@
 </form>
 <ul class="home-list">
     {% for n in notifications %}
-    <li{% if not n.is_read %} class="unread"{% endif %}>
+    <li{% if not n.is_read %} class="unread"{% endif %} data-voice-item data-voice-text="{{ n.message }}">
         <a href="{{ n.link or '#' }}">{{ n.message }}</a>
         <span class="home-list-sub">{{ kind_labels.get(n.kind, '시스템') }}</span>
         <span class="home-list-end">{{ n.created_at|fdate }}</span>

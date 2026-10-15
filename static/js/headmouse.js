@@ -540,7 +540,20 @@ function bindEvents() {
     document.addEventListener('hidden.bs.modal', refreshCands);
 }
 
+// 파일 선택 창은 브라우저 보안상 실제 클릭으로만 열림. 응시 클릭(el.click)으로는 열리지 않음
+function fileNotes() {
+    document.querySelectorAll('input[type=file]').forEach(inp => {
+        const at = inp.classList.contains('d-none') ? inp.parentElement.querySelector('button') : inp;
+        if (!at) return;
+        const p = document.createElement('p');
+        p.className = 'hm-file-note';
+        p.textContent = '파일 선택 창은 헤드마우스 응시로 열리지 않습니다. 운영체제 응시 클릭 기능이나 키보드 엔터 키로 열어 주세요.';
+        at.after(p);
+    });
+}
+
 function init() {
+    fileNotes();
     filtX = new OneEuro(ONEEURO_MIN_CUTOFF, ONEEURO_BETA, ONEEURO_DCUTOFF);
     filtY = new OneEuro(ONEEURO_MIN_CUTOFF, ONEEURO_BETA, ONEEURO_DCUTOFF);
     buildUI();

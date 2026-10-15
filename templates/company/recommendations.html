@@ -1,10 +1,19 @@
 {% extends "base.html" %}
-{% block title %}추천 인재{% endblock %}
+{% block title %}추천 인재{% set offer_next = '/company/recommendations' %}
+{% include "company/offer_modal.html" %}
+{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">추천 인재</h2>
 </div>
+
+{% if request.query_params.get('offered') %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    채용 제안을 보냈습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="닫기"></button>
+</div>
+{% endif %}
 
 <div class="content-card">
     {% if candidates %}
@@ -18,6 +27,7 @@
                     <th scope="col">상태</th>
                     <th scope="col">추천일</th>
                     <th scope="col">상세</th>
+                    <th scope="col">제안</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,6 +50,15 @@
                 <td>
                     <a href="/company/jobs/{{ c['job_id'] }}/applicants/{{ c['id'] }}" class="btn btn-sm btn-outline-primary">상세</a>
                 </td>
+                <td>
+                    {% if c['seeker_user_id'] in offered %}
+                    <button type="button" class="btn btn-sm btn-secondary" disabled
+                            data-offer-url="/api/talent_offer/{{ c['seeker_user_id'] }}" data-name="{{ c['seeker_name'] }}" data-job="{{ c['job_title'] }}" data-offered="1">제안 완료</button>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#offerModal"
+                            data-offer-url="/api/talent_offer/{{ c['seeker_user_id'] }}" data-name="{{ c['seeker_name'] }}" data-job="{{ c['job_title'] }}">제안 보내기</button>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
             </tbody>
@@ -52,4 +71,6 @@
     </div>
     {% endif %}
 </div>
+{% set offer_next = '/company/recommendations' %}
+{% include "company/offer_modal.html" %}
 {% endblock %}

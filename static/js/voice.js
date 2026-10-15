@@ -38,6 +38,8 @@
     let dict = null; // { el, btn, stack, queue }
     const pageCmds = [];
     const freeCmds = [];
+    // 메뉴명/버튼명 완전일치, 입력칸 값 입력이 모두 실패한 뒤에만 시도하는 후순위 명령임
+    const lateCmds = [];
 
     // mode: speak(안내 중, 마이크 꺼짐) / listen(발화 가능)
     function setStatus(msg, mode) {
@@ -685,7 +687,7 @@
 
     function known(text) {
         const c = V.classify(text);
-        if (['where', 'read', 'help', 'back', 'page', 'scroll', 'apply', 'voiceoff', 'search'].includes(c.kind)) return true;
+        if (['where', 'read', 'help', 'back', 'page', 'scroll', 'apply', 'voiceoff', 'search', 'theme'].includes(c.kind)) return true;
         const q = c.arg || text;
         if (V.navAlias(q) || V.match(q, navLinks().map(l => l.label), true).length) return true;
         if (V.match(q, clickables().map(btnLabel), true).length) return true;
@@ -1135,6 +1137,14 @@
         location.href = '/jobs?q=' + encodeURIComponent(q);
     }
 
+    // 저장 방식을 버튼 클릭과 동일하게 유지하도록 테마 버튼을 누름
+    function setTheme(t) {
+        const name = t === 'dark' ? '다크모드' : '라이트모드';
+        if ((document.documentElement.getAttribute('data-theme') || 'light') === t) return speak('이미 ' + name + '예요');
+        document.getElementById('themeToggle').click();
+        return speak(name + '로 바꿨어요');
+    }
+
     async function logout() {
         const a = await ask('로그아웃할까요?', true);
         if (a && V.yesno(a) === 'yes') location.href = '/logout';
@@ -1142,7 +1152,8 @@
     }
 
     // quiet: 호출어 없는 발화임. 인식하지 못한 경우 안내를 생략함
-    async function run(cmd, quiet) {
+    // viaModel: 모델 결과로 만든 문장임. 재요청 반복 방지
+    async function run(cmd, quiet, viaModel) {
         setStatus('"' + cmd + '"');
         const c = V.classify(cmd);
         if (c.kind === 'stop' || c.kind === 'cancel') return stop();
@@ -1150,6 +1161,7 @@
             if (await fn(cmd)) return;
         }
         if (c.kind === 'where') return speak(whereText());
+        if (c.kind === 'theme') return setTheme(c.arg);
         if (c.kind === 'help') return speak(HELP_ALL);
         if (c.kind === 'voiceoff') return setAlways(false);
         if (c.kind === 'back') {
@@ -1175,6 +1187,9 @@
         if (c.kind === 'click') return await press(c.arg) || speak(c.arg + ' 버튼을 못 찾았어요');
         // 동사 없는 문장은 메뉴명 완전일치, 버튼 라벨 완전일치, 라벨 값 순으로 처리함
         if (await nav(c.arg, true) || await press(c.arg, true) || await fill(c.arg)) return;
+        for (const fn of lateCmds) {
+            if (await fn(c.arg)) return;
+        }
         // 값만 말한 경우 커서가 있는 칸에 입력함
         const cur = document.activeElement;
         let val = V.valueText(c.arg);
@@ -1191,7 +1206,82 @@
         }
         // 메뉴명과 부분적으로만 일치하면 확인 후 이동함
         if (await nav(c.arg, false, true)) return;
+        const alt = !viaModel && modelCmd(await nlu(cmd), cmd);
+        if (alt) return run(alt, false, true);
         return speak(HELP);
+    }
+
+    // 규칙 미인식 발화만 모델 해석 요청. 서버 미설정, 시간 초과 시 none 반환
+    async function nlu(cmd) {
+        const uniq = a => [...new Set(a.filter(Boolean))];
+        const body = {
+            text: cmd,
+            sections: uniq([...document.querySelectorAll('#main fieldset[id^="sec-"] > legend')].map(l => l.textContent.replace(/[\s/]/g, ''))),
+            fields: uniq(labelNames()),
+            buttons: uniq(clickables().map(btnLabel)),
+            menus: uniq(navLinks().map(l => l.label)),
+        };
+        try {
+            const res = await fetch('/api/nlu', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            return res.ok ? await res.json() : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 이력서 대상 동작, 매칭 제안 응답의 target별 실행 문구임
+    const RESUME_ACT_VERB = { 수정: '수정해줘', 삭제: '삭제해줘', 복사: '복사해줘', 보기: '보여줘', 대표: '기본으로 설정해줘' };
+    const PROPOSAL_VERB = { 수락: '수락해줘', 거절: '거절해줘' };
+    const A11Y_SENTENCE = {
+        글자크게: '글자 크게 해줘', 글자보통: '글자 보통으로 해줘',
+        고대비: '고대비로 해줘', 고대비끄기: '고대비 해제해줘',
+        쉬운화면: '쉬운 화면으로 해줘', 쉬운화면끄기: '쉬운 화면 해제해줘',
+        다크모드: '다크모드로 해줘', 라이트모드: '라이트모드로 해줘',
+    };
+
+    // 모델 결과를 규칙 문장으로 변환하여 기존 처리 경로를 재사용함
+    function modelCmd(r, cmd) {
+        if (!r) return null;
+        const t = r.target, v = r.value;
+        const n = r.ord === -1 ? '마지막 ' : r.ord > 0 ? r.ord + '번째 ' : '';
+        switch (r.action) {
+            case 'nav': return t + ' 열어줘';
+            case 'click': return t + ' 눌러줘';
+            case 'focus': return t;
+            case 'fill': return t && v ? t + ' ' + v : null;
+            case 'open_section': return t + ' 열어줘';
+            case 'add_row': return t + ' 추가';
+            case 'fill_row': return v ? t + '에 ' + v + ' 입력해줘' : null;
+            case 'delete_row': return (n + t + ' ' + v).trim() + ' 삭제해줘';
+            case 'edit_row': return v ? (n + t + ' ' + r.field).trim() + ' ' + V.josa(v, '으로', '로') + ' 바꿔줘' : null;
+            case 'ask_fields': return t + ' 항목 뭐 있어';
+            case 'dictate': return t === '내용' ? '내용 말할게' : t + ' 작성';
+            // 상담 분야, 방법은 원문에서 추출하도록 원문 유지
+            case 'consult_request': return cmd + ' 상담 신청';
+            case 'send_message': return cmd + ' 메시지 보내줘';
+            case 'import_section': return '예전 이력서 ' + t + ' 불러와줘';
+            case 'job_search': return ((t === '맞춤' ? '맞춤 ' : '') + v + ' 공고 찾아줘').replace(/\s+/g, ' ').trim();
+            case 'open_item': return n ? (n + '열어줘').trim() : null;
+            case 'read_item': return n ? (n + '읽어줘').trim() : null;
+            case 'bookmark': return '이 공고 저장해줘';
+            case 'resume_new': return '새 이력서 만들어줘';
+            case 'resume_copy': return '이전 이력서랑 똑같이 해줘';
+            case 'resume_act': {
+                const verb = RESUME_ACT_VERB[t];
+                const who = v || n.trim();
+                return verb ? (who ? who + ' ' : '') + '이력서 ' + verb : null;
+            }
+            case 'status_read': return '지원 현황 알려줘';
+            case 'withdraw': return ((v || n.trim()) + ' 지원 취소해줘').trim();
+            case 'proposal_respond': {
+                const who = v || n.trim();
+                return (who ? who + ' ' : '') + '제안 ' + (PROPOSAL_VERB[t] || '수락해줘');
+            }
+            case 'schedule_read': return (v ? v + ' ' : '') + '일정 알려줘';
+            case 'inbox_read': return t === '알림' ? '알림 읽어줘' : '새 메시지 읽어줘';
+            case 'a11y_set': return A11Y_SENTENCE[t] || null;
+        }
+        return null;
     }
 
     function talk() {
@@ -1286,6 +1376,7 @@
             pageCmds.push(fn);
             if (free) freeCmds.push(free);
         },
+        onLate: fn => lateCmds.push(fn),
     };
 
     // 이 탭에서 끈 경우('') 계정 설정보다 우선함

@@ -36,7 +36,7 @@ async def status_home(request: Request):
     conn = get_sqlite()
     try:
         app_rows = conn.execute(
-            """SELECT c.id, c.status, c.created_at, jp.id AS job_id, jp.title, co.company_name
+            """SELECT c.id, c.status, c.created_at, jp.id AS job_id, jp.title, co.id AS company_id, co.company_name
                FROM candidacies c
                JOIN job_postings jp ON c.job_id = jp.id
                JOIN companies co ON jp.company_id = co.id
@@ -47,7 +47,7 @@ async def status_home(request: Request):
 
         iv_rows = conn.execute(
             """SELECT s.id, s.interview_date, s.interview_time, s.interview_type,
-                      s.location, jp.title AS job_title, co.company_name
+                      s.location, jp.title AS job_title, co.id AS company_id, co.company_name
                FROM interview_schedules s
                JOIN candidacies c ON s.candidacy_id = c.id
                JOIN job_postings jp ON c.job_id = jp.id
@@ -79,7 +79,7 @@ async def status_home(request: Request):
         ).fetchall()
 
         place_rows = conn.execute(
-            """SELECT p.id, p.start_date, p.end_date, p.status, jp.title AS job_title, co.company_name
+            """SELECT p.id, p.start_date, p.end_date, p.status, p.company_id, jp.title AS job_title, co.company_name
                FROM placements p
                JOIN job_postings jp ON p.job_id = jp.id
                JOIN companies co ON p.company_id = co.id

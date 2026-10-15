@@ -8,5 +8,5 @@ bash scripts/fetch_vad.sh
 bash scripts/fetch_headmouse.sh
 $PY scripts/fetch_tts.py
 # huggingface 캐시에 저장해 두면 이후 오프라인에서도 로드 가능함
-$PY -c "import os; from faster_whisper import download_model; print(download_model(os.getenv('STT_MODEL', 'small')))"
+$PY -c "import os; from faster_whisper import download_model; print(download_model(os.getenv('STT_MODEL', 'large-v3-turbo')))"
 echo "모든 자산 준비 완료"

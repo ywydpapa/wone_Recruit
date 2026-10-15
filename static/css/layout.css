@@ -108,7 +108,7 @@
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    transition: width 0.2s, transform 0.2s;
+    transition: transform 0.2s, top 0.2s, height 0.2s;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -116,7 +116,8 @@
     height: var(--topbar-h);
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    justify-content: space-between;
+    padding: 0 12px 0 20px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
     flex-shrink: 0;
 }
@@ -165,28 +166,27 @@
     border-radius: 10px;
     line-height: 1;
 }
-.sidebar-footer {
-    padding: 8px 12px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    flex-shrink: 0;
-}
 .sidebar-hide-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 10px 10px;
-    min-height: 44px;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     border: none;
     background: transparent;
-    color: rgba(255,255,255,0.5);
-    font-size: 0.8rem;
-    font-weight: 400;
-    border-radius: 4px;
+    color: var(--text-secondary);
+    border-radius: 6px;
     cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
 }
-.sidebar-hide-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
-.sidebar-hide-btn i { font-size: 0.7rem; }
+.sidebar:hover .sidebar-hide-btn,
+.sidebar-hide-btn:focus-visible { opacity: 1; }
+.sidebar-hide-btn:hover { background: var(--bg-subtle); color: var(--text); }
+.sidebar-hidden .sidebar-hide-btn { display: none; }
+@media (hover: none) {
+    .sidebar-hide-btn { opacity: 1; }
+}
 
 .sidebar-resize {
     position: fixed;
@@ -196,13 +196,14 @@
     height: 100vh;
     cursor: col-resize;
     z-index: 1001;
-    transition: left 0.2s, background 0.15s;
+    transition: background 0.15s;
 }
 .sidebar-resize:hover,
 .sidebar-resizing .sidebar-resize { background: rgba(0,86,179,0.2); }
 .sidebar-resizing { cursor: col-resize; user-select: none; }
 .sidebar-resizing * { pointer-events: none; }
 .sidebar-resizing .sidebar-resize { pointer-events: auto; }
+.sidebar-resizing .main-wrap { transition: none; }
 
 .sidebar-hover-zone {
     position: fixed;
@@ -221,7 +222,10 @@
 
 .sidebar-peek .sidebar {
     transform: translateX(0);
-    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    top: 56px;
+    height: calc(100vh - 72px);
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
 }
 .sidebar-peek .main-wrap { margin-left: 0; }
 

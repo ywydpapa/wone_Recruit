@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.candidacy import get_stage_labels, get_stage_color_map
+from routers.company.offer_templates import get_templates
 
 router = APIRouter(prefix="/company")
 
@@ -17,7 +18,7 @@ async def recommendations(request: Request):
             return RedirectResponse(url="/company/profile", status_code=303)
 
         candidates = conn.execute(
-            """SELECT c.id, c.job_id, c.status, c.created_at, c.match_stage,
+            """SELECT c.id, c.job_id, c.status, c.created_at, c.match_stage, c.seeker_user_id,
                       u.name AS seeker_name, jp.title AS job_title
                FROM candidacies c
                JOIN users u ON c.seeker_user_id=u.id
@@ -27,6 +28,10 @@ async def recommendations(request: Request):
             (company["id"],),
         ).fetchall()
 
+        offered = {r[0] for r in conn.execute(
+            "SELECT seeker_user_id FROM talent_offers WHERE company_user_id=?", (user["id"],)
+        ).fetchall()}
+        offer_tpls = get_templates(conn, user["id"])
         stage_labels = get_stage_labels(conn, company["id"])
         stage_colors = get_stage_color_map(conn, company["id"])
     finally:
@@ -36,6 +41,9 @@ async def recommendations(request: Request):
             "request": request, "page_title": "추천 인재",
             "user_name": user["name"], "user_role": "company",
             "candidates": candidates,
+            "offered": offered,
+            "offer_tpls": offer_tpls,
+            "company_name": company["company_name"],
             "status_labels": stage_labels,
             "stage_colors": stage_colors,
         }

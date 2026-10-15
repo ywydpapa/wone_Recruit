@@ -34,7 +34,7 @@
         {% for rec in recommended %}
         {% set job = rec.job %}
         <article class="home-job">
-            <p class="home-job-company">{{ job['company_name'] }}</p>
+            <p class="home-job-company"><a href="/companies/{{ job['company_id'] }}" class="link-plain">{{ job['company_name'] }}</a></p>
             <h3><a href="/jobs/{{ job['id'] }}">{{ job['title'] }}</a></h3>
             <p class="home-job-meta">
                 <span>{{ job|region('전국') }}</span>
@@ -65,7 +65,7 @@
             {% for app in apps %}
             <li>
                 <a href="/jobs/{{ app['job_id'] }}">{{ app['job_title'] }}</a>
-                <span class="home-list-sub">{{ app['company_name'] }}</span>
+                <span class="home-list-sub"><a href="/companies/{{ app['company_id'] }}" class="link-plain">{{ app['company_name'] }}</a></span>
                 <span class="home-list-end">{{ app['status_label'] }}</span>
             </li>
             {% endfor %}

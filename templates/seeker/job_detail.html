@@ -19,7 +19,7 @@
                     {% if applicant_count %}지원자 {{ applicant_count }}명{% else %}아직 지원자가 없습니다{% endif %}
                 </p>
             </div>
-            <button type="button" id="shareBtn" class="btn btn-sm btn-outline-secondary flex-shrink-0">공유</button>
+            <button type="button" id="shareBtn" class="btn btn-outline-secondary flex-shrink-0">공유</button>
         </div>
         <dl class="job-summary-bar mb-0">
             <dt>근무지역</dt>
@@ -289,7 +289,7 @@
             {% for sj in similar_jobs %}
             <li>
                 <a href="/jobs/{{ sj['id'] }}">{{ sj['title'] }}</a>
-                <span class="home-list-sub">{{ sj['company_name'] }} &middot; {{ sj|region('전국') }}</span>
+                <span class="home-list-sub"><a href="/companies/{{ sj['company_id'] }}" class="link-plain">{{ sj['company_name'] }}</a> &middot; {{ sj|region('전국') }}</span>
                 <span class="home-list-end">{% if sj['deadline'] %}~ {{ sj['deadline'] }}{% else %}상시채용{% endif %}</span>
             </li>
             {% endfor %}
@@ -302,19 +302,21 @@
 <!-- 스티키 하단 바 -->
 {% if user_role == 'seeker' %}
 <div class="job-sticky-bar">
-    <a href="/jobs" class="btn btn-light">목록으로</a>
-    <div class="d-flex gap-2 align-items-center">
-        <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline-block">
-            {{ csrf_input }}
-            <button type="submit" class="btn {% if is_bookmarked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4">
-                {% if is_bookmarked %}저장됨{% else %}저장{% endif %}
-            </button>
-        </form>
-        {% if already_applied %}
-        <button class="btn btn-secondary rounded-pill btn-apply" disabled>지원완료</button>
-        {% else %}
-        <a href="/apply/{{ job['id'] }}" class="btn btn-primary rounded-pill btn-apply">지원하기</a>
-        {% endif %}
+    <div class="job-sticky-inner">
+        <a href="/jobs" class="btn btn-light">목록으로</a>
+        <div class="d-flex gap-2 align-items-center">
+            <form method="post" action="/bookmarks/{{ job['id'] }}/toggle" class="d-inline-block">
+                {{ csrf_input }}
+                <button type="submit" class="btn {% if is_bookmarked %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4">
+                    {% if is_bookmarked %}저장됨{% else %}저장{% endif %}
+                </button>
+            </form>
+            {% if already_applied %}
+            <button class="btn btn-secondary rounded-pill btn-apply" disabled>지원완료</button>
+            {% else %}
+            <a href="/apply/{{ job['id'] }}" class="btn btn-primary rounded-pill btn-apply">지원하기</a>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endif %}

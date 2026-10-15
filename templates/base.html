@@ -17,12 +17,24 @@
     if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
     document.documentElement.setAttribute('data-theme',t);})();
     </script>
+    {% if user_role != 'seeker' %}
+    <script>
+    (function(){var w=parseInt(localStorage.getItem('recruit_sidebar_w'));
+    if(w)document.documentElement.style.setProperty('--sidebar-w',w+'px');
+    if(localStorage.getItem('recruit_sidebar_hidden')==='1'&&innerWidth>768)document.documentElement.classList.add('sidebar-hidden');})();
+    </script>
+    {% else %}
+    <script>
+    (function(){var w=parseInt(localStorage.getItem('recruit_mypage_w'));
+    if(w)document.documentElement.style.setProperty('--mypage-nav-w',w+'px');})();
+    </script>
+    {% endif %}
     <link rel="stylesheet" href="/static/css/base.css?v=5">
-    <link rel="stylesheet" href="/static/css/layout.css?v=5">
+    <link rel="stylesheet" href="/static/css/layout.css?v=6">
     <link rel="stylesheet" href="/static/css/components.css?v=7">
-    <link rel="stylesheet" href="/static/css/a11y.css?v=8">
-    <link rel="stylesheet" href="/static/css/pages.css?v=6">
-    <link rel="stylesheet" href="/static/css/theme.css?v=6">
+    <link rel="stylesheet" href="/static/css/a11y.css?v=9">
+    <link rel="stylesheet" href="/static/css/pages.css?v=8">
+    <link rel="stylesheet" href="/static/css/theme.css?v=10">
     {% block styles %}{% endblock %}
 </head>
 <body class="{% if _a11y.get('high_contrast') %}theme-high-contrast{% endif %} {% if _a11y.get('large_target') %}large-target{% endif %} {% if _a11y.get('easy_mode') %}easy-mode{% endif %}">
@@ -46,6 +58,9 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <a href="/"><span>WONE</span> Recruit</a>
+        <button type="button" class="sidebar-hide-btn" onclick="toggleSidebar()" title="사이드바 숨기기" aria-label="사이드바 숨기기" aria-expanded="true" aria-controls="sidebar">
+            <i class="fas fa-angles-left" aria-hidden="true"></i>
+        </button>
     </div>
     <nav class="sidebar-nav" aria-label="주 메뉴">
 
@@ -71,6 +86,9 @@
         </a>
         <a href="/company/recommendations" class="sidebar-link{% if '/company/recommendations' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-user-check"></i><span>추천 인재</span>
+        </a>
+        <a href="/company/offer-templates" class="sidebar-link{% if '/company/offer-templates' in request.url.path %} active" aria-current="page{% endif %}">
+            <i class="fas fa-file-alt"></i><span>메시지 양식</span>
         </a>
         <a href="/messages" class="sidebar-link{% if '/messages' in request.url.path %} active" aria-current="page{% endif %}">
             <i class="fas fa-envelope"></i><span>메시지</span>
@@ -186,19 +204,14 @@
         {% endif %}
 
     </nav>
-    <div class="sidebar-footer">
-        <button type="button" class="sidebar-hide-btn" id="sidebarHideBtn" onclick="toggleSidebar()" title="사이드바 숨기기" aria-expanded="true" aria-controls="sidebar">
-            <i class="fas fa-chevron-left" aria-hidden="true"></i><span>숨기기</span>
-        </button>
-    </div>
-    <div class="sidebar-resize" id="sidebarResize" aria-hidden="true"></div>
+    <div class="sidebar-resize" id="sidebarResize" title="클릭하여 숨기기, 드래그하여 너비 조절" aria-hidden="true"></div>
     <button type="button" class="sidebar-reset-btn sr-only-focusable" id="sidebarResetBtn" title="사이드바 너비 기본값 복원">기본값 복원</button>
 </aside>
 <div class="sidebar-hover-zone" id="sidebarHoverZone"></div>
 
 <div class="main-wrap">
     <header class="topbar">
-        <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="메뉴 접기/펼치기" aria-expanded="true" aria-controls="sidebar" aria-label="메뉴 접기/펼치기">
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="메뉴 접기/펼치기" aria-expanded="true" aria-controls="sidebar" aria-label="메뉴 접기/펼치기">
             <i class="fas fa-bars" aria-hidden="true"></i>
         </button>
         <div class="topbar-brand d-md-none">
@@ -332,14 +345,10 @@
     if (!sidebar) return;
     var handle = document.getElementById('sidebarResize');
     var hoverZone = document.getElementById('sidebarHoverZone');
-    var body = document.body;
+    var root = document.documentElement;
     var MIN_W = 180, MAX_W = 360, DEFAULT_W = 240;
-
-    var savedW = parseInt(localStorage.getItem('recruit_sidebar_w')) || DEFAULT_W;
-    var hidden = localStorage.getItem('recruit_sidebar_hidden') === '1';
-    sidebar.style.width = savedW + 'px';
-    document.documentElement.style.setProperty('--sidebar-w', savedW + 'px');
-    if (hidden) { body.classList.add('sidebar-hidden'); }
+    var mobile = window.innerWidth <= 768;
+    var hidden = root.classList.contains('sidebar-hidden');
 
     function updateAriaExpanded() {
         var expanded = String(!hidden);
@@ -349,64 +358,70 @@
     }
     updateAriaExpanded();
 
+    // 모바일은 숨김 상태 저장 없이 덮개 형태로 열고 닫음
     window.toggleSidebar = function() {
+        if (mobile) {
+            root.classList.toggle('sidebar-open');
+            return;
+        }
         hidden = !hidden;
-        body.classList.toggle('sidebar-hidden', hidden);
+        root.classList.remove('sidebar-peek');
+        root.classList.toggle('sidebar-hidden', hidden);
         localStorage.setItem('recruit_sidebar_hidden', hidden ? '1' : '0');
         updateAriaExpanded();
     };
 
-    var dragging = false;
+    // 이동 없이 놓으면 클릭으로 보고 숨김 처리
+    var dragX = null, moved = false;
     handle.addEventListener('mousedown', function(e) {
         e.preventDefault();
-        dragging = true;
-        body.classList.add('sidebar-resizing');
+        dragX = e.clientX;
+        moved = false;
+        root.classList.add('sidebar-resizing');
     });
     document.addEventListener('mousemove', function(e) {
-        if (!dragging) return;
+        if (dragX === null) return;
+        if (Math.abs(e.clientX - dragX) > 3) moved = true;
+        if (!moved) return;
         var w = Math.min(MAX_W, Math.max(MIN_W, e.clientX));
-        sidebar.style.width = w + 'px';
-        document.documentElement.style.setProperty('--sidebar-w', w + 'px');
+        root.style.setProperty('--sidebar-w', w + 'px');
     });
     document.addEventListener('mouseup', function() {
-        if (!dragging) return;
-        dragging = false;
-        body.classList.remove('sidebar-resizing');
-        var w = parseInt(sidebar.style.width);
-        localStorage.setItem('recruit_sidebar_w', w);
+        if (dragX === null) return;
+        dragX = null;
+        root.classList.remove('sidebar-resizing');
+        if (moved) localStorage.setItem('recruit_sidebar_w', parseInt(getComputedStyle(root).getPropertyValue('--sidebar-w')));
+        else toggleSidebar();
     });
 
     var resetBtn = document.getElementById('sidebarResetBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
-            sidebar.style.width = DEFAULT_W + 'px';
-            document.documentElement.style.setProperty('--sidebar-w', DEFAULT_W + 'px');
+            root.style.setProperty('--sidebar-w', DEFAULT_W + 'px');
             localStorage.setItem('recruit_sidebar_w', DEFAULT_W);
         });
     }
 
-    var peekTimer = null;
-    hoverZone.addEventListener('mouseenter', function() {
-        if (!body.classList.contains('sidebar-hidden')) return;
-        peekTimer = setTimeout(function() {
-            body.classList.add('sidebar-peek');
-        }, 200);
-    });
-    hoverZone.addEventListener('mouseleave', function() {
-        clearTimeout(peekTimer);
-    });
-    sidebar.addEventListener('mouseleave', function() {
-        if (body.classList.contains('sidebar-peek')) {
-            body.classList.remove('sidebar-peek');
-        }
-    });
-    sidebar.addEventListener('mouseenter', function() {
-        clearTimeout(peekTimer);
-    });
-
-    if (window.innerWidth <= 768) {
-        body.classList.remove('sidebar-hidden');
+    if (mobile) {
+        document.querySelector('.main-wrap').addEventListener('click', function(e) {
+            if (!e.target.closest('#sidebarToggle')) root.classList.remove('sidebar-open');
+        });
     }
+
+    var peekTimer = null;
+    function peek() {
+        if (!hidden) return;
+        clearTimeout(peekTimer);
+        peekTimer = setTimeout(function() { root.classList.add('sidebar-peek'); }, 150);
+    }
+    function unpeek() {
+        clearTimeout(peekTimer);
+        peekTimer = setTimeout(function() { root.classList.remove('sidebar-peek'); }, 300);
+    }
+    [hoverZone, document.getElementById('sidebarToggle'), sidebar].forEach(function(el) {
+        el.addEventListener('mouseenter', peek);
+        el.addEventListener('mouseleave', unpeek);
+    });
 
     var act = document.querySelector('.sidebar-link.active');
     if (act) act.scrollIntoView({block:'nearest'});
@@ -521,16 +536,19 @@ document.querySelectorAll('[data-delete-url]').forEach(function(el) {
 </script>
 {% block scripts %}{% endblock %}
 {% if request.session.get('logined') %}
-<script src="/static/js/a11y-widget.js?v=3"></script>
+<script src="/static/js/a11y-widget.js?v=4"></script>
 <script src="/static/vendor/vad/ort.wasm.min.js"></script>
 <script src="/static/vendor/vad/bundle.min.js"></script>
-<script src="/static/js/voice-parse.js?v=12"></script>
-<script src="/static/js/voice.js?v=20"></script>
+<script src="/static/js/voice-parse.js?v=18"></script>
+<script src="/static/js/voice.js?v=23"></script>
 {% if user_role == 'seeker' %}
-<script src="/static/js/seeker-voice.js?v=2"></script>
+<script src="/static/js/seeker-voice.js?v=6"></script>
+<script src="/static/js/mypage-nav.js?v=2"></script>
+{% elif user_role == 'company' %}
+<script src="/static/js/company-voice.js?v=1"></script>
 {% endif %}
 {% if _a11y.get('head_mouse') %}
-<script type="module" src="/static/js/headmouse.js"></script>
+<script type="module" src="/static/js/headmouse.js?v=2"></script>
 {% endif %}
 {% endif %}
 </body>

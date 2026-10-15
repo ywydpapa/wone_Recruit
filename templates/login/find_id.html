@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아이디 찾기 - WONE Recruit</title>
+    <script>
+    (function(){var t=localStorage.getItem('recruit_theme');
+    if(!t)t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+    document.documentElement.setAttribute('data-theme',t);})();
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/css/login.css">
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <a href="/login" class="brand-logo"><span>WONE</span> Recruit</a>
+        <div class="login-title">아이디 찾기</div>
+
+        {% if sent %}
+        <div class="alert alert-success small mb-3" role="status">
+            입력하신 정보와 일치하는 계정이 있으면 등록된 이메일로 아이디를 보냈습니다.
+        </div>
+        <p class="text-muted small mb-3">메일이 오지 않으면 스팸함을 확인하거나 잠시 후 다시 시도해 주세요. 가입 시 이메일을 등록하지 않았다면 운영자에게 문의해 주세요.</p>
+        <a href="/login" class="btn btn-primary-custom">로그인하기</a>
+        {% else %}
+
+        {% if error == 'rate_limit' %}
+        <div class="alert alert-danger py-2 small mb-3" role="alert">요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.</div>
+        {% endif %}
+
+        <p class="text-muted small mb-3">가입한 이름과 이메일을 입력하면 등록된 아이디를 메일로 보내 드립니다.</p>
+        <form action="/find-id" method="post">
+            {{ csrf_input }}
+            <div class="mb-3 input-icon-wrapper">
+                <input type="text" name="name" class="form-control form-control-lg" placeholder="이름" aria-label="이름" autocomplete="name" required>
+                <i class="fas fa-id-card" aria-hidden="true"></i>
+            </div>
+            <div class="mb-4 input-icon-wrapper">
+                <input type="email" name="email" class="form-control form-control-lg" placeholder="이메일" aria-label="이메일" autocomplete="email" required>
+                <i class="far fa-envelope" aria-hidden="true"></i>
+            </div>
+            <button type="submit" class="btn btn-primary-custom">아이디 찾기</button>
+        </form>
+        {% endif %}
+
+        <div class="text-center mt-4">
+            <a href="/login" class="link-custom">로그인으로 돌아가기</a>
+            <span class="text-muted">|</span>
+            <a href="/forgot-password" class="link-custom">비밀번호 찾기</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

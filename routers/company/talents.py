@@ -6,6 +6,7 @@ from core.db import get_sqlite
 from core.deps import require_role, templates
 from core.notifications import create_notification
 from core.security import verify_password
+from routers.company.offer_templates import get_templates
 
 router = APIRouter(prefix="/company")
 api_router = APIRouter()
@@ -229,6 +230,7 @@ async def talent_detail(request: Request, seeker_user_id: int, back: str = Query
         company = conn.execute(
             "SELECT company_name FROM companies WHERE user_id=?", (user["id"],)
         ).fetchone()
+        offer_tpls = get_templates(conn, user["id"])
 
         dup = conn.execute(
             """SELECT 1 FROM access_log
@@ -283,6 +285,7 @@ async def talent_detail(request: Request, seeker_user_id: int, back: str = Query
             "profile": profile, "certs": certs,
             "offered": offered, "disability_hidden": disability_hidden,
             "company_name": company["company_name"] if company else "",
+            "offer_tpls": offer_tpls,
             "comm_pref": comm_pref, "assistive": assistive,
             "accommodation": accommodation,
             "back_qs": back or "",
@@ -297,6 +300,7 @@ async def send_talent_offer(
     title: str = Form(...),
     message: str = Form(...),
     contact: str = Form(""),
+    next: str = Form(""),
 ):
     user = require_role(request, "company")
     conn = get_sqlite()
@@ -319,4 +323,7 @@ async def send_talent_offer(
         conn.commit()
     finally:
         conn.close()
+    # 추천 인재 화면에서 보낸 경우 인재검색 비밀번호 확인을 거치지 않도록 원래 화면으로 복귀
+    if next == "/company/recommendations":
+        return RedirectResponse(url="/company/recommendations?offered=1", status_code=303)
     return RedirectResponse(url=f"/company/talent/{seeker_user_id}?offered=1", status_code=303)

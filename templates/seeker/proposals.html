@@ -18,9 +18,9 @@
         </thead>
         <tbody>
         {% for p in proposals %}
-        <tr>
+        <tr data-voice-item data-voice-text="{{ p['company_name'] }}, {{ p['job_title'] }}, {{ p['employment_type'] or '' }}">
             <td class="fw-semibold"><a href="/jobs/{{ p['job_id'] }}">{{ p['job_title'] }}</a></td>
-            <td>{{ p['company_name'] }}</td>
+            <td><a href="/companies/{{ p['company_id'] }}" class="link-plain">{{ p['company_name'] }}</a></td>
             <td>{{ p|region('-') }}</td>
             <td>{{ p['employment_type'] or '-' }}</td>
             <td>{{ p['created_at']|fdate }}</td>

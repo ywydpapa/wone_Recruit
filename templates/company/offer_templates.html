@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}메시지 양식{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>메시지 양식</h2>
+</div>
+
+{% if saved == '1' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    양식이 저장되었습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="닫기"></button>
+</div>
+{% elif saved == 'empty' %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    양식 이름, 제목, 내용을 모두 입력해 주세요.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="닫기"></button>
+</div>
+{% endif %}
+
+<p class="text-muted">채용 제안을 보낼 때 불러오는 양식입니다. 제목과 내용에 {이름}, {회사명}, {공고명}을 넣으면 보낼 때 받는 사람에 맞게 바뀝니다.</p>
+
+<div class="content-card mb-4">
+    {% if offer_tpls %}
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">메시지 양식 목록</caption>
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">양식 이름</th>
+                    <th scope="col">제목</th>
+                    <th scope="col">수정일</th>
+                    <th scope="col">관리</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for t in offer_tpls %}
+            <tr>
+                <td class="fw-semibold">{{ t.name }}</td>
+                <td>{{ t.title }}</td>
+                <td>{{ t.updated_at|fdate }}</td>
+                <td class="text-nowrap">
+                    <a href="/company/offer-templates?edit={{ t.id }}" class="btn btn-sm btn-outline-secondary">수정</a>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            data-delete-url="/company/offer-templates/{{ t.id }}" data-confirm="양식을 삭제하시겠습니까?">삭제</button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-file-alt"></i></div>
+        <p class="empty-state-text">저장한 양식이 없습니다.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="content-card">
+    <h3 class="h5 mb-3">{{ '양식 수정' if cur else '새 양식' }}</h3>
+    <form method="post" action="/company/offer-templates">
+        {{ csrf_input }}
+        {% if cur %}<input type="hidden" name="tpl_id" value="{{ cur.id }}">{% endif %}
+        <div class="mb-3">
+            <label for="tplName" class="form-label fw-bold">양식 이름 <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="tplName" name="name" maxlength="50" required value="{{ cur.name if cur else '' }}" placeholder="예: 면접 안내">
+        </div>
+        <div class="mb-3">
+            <label for="tplTitle" class="form-label fw-bold">제목 <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="tplTitle" name="title" maxlength="200" required value="{{ cur.title if cur else '' }}" placeholder="예: [{회사명}] {이름}님께 채용 제안드립니다">
+        </div>
+        <div class="mb-3">
+            <label for="tplMessage" class="form-label fw-bold">내용 <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="tplMessage" name="message" rows="6" maxlength="3000" required>{{ cur.message if cur else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="tplContact" class="form-label fw-bold">연락처</label>
+            <input type="text" class="form-control" id="tplContact" name="contact" maxlength="100" value="{{ cur.contact if cur else '' }}" placeholder="이메일 또는 전화번호">
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">저장</button>
+            {% if cur %}<a href="/company/offer-templates" class="btn btn-outline-secondary">취소</a>{% endif %}
+        </div>
+    </form>
+</div>
+<script type="application/json" id="offerTplData">{{ offer_tpls|tojson }}</script>
+{% endblock %}

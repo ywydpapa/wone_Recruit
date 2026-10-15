@@ -12,7 +12,7 @@ def _clean(biz_no):
     return re.sub(r"[^0-9]", "", biz_no)
 
 
-def _checksum_ok(no):
+def checksum_ok(no):
     d = [int(c) for c in no]
     total = sum(a * b for a, b in zip(d, [1, 3, 7, 1, 3, 7, 1, 3, 5]))
     total += d[8] * 5 // 10
@@ -21,7 +21,7 @@ def _checksum_ok(no):
 
 async def check_bizno(biz_no):
     cleaned = _clean(biz_no)
-    if len(cleaned) != 10 or not _checksum_ok(cleaned):
+    if len(cleaned) != 10 or not checksum_ok(cleaned):
         return False
 
     api_key = os.getenv("BIZNO_API_KEY")

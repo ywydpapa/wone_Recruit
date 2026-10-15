@@ -8,21 +8,25 @@ _lock = threading.Lock()
 MAX_ATTEMPTS = 5
 WINDOW = 300  # 5분
 
+# 같은 서버의 nginx가 넘긴 요청만 XFF 신뢰. 클라이언트 위조값은 앞쪽에 붙으므로 nginx가 추가한 마지막 값 사용
+LOCAL_PROXY = ("127.0.0.1", "::1")
+
 
 def get_client_ip(request):
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    if request.client.host in LOCAL_PROXY:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[-1].strip()
     return request.client.host
 
 
-def check_login_rate(ip):
+def check_login_rate(ip, limit=MAX_ATTEMPTS):
     now = time.time()
     cutoff = now - WINDOW
     with _lock:
         timestamps = [t for t in _store.get(ip, []) if t > cutoff]
         _store[ip] = timestamps
-        return len(timestamps) >= MAX_ATTEMPTS
+        return len(timestamps) >= limit
 
 
 def record_login_attempt(ip):

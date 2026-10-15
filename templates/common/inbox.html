@@ -11,7 +11,7 @@
         <div class="msg-list">
             {% for conv in conversations %}
             {% if conv.user_id %}
-            <a href="/messages/{{ conv.user_id }}" class="msg-item {% if conv.unread > 0 %}msg-unread{% endif %}">
+            <a href="/messages/{{ conv.user_id }}" class="msg-item {% if conv.unread > 0 %}msg-unread{% endif %}" data-voice-item data-voice-text="{{ conv.counterpart }}, {{ conv.body }}">
                 <div class="msg-avatar">{{ conv.counterpart[:1] }}</div>
                 <div class="msg-item-body">
                     <div class="msg-item-top">

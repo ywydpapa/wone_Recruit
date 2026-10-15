@@ -113,8 +113,35 @@ h1, h2, h3, h4, h5, h6 { color: var(--text); letter-spacing: -0.02em; }
 .seeker-main .page-header { padding: 0 0 20px; margin: 0; background: none; border: 0; }
 
 /* 마이페이지 */
-.mypage { display: grid; grid-template-columns: 200px 1fr; gap: 48px; align-items: start; }
-.mypage-nav { position: sticky; top: 96px; }
+.mypage { display: grid; grid-template-columns: var(--mypage-nav-w, 168px) 1fr; gap: 48px; align-items: start; }
+.mypage-nav { position: sticky; top: 96px; z-index: 1; }
+.mypage-resize {
+    position: absolute;
+    top: 0;
+    right: -40px;
+    width: 32px;
+    height: 100%;
+    cursor: col-resize;
+    touch-action: none;
+}
+.mypage-resize::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 15px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--border);
+    transition: background 0.15s;
+}
+.mypage-resize:hover::after,
+.mypage-resize:focus-visible::after,
+.mypage-resizing .mypage-resize::after { background: var(--primary); }
+.mypage-resize:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mypage-resizing { cursor: col-resize; user-select: none; }
+.mypage-resizing * { pointer-events: none; }
+.mypage-resizing .mypage-resize { pointer-events: auto; }
 .mypage-name { font-size: 18px; margin: 0 0 20px; padding-bottom: 16px; border-bottom: 2px solid var(--text); }
 .mypage-group { font-size: 14px; font-weight: 700; color: var(--text-secondary); margin: 20px 0 6px; }
 .mypage-nav ul { list-style: none; margin: 0; padding: 0; }
@@ -214,6 +241,7 @@ h1, h2, h3, h4, h5, h6 { color: var(--text); letter-spacing: -0.02em; }
     .gnb-logout { display: none; }
     .mypage { grid-template-columns: 1fr; gap: 16px; }
     .mypage-nav { position: static; }
+    .mypage-resize { display: none; }
     .mypage-nav ul { display: flex; flex-wrap: wrap; gap: 4px 12px; }
     .mypage-nav li a { border-left: 0; padding: 4px 0; }
     .mypage-name { display: none; }
@@ -280,9 +308,20 @@ h1, h2, h3, h4, h5, h6 { color: var(--text); letter-spacing: -0.02em; }
 .home-job h3 { font-size: 17px; font-weight: 700; line-height: 1.4; margin: 4px 0 10px; }
 .home-job h3 a { color: var(--text); text-decoration: none; }
 .home-job h3 a::after { content: ""; position: absolute; inset: 0; }
-.home-job-company { margin: 0; font-size: 14px; color: var(--text-secondary); }
-.home-job-meta, .home-job-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; font-size: 14px; color: var(--text-secondary); }
-.home-job-fit { margin: 8px 0 0; font-size: 14px; color: var(--success); font-weight: 600; }
+.home-job-company { margin: 0; font-size: 15px; color: var(--text-secondary); }
+.home-job-company a,
+.home-job-actions { position: relative; z-index: 1; }
+.home-job-meta, .home-job-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0; font-size: 15px; color: var(--text-secondary); }
+.home-job-meta .item-badge, .home-job-meta .badge { margin: 0; font-size: 14px; }
+.home-job-fit { margin: 8px 0 0; font-size: 15px; color: var(--success); font-weight: 600; }
+.home-job-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 15px; }
+.home-job-actions .small { font-size: 15px; }
+.jobs-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 24px 0 14px; }
+.jobs-count { margin: 0; font-size: 16px; }
+.jobs-sort { display: flex; gap: 4px; }
+.jobs-sort a { padding: 8px 12px; border-radius: 6px; font-size: 15px; color: var(--text-secondary); text-decoration: none; }
+.jobs-sort a:hover { color: var(--text); background: var(--bg-subtle); }
+.jobs-sort a.active { color: var(--primary); font-weight: 700; }
 .home-job-foot { justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--text); font-weight: 600; }
 .home-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
 .home-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--text); }

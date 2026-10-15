@@ -62,6 +62,12 @@
         save('voice_auto', e.detail, true);
     });
 
+    // 음성 명령(a11y_set)에서 설정값을 읽고 바꾸는 용도임
+    window.A11y = {
+        get: function(key) { return state[key]; },
+        set: save
+    };
+
     // 응시 클릭 시간은 헤드마우스 패널에서 변경하며, 여기서는 같은 경로로 저장만 함
     document.addEventListener('hm:dwell-change', function(e) {
         save('dwell_ms', e.detail, true);

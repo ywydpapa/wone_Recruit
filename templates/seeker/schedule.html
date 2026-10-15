@@ -51,7 +51,7 @@
         <div class="schedule-date-group" data-date="{{ g.events[0].date_str }}">
             <div class="schedule-date-header{% if g.is_today %} today{% endif %}">{{ g.label }}</div>
             {% for ev in g.events %}
-            <div class="schedule-event">
+            <div class="schedule-event" data-voice-item>
                 <div class="schedule-event-time">{{ ev.time_str }}</div>
                 <div class="schedule-event-body">
                     <div class="schedule-event-title">{{ ev.title }}</div>

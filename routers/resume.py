@@ -143,8 +143,9 @@ async def resume_list(request: Request):
 
 
 # 음성 명령용 경로임. 대표 이력서, 없으면 최근 수정한 이력서의 편집 화면으로 이동함
+# cmd는 편집 화면 로드 후 실행할 항목 명령임. 해석은 resume-voice.js에서 처리함
 @router.get("/resumes/write")
-async def resume_write(request: Request, item: str = ""):
+async def resume_write(request: Request, item: str = "", cmd: str = ""):
     user = require_role(request, "seeker")
     conn = get_sqlite()
     try:
@@ -155,11 +156,111 @@ async def resume_write(request: Request, item: str = ""):
     finally:
         conn.close()
     if not r:
-        return RedirectResponse(url="/resumes", status_code=303)
+        return RedirectResponse(url="/resumes?voice=new" if cmd else "/resumes", status_code=303)
     url = f"/resumes/{r['id']}/edit"
     if item in INTRO_TITLES:
         url += f"?voice={quote(item)}"
+    elif cmd:
+        url += f"?cmd={quote(cmd[:30])}"
     return RedirectResponse(url=url, status_code=303)
+
+
+# 커밋은 호출부에서 처리함
+def _copy_resume_data(conn, uid, copy_from, new_id):
+    src = conn.execute(
+        "SELECT * FROM resumes WHERE id=? AND user_id=?", (copy_from, uid)
+    ).fetchone()
+    if not src:
+        return
+    fields = [
+        "desired_job", "work_pref", "mobility_type", "commute_max_minutes",
+        "daily_work_hours", "preferred_time", "rest_frequency",
+        "accommodation_needs", "experience_summary",
+    ]
+    update_parts = ", ".join(f"{f}=?" for f in fields)
+    vals = [src[f] for f in fields]
+    conn.execute(
+        f"UPDATE resumes SET {update_parts} WHERE id=?",
+        vals + [new_id],
+    )
+
+    for edu in conn.execute(
+        "SELECT * FROM resume_educations WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_educations
+               (resume_id, sort_order, education_level, school_name, major,
+                start_date, end_date, graduation_status, gpa, gpa_scale, is_transfer)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (new_id, edu["sort_order"], edu["education_level"], edu["school_name"],
+             edu["major"], edu["start_date"], edu["end_date"], edu["graduation_status"],
+             edu["gpa"], edu["gpa_scale"], edu["is_transfer"]),
+        )
+
+    for car in conn.execute(
+        "SELECT * FROM resume_careers WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_careers
+               (resume_id, sort_order, company_name, department, position,
+                start_date, end_date, is_current, employment_type, description)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (new_id, car["sort_order"], car["company_name"], car["department"],
+             car["position"], car["start_date"], car["end_date"],
+             car["is_current"], car["employment_type"], car["description"]),
+        )
+
+    for cert in conn.execute(
+        "SELECT * FROM resume_certifications WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_certifications
+               (resume_id, sort_order, cert_name, cert_date, issuing_org)
+               VALUES (?,?,?,?,?)""",
+            (new_id, cert["sort_order"], cert["cert_name"], cert["cert_date"], cert["issuing_org"]),
+        )
+
+    for lang in conn.execute(
+        "SELECT * FROM resume_languages WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_languages
+               (resume_id, sort_order, language, test_name, score, level, test_date)
+               VALUES (?,?,?,?,?,?,?)""",
+            (new_id, lang["sort_order"], lang["language"], lang["test_name"],
+             lang["score"], lang["level"], lang["test_date"]),
+        )
+
+    for award in conn.execute(
+        "SELECT * FROM resume_awards WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_awards
+               (resume_id, sort_order, category, title, organizer, activity_date, description)
+               VALUES (?,?,?,?,?,?,?)""",
+            (new_id, award["sort_order"], award["category"], award["title"],
+             award["organizer"], award["activity_date"], award["description"]),
+        )
+
+    for port in conn.execute(
+        "SELECT * FROM resume_portfolios WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_portfolios
+               (resume_id, sort_order, link_type, url, description)
+               VALUES (?,?,?,?,?)""",
+            (new_id, port["sort_order"], port["link_type"], port["url"], port["description"]),
+        )
+
+    for intro in conn.execute(
+        "SELECT * FROM resume_intros WHERE resume_id=? ORDER BY sort_order", (copy_from,)
+    ).fetchall():
+        conn.execute(
+            """INSERT INTO resume_intros
+               (resume_id, sort_order, title, content, char_limit)
+               VALUES (?,?,?,?,?)""",
+            (new_id, intro["sort_order"], intro["title"], intro["content"], intro["char_limit"]),
+        )
 
 
 @router.post("/resumes/new")
@@ -186,104 +287,38 @@ async def resume_new(
         new_id = cur.lastrowid
 
         if copy_from:
-            src = conn.execute(
-                "SELECT * FROM resumes WHERE id=? AND user_id=?", (copy_from, uid)
-            ).fetchone()
-            if src:
-                fields = [
-                    "desired_job", "work_pref", "mobility_type", "commute_max_minutes",
-                    "daily_work_hours", "preferred_time", "rest_frequency",
-                    "accommodation_needs", "experience_summary",
-                ]
-                update_parts = ", ".join(f"{f}=?" for f in fields)
-                vals = [src[f] for f in fields]
-                conn.execute(
-                    f"UPDATE resumes SET {update_parts} WHERE id=?",
-                    vals + [new_id],
-                )
-
-                for edu in conn.execute(
-                    "SELECT * FROM resume_educations WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_educations
-                           (resume_id, sort_order, education_level, school_name, major,
-                            start_date, end_date, graduation_status, gpa, gpa_scale, is_transfer)
-                           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-                        (new_id, edu["sort_order"], edu["education_level"], edu["school_name"],
-                         edu["major"], edu["start_date"], edu["end_date"], edu["graduation_status"],
-                         edu["gpa"], edu["gpa_scale"], edu["is_transfer"]),
-                    )
-
-                for car in conn.execute(
-                    "SELECT * FROM resume_careers WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_careers
-                           (resume_id, sort_order, company_name, department, position,
-                            start_date, end_date, is_current, employment_type, description)
-                           VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                        (new_id, car["sort_order"], car["company_name"], car["department"],
-                         car["position"], car["start_date"], car["end_date"],
-                         car["is_current"], car["employment_type"], car["description"]),
-                    )
-
-                for cert in conn.execute(
-                    "SELECT * FROM resume_certifications WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_certifications
-                           (resume_id, sort_order, cert_name, cert_date, issuing_org)
-                           VALUES (?,?,?,?,?)""",
-                        (new_id, cert["sort_order"], cert["cert_name"], cert["cert_date"], cert["issuing_org"]),
-                    )
-
-                for lang in conn.execute(
-                    "SELECT * FROM resume_languages WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_languages
-                           (resume_id, sort_order, language, test_name, score, level, test_date)
-                           VALUES (?,?,?,?,?,?,?)""",
-                        (new_id, lang["sort_order"], lang["language"], lang["test_name"],
-                         lang["score"], lang["level"], lang["test_date"]),
-                    )
-
-                for award in conn.execute(
-                    "SELECT * FROM resume_awards WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_awards
-                           (resume_id, sort_order, category, title, organizer, activity_date, description)
-                           VALUES (?,?,?,?,?,?,?)""",
-                        (new_id, award["sort_order"], award["category"], award["title"],
-                         award["organizer"], award["activity_date"], award["description"]),
-                    )
-
-                for port in conn.execute(
-                    "SELECT * FROM resume_portfolios WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_portfolios
-                           (resume_id, sort_order, link_type, url, description)
-                           VALUES (?,?,?,?,?)""",
-                        (new_id, port["sort_order"], port["link_type"], port["url"], port["description"]),
-                    )
-
-                for intro in conn.execute(
-                    "SELECT * FROM resume_intros WHERE resume_id=? ORDER BY sort_order", (copy_from,)
-                ).fetchall():
-                    conn.execute(
-                        """INSERT INTO resume_intros
-                           (resume_id, sort_order, title, content, char_limit)
-                           VALUES (?,?,?,?,?)""",
-                        (new_id, intro["sort_order"], intro["title"], intro["content"], intro["char_limit"]),
-                    )
+            _copy_resume_data(conn, uid, copy_from, new_id)
 
         conn.commit()
     finally:
         conn.close()
     return RedirectResponse(url=f"/resumes/{new_id}/edit", status_code=303)
+
+
+# 음성 명령용 경로임. 이력서가 없으면 아무 것도 하지 않고 404로 알림
+@router.post("/resumes/copy-latest")
+async def resume_copy_latest(request: Request):
+    user = require_role(request, "seeker")
+    uid = user["id"]
+    conn = get_sqlite()
+    try:
+        latest = conn.execute(
+            "SELECT id, name FROM resumes WHERE user_id=? ORDER BY updated_at DESC LIMIT 1",
+            (uid,),
+        ).fetchone()
+        if not latest:
+            return JSONResponse({"error": "none"}, status_code=404)
+        cur = conn.execute(
+            """INSERT INTO resumes (user_id, name, is_default, created_at, updated_at)
+               VALUES (?,?,0,datetime('now','localtime'),datetime('now','localtime'))""",
+            (uid, latest["name"] + " 복사본"),
+        )
+        new_id = cur.lastrowid
+        _copy_resume_data(conn, uid, latest["id"], new_id)
+        conn.commit()
+    finally:
+        conn.close()
+    return JSONResponse({"id": new_id})
 
 
 # 컬럼 별칭은 화면 입력칸 name 기준
@@ -751,7 +786,7 @@ async def resume_delete(request: Request, resume_id: int):
         conn.commit()
     finally:
         conn.close()
-    return JSONResponse({"redirect": "/resumes"})
+    return JSONResponse({"redirect": "/resumes?success=deleted"})
 
 
 @router.post("/resumes/{resume_id}/default")

@@ -99,18 +99,21 @@ def test_reset_rate_limit(client, outbox):
 
 def test_signup_requires_email(client):
     r = client.post("/signup", data={
-        "username": "no_mail", "password": "testpass1234", "confirm_password": "testpass1234",
-        "name": "메일없음", "role": "seeker", "agree_terms": "1", "agree_privacy": "1",
+        "username": "nomailuser", "password": "testpass1234", "confirm_password": "testpass1234",
+        "name": "메일없음", "role": "seeker", "agree_terms": "1", "agree_privacy": "1", "agree_age": "1",
     }, follow_redirects=False)
-    assert "error=email_required" in r.headers["location"]
+    assert r.status_code == 400
+    assert "이메일을 정확히" in r.text
 
 
 def test_signup_password_policy(client):
     base = {
-        "username": "pw_user", "name": "정책", "email": "pw@example.com", "role": "seeker",
-        "agree_terms": "1", "agree_privacy": "1",
+        "username": "pwuser", "name": "정책", "email": "pw@example.com", "role": "seeker",
+        "agree_terms": "1", "agree_privacy": "1", "agree_age": "1",
     }
     r = client.post("/signup", data={**base, "password": "short123", "confirm_password": "short123"}, follow_redirects=False)
-    assert "error=short" in r.headers["location"]
+    assert r.status_code == 400
+    assert "12자 이상" in r.text
     r = client.post("/signup", data={**base, "password": "testpass1234", "confirm_password": "testpass9999"}, follow_redirects=False)
-    assert "error=mismatch" in r.headers["location"]
+    assert r.status_code == 400
+    assert "일치하지 않습니다" in r.text

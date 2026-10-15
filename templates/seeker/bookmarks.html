@@ -6,7 +6,7 @@
         <div class="row g-4">
             {% for job in jobs %}
             <div class="col-lg-6">
-                <div class="item-card">
+                <div class="item-card" data-voice-item data-voice-text="{{ job['company_name'] }}, {{ job['title'] }}, {{ job|region('전국') }}, {{ job['employment_type'] }}">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="flex-fill-clamp">
                             <span class="item-badge">{{ job['employment_type'] }}</span>
@@ -22,7 +22,7 @@
                             <span class="item-title text-muted">{{ job['title'] }}</span>
                             {% endif %}
                             <div class="item-meta">
-                                <div>{{ job['company_name'] }}</div>
+                                <div><a href="/companies/{{ job['company_id'] }}" class="link-plain">{{ job['company_name'] }}</a></div>
                                 <div>{{ job|region('전국') }}</div>
                                 {% if job['category_name'] %}
                                 <div>{{ job['category_name'] }}</div>

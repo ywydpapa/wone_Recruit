@@ -170,19 +170,27 @@
         if (e.key === 'Escape') document.getElementById('voiceCancel').click();
     });
 
-    // 다른 화면에서 지원동기 작성 명령으로 진입한 경우 바로 받아쓰기를 시작함. 새로고침 시 재실행되지 않도록 주소에서 제거함
+    // 다른 화면에서 지원동기 작성, 항목 추가, 파일 첨부 명령으로 진입한 경우 바로 실행함. 새로고침 시 재실행되지 않도록 주소에서 제거함
     window.addEventListener('DOMContentLoaded', () => {
         const q = new URLSearchParams(location.search);
         const item = q.get('voice');
-        if (!item) return;
+        const cmd = q.get('cmd');
+        if (!item && !cmd) return;
         q.delete('voice');
+        q.delete('cmd');
         history.replaceState(null, '', location.pathname + (q.size ? '?' + q : ''));
-        introDictate(VoiceParse.squash(item));
+        if (item) introDictate(VoiceParse.squash(item));
+        else if (VoiceParse.fileCmd(cmd)) fileFocus();
+        else secCmd(VoiceParse.squash(cmd));
     });
 
     // 섹션 음성 입력 및 자기소개서 받아쓰기 명령임. STT 프롬프트 영향으로 입력을 이력으로 인식하는 경우도 포함함
     window.addEventListener('DOMContentLoaded', () => Voice.onCommand(async cmd => {
         const s = VoiceParse.squash(cmd);
+        if (VoiceParse.copyCmd(cmd)) {
+            await importAll();
+            return true;
+        }
         const imp = VoiceParse.importCmd(cmd);
         if (imp) {
             await importSec(imp.sec);
@@ -205,6 +213,7 @@
                 return true;
             }
         }
+        if (VoiceParse.fileCmd(cmd)) return fileFocus();
         if (await secCmd(s)) return true;
         if (askFields(s)) return true;
         const f = cmd.match(FILL_RE);
@@ -213,6 +222,13 @@
             const sec = btn.dataset.sec;
             openSec(btn);
             show(sec, btn, f[4], VoiceParse.resumeRow(sec, f[4], new Date()));
+            return true;
+        }
+        const it = VoiceParse.itemAdd(cmd);
+        if (it && !INTRO_TITLES.some(t => VoiceParse.squash(t) === VoiceParse.squash(it.item))) {
+            const btn = document.querySelector('.resume-voice-btn[data-sec="' + it.sec + '"]');
+            openSec(btn);
+            show(it.sec, btn, it.item, VoiceParse.resumeRow(it.sec, it.item, new Date()));
             return true;
         }
         if (await delRow(cmd)) return true;
@@ -232,8 +248,31 @@
         }
         const t = s.match(/^(.+?)(을|를)?(작성|쓰기|입력|받아쓰기)/);
         return t ? introDictate(t[1]) : false;
-    }, cmd => [SEC_RE, ASK_RE, BODY_RE].some(re => re.test(VoiceParse.squash(cmd))) || FILL_RE.test(cmd)
+    }, cmd => VoiceParse.copyCmd(cmd) || [SEC_RE, ASK_RE, BODY_RE].some(re => re.test(VoiceParse.squash(cmd))) || FILL_RE.test(cmd) || VoiceParse.fileCmd(cmd) || !!VoiceParse.itemAdd(cmd)
         || ((DEL_TAIL.test(cmd) || EDIT_TAIL.test(cmd)) && ROW_WORD.test(cmd))));
+
+    // 섹션명 없이 자격증명만 말한 경우. 메뉴/버튼 완전일치, 칸 입력이 모두 실패한 뒤에만 시도함
+    window.addEventListener('DOMContentLoaded', () => Voice.onLate(async cmd => {
+        const words = cmd.trim().split(/\s+/).filter(Boolean);
+        if (!words.length || words.length > 5) return false;
+        const act = document.activeElement;
+        if (act && act.matches('input, textarea, select') && act.closest('#main')) return false;
+        const q = cmd.replace(/[1-3]급|일급|이급|삼급/g, '').trim();
+        if (!q) return false;
+        let list;
+        try {
+            const r = await fetch('/api/refs/certs?q=' + encodeURIComponent(q));
+            if (!r.ok) return false;
+            list = await r.json();
+        } catch (e) {
+            return false;
+        }
+        if (!VoiceParse.certHit(q, list)) return false;
+        const btn = document.querySelector('.resume-voice-btn[data-sec="cert"]');
+        openSec(btn);
+        show('cert', btn, cmd, VoiceParse.resumeRow('cert', cmd, new Date()));
+        return true;
+    }));
 
     function putRow(row, data) {
         Object.entries(data).forEach(([name, v]) => {
@@ -249,6 +288,27 @@
             el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         if (data.edu_gpa) row.querySelector('.edu-gpa-wrap').classList.remove('d-none');
+    }
+
+    // 최근 수정한 다른 이력서의 전체 섹션을 현재 폼에 채움
+    async function importAll() {
+        const others = JSON.parse(document.getElementById('otherResumes').textContent);
+        if (!others.length) return Voice.speak('불러올 다른 이력서가 없어요', true);
+        const src = others[0];
+        let total = 0;
+        for (const [, secId, add, cls, , sec] of SECTIONS) {
+            if (!sec) continue;
+            const r = await fetch('/resumes/' + src.id + '/sections/' + sec);
+            if (!r.ok) continue;
+            const { rows } = await r.json();
+            if (!rows.length) continue;
+            const box = document.getElementById(secId);
+            if (box.classList.contains('d-none')) document.querySelector('.section-toggle-btn[data-target="' + secId + '"]').click();
+            rows.forEach(data => putRow(blankRow(cls, add), data));
+            total += rows.length;
+        }
+        if (!total) return Voice.speak(src.name + '에는 불러올 항목이 없어요', true);
+        Voice.speak(src.name + '에서 ' + total + '건을 불러왔어요. 저장 전에 확인해 주세요', true);
     }
 
     // 현재 폼에 행만 추가. 저장은 사용자 직접 처리
@@ -425,6 +485,7 @@
         const m = s.match(SEC_RE);
         if (!m) return false;
         const [names, id, add] = SECTIONS.find(x => x[0].includes(m[2]));
+        if (id === 'sec-resume') return fileFocus();
         const sec = document.getElementById(id);
         if (sec.classList.contains('d-none')) document.querySelector('.section-toggle-btn[data-target="' + id + '"]').click();
         let row = null;
@@ -446,6 +507,16 @@
         const lab = el.id && document.querySelector('label[for="' + el.id + '"]');
         const name = lab ? lab.textContent.trim() : el.placeholder;
         Voice.speak(row.getAttribute('aria-label') + ', ' + VoiceParse.josa(name, '을', '를') + ' 말씀하세요', true);
+        return true;
+    }
+
+    // 파일 선택 창은 사용자 직접 조작으로만 열림. 음성은 칸 이동과 안내까지만 처리함
+    function fileFocus() {
+        const sec = document.getElementById('sec-resume');
+        if (sec.classList.contains('d-none')) document.querySelector('.section-toggle-btn[data-target="sec-resume"]').click();
+        sec.scrollIntoView({ block: 'start' });
+        document.getElementById('resume_file').focus();
+        Voice.speak('파일 첨부 칸으로 이동했어요. 파일 선택 창은 음성으로 열 수 없어서 엔터 키를 누르거나 직접 클릭해 주세요', true);
         return true;
     }
 

@@ -31,7 +31,7 @@
 <div class="mp-row-list">
     {% for r in resumes %}
     {% set counts = item_counts.get(r.id, {}) %}
-    <div class="mp-row">
+    <div class="mp-row" data-voice-item data-resume-id="{{ r.id }}" data-name="{{ r.name }}" data-updated="{{ updated_dates.get(r.id, '') }}"{% if r.is_default %} data-default="1"{% endif %}>
         <div class="mp-row-head">
             <div>
                 {% if r.is_default %}
@@ -66,11 +66,8 @@
                 {% endif %}
 
                 {% if not r.is_default %}
-                <form method="post" action="/resumes/{{ r.id }}/delete"
-                      onsubmit="return confirm('이력서를 삭제하시겠습니까?')">
-                    {{ csrf_input }}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
-                </form>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-delete-url="/resumes/{{ r.id }}" data-confirm="이력서를 삭제하시겠습니까?">삭제</button>
                 {% endif %}
             </div>
         </div>

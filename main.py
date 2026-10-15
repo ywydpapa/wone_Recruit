@@ -12,7 +12,7 @@ import dotenv
 
 from core.db import get_sqlite
 from core.logger import log
-from core.deps import templates
+from core.deps import templates, check_idle
 from core.csrf import ensure_token, verify_csrf
 
 dotenv.load_dotenv()
@@ -29,11 +29,15 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(lifespan=lifespan, dependencies=[Depends(verify_csrf)])
+app = FastAPI(lifespan=lifespan, dependencies=[Depends(check_idle), Depends(verify_csrf)],
+              docs_url=None, redoc_url=None, openapi_url=None)
 
 
 @app.exception_handler(StarletteHTTPException)
 async def on_http_err(request: Request, exc: StarletteHTTPException):
+    location = (exc.headers or {}).get("Location")
+    if location:
+        return RedirectResponse(url=location, status_code=exc.status_code)
     status = exc.status_code
     if status == 403:
         tpl = "errors/403.html"
@@ -115,6 +119,18 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        resp = await call_next(request)
+        resp.headers.setdefault("X-Frame-Options", "DENY")
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if os.getenv("ENVIRONMENT") == "production":
+            resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+        return resp
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(A11yMiddleware)
 app.add_middleware(ForcePasswordChangeMiddleware)
 app.add_middleware(CSRFTokenMiddleware)
@@ -123,12 +139,13 @@ app.add_middleware(
     secret_key=_secret,
     https_only=os.getenv("ENVIRONMENT") == "production",
     same_site="strict",
+    max_age=43200,
 )
 
 os.makedirs("static/css", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages, inquiry, accessibility, refs, notice, consult, status
+from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages, inquiry, accessibility, refs, notice, consult, status, nlu
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(company.router)
@@ -146,3 +163,4 @@ app.include_router(refs.router)
 app.include_router(notice.router)
 app.include_router(consult.router)
 app.include_router(status.router)
+app.include_router(nlu.router)

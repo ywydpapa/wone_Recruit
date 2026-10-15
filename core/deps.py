@@ -1,11 +1,14 @@
 import json
+import os
+import time
 from urllib.parse import quote
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from core.csrf import csrf_input_html
+from core.logger import log
 from core.masking import mask_name, mask_phone, mask_email
 
 templates = Jinja2Templates(directory="templates")
@@ -112,6 +115,24 @@ def check_login(request):
     return request.session.get("logined", False)
 
 
+IDLE_TIMEOUT = int(os.getenv("IDLE_TIMEOUT", "3600"))
+# 배지 폴링은 활동 제외. 탭만 열어두면 세션 무기한 유지됨
+POLL_PATHS = ("/api/notifications/count", "/api/messages/unread-count")
+
+
+def check_idle(request: Request):
+    if not check_login(request):
+        return
+    now = time.time()
+    last = request.session.get("last_seen")
+    if last and now - last > IDLE_TIMEOUT:
+        log.info("timeout: user=%s idle=%.0fs", request.session.get("id"), now - last)
+        request.session.clear()
+        raise HTTPException(status_code=303, headers={"Location": "/login?error=timeout"})
+    if request.url.path not in POLL_PATHS:
+        request.session["last_seen"] = now
+
+
 def get_current_user(request):
     return {
         "id": request.session.get("id"),
@@ -122,7 +143,14 @@ def get_current_user(request):
 
 def require_role(request, *roles):
     if not check_login(request):
-        raise HTTPException(status_code=303, headers={"Location": "/login"})
+        if request.method == "GET":
+            path = request.url.path
+            if request.url.query:
+                path += "?" + request.url.query
+            location = "/login?next=" + quote(path)
+        else:
+            location = "/login"
+        raise HTTPException(status_code=303, headers={"Location": location})
     user = get_current_user(request)
     if user["role"] not in roles:
         raise HTTPException(status_code=403, detail="권한이 없습니다.")

@@ -177,7 +177,7 @@ def _get_active_consult_reqs(conn, uid):
 
 def get_seeker_dashboard(conn, uid):
     apps = conn.execute("""
-        SELECT c.*, jp.title as job_title, co.company_name
+        SELECT c.*, jp.title as job_title, jp.company_id, co.company_name
         FROM candidacies c
         JOIN job_postings jp ON c.job_id=jp.id
         JOIN companies co ON jp.company_id=co.id

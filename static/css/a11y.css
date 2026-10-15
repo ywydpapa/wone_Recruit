@@ -94,6 +94,11 @@ body.theme-high-contrast .hm-msg {
     box-shadow: none;
 }
 body.theme-high-contrast .hm-band { color: #ffcc00; }
+.hm-file-note {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
 
 /* 접근성 위젯 */
 .a11y-widget {

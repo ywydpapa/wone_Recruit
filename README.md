@@ -21,8 +21,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env     # 환경변수 설정 (아래 참고)
 python init_db.py        # DB 초기화 (recruit.db 생성, 기존 데이터가 있으면 --force 필요)
+bash scripts/fetch_assets.sh   # 음성/헤드마우스 자산 다운로드 (최초 1회)
 uvicorn main:app --reload
 ```
+
+음성 입력과 헤드마우스용 브라우저 라이브러리(`static/vendor/`)와 음성 모델은 용량 문제로 저장소에 들어가 있지 않습니다. 새 서버 배포 시 인터넷이 연결된 상태에서 `scripts/fetch_assets.sh`를 한 번 실행해 주세요. 용량은 약 2GB이며, 마이크 버튼 작동을 위해 필요합니다.
 
 ## 환경변수 설정
 

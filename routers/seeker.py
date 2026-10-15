@@ -501,7 +501,7 @@ async def applications_list(request: Request):
         applications = conn.execute(
             """SELECT c.id, c.status, c.created_at, c.source,
                       jp.title, jp.id AS job_id,
-                      co.company_name
+                      co.id AS company_id, co.company_name
                FROM candidacies c
                JOIN job_postings jp ON c.job_id=jp.id
                JOIN companies co ON jp.company_id=co.id
@@ -576,7 +576,7 @@ async def proposals_list(request: Request):
             """SELECT c.id, c.job_id, c.match_stage, c.created_at,
                       jp.title AS job_title, jp.employment_type,
                       r.sido AS region_sido, r.sigungu AS region_sigungu,
-                      co.company_name
+                      co.id AS company_id, co.company_name
                FROM candidacies c
                JOIN job_postings jp ON c.job_id = jp.id
                JOIN companies co ON jp.company_id = co.id
@@ -951,7 +951,7 @@ async def job_detail(request: Request, job_id: int):
             conn.commit()
             # 같은 직무 카테고리 또는 같은 지역의 공고를 조회함
             similar_sql = (
-                "SELECT jp.id, jp.title, jp.employment_type, jp.salary, jp.deadline, "
+                "SELECT jp.id, jp.company_id, jp.title, jp.employment_type, jp.salary, jp.deadline, "
                 "c.company_name, r.sido AS region_sido, r.sigungu AS region_sigungu "
                 "FROM job_postings jp "
                 "JOIN companies c ON jp.company_id=c.id "

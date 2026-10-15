@@ -265,15 +265,24 @@
 
 /* 공고 상세 */
 .job-detail-wrap {
-    max-width: 800px;
+    max-width: 960px;
     margin: 0 auto;
-    padding-bottom: 80px;
+    padding-bottom: 100px;
+    letter-spacing: 0;
 }
+.job-detail-wrap .small,
+.job-detail-wrap small { font-size: 1rem; }
+.job-detail-wrap .badge { font-size: 0.9rem; }
+.job-detail-wrap .home-list a,
+.job-detail-wrap .home-list-sub,
+.job-detail-wrap .home-list-end { font-size: 1rem; }
+.job-detail-wrap .text-prewrap,
+.job-detail-wrap li { line-height: 1.75; }
 .job-hero {
     margin-bottom: 20px;
 }
 .job-hero h1 {
-    font-size: 1.4rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--text);
     margin-bottom: 10px;
@@ -292,7 +301,7 @@
     object-fit: cover;
 }
 .job-hero-company a {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--text);
     text-decoration: none;
@@ -306,7 +315,7 @@
     align-items: center;
     gap: 6px;
 }
-.job-hero-applicant { margin-top: 10px; font-size: 0.82rem; color: var(--text-muted); }
+.job-hero-applicant { margin-top: 10px; font-size: 1rem; color: var(--text-muted); }
 .job-hero-applicant i { margin-right: 4px; }
 .badge-dday {
     font-weight: 600;
@@ -364,7 +373,7 @@
 
 /* 섹션 제목 */
 .job-section-title {
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text);
     padding-bottom: 8px;
@@ -388,17 +397,17 @@
 .job-info-row {
     display: flex;
     border-bottom: 1px solid var(--border);
-    padding: 8px 0;
+    padding: 12px 0;
 }
 .job-info-label {
-    flex: 0 0 90px;
-    font-size: 0.85rem;
+    flex: 0 0 110px;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-secondary);
 }
 .job-info-value {
     flex: 1;
-    font-size: 0.88rem;
+    font-size: 1rem;
     color: var(--text);
 }
 
@@ -409,7 +418,7 @@
     background: var(--bg-subtle);
     color: var(--text-secondary);
     border-radius: 4px;
-    font-size: 0.82rem;
+    font-size: 0.95rem;
     font-weight: 500;
     border: 1px solid var(--border);
 }
@@ -426,12 +435,12 @@
     background: var(--text);
     color: #fff;
     border-radius: 4px;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 600;
 }
 .hiring-arrow {
     color: #bbb;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
 }
 
 /* 스티키 하단 바 */
@@ -442,17 +451,24 @@
     right: 0;
     background: var(--bg-card);
     border-top: 1px solid var(--border);
-    padding: 10px 20px;
+    padding: 12px 88px;
     z-index: 1040;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+}
+.job-sticky-inner {
+    max-width: 960px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+}
+.job-sticky-bar .btn {
+    min-height: 48px;
+    font-size: 1.05rem;
 }
 .job-sticky-bar .btn-apply {
-    padding: 8px 32px;
+    padding: 10px 40px;
     font-weight: 600;
-    font-size: 0.95rem;
     border-radius: 6px;
 }
 
@@ -467,7 +483,7 @@
         grid-template-columns: 1fr;
     }
     .job-sticky-bar {
-        padding: 8px 16px;
+        padding: 8px 88px 8px 16px;
     }
     .job-sticky-bar .btn-apply {
         padding: 8px 20px;
@@ -504,6 +520,10 @@
 .talents-auth-card { max-width: 480px; margin: 0 auto; }
 .talent-sort-select { width: auto; min-width: 140px; font-size: 0.85rem; }
 .talent-avatar { width: 52px; height: 52px; font-size: 1.3rem; }
+
+/* 채용 제안 양식 */
+.offer-tpl-save summary { cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); }
+.offer-tpl-msg { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-secondary); }
 
 /* 필터 */
 .filter-section {
