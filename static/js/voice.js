@@ -48,13 +48,21 @@
         statusEl.hidden = !msg;
     }
 
+    // 페이지 이동 시 크롬 사용자 활성화 초기화. 클릭 또는 키 입력 전까지 음성 출력 차단
     function needGesture() {
-        setStatus('화면을 한 번 눌러 주세요');
-        document.addEventListener('pointerdown', () => {
-            if (actx) actx.resume();
-            if (audioEl) audioEl.play().catch(() => {});
-            setStatus('');
-        }, { once: true });
+        setStatus('화면을 한 번 누르거나 아무 키나 눌러 주세요');
+        return new Promise(res => {
+            const go = () => {
+                document.removeEventListener('pointerdown', go);
+                document.removeEventListener('keydown', go);
+                if (actx) actx.resume();
+                if (audioEl) audioEl.play().catch(() => {});
+                setStatus('');
+                res();
+            };
+            document.addEventListener('pointerdown', go);
+            document.addEventListener('keydown', go);
+        });
     }
 
     async function fetchTts(text) {
@@ -134,9 +142,11 @@
                 u.voice = voice;
                 u.rate = RATES[cfg.tts_speed] || 1;
                 u.onend = res;
-                u.onerror = e => {
-                    if (e.error === 'not-allowed') needGesture();
-                    res();
+                u.onerror = async e => {
+                    if (e.error !== 'not-allowed') return res();
+                    await needGesture();
+                    if (gen === speakGen) window.speechSynthesis.speak(u);
+                    else res();
                 };
                 window.speechSynthesis.speak(u);
             });
@@ -645,6 +655,16 @@
             }
         }
         if (!el) return false;
+        // 브라우저 필수 입력 말풍선은 화면 표시만 되므로 음성으로 안내
+        if (el.type === 'submit' && el.form) {
+            const empty = [...el.form.elements].filter(f => f.willValidate && f.validity.valueMissing);
+            if (empty.length) {
+                empty[0].focus();
+                const names = [...new Set(empty.map(fieldName))].join(', ');
+                await speak('필수 항목이 비어 있어요. ' + V.josa(names, '을', '를') + ' 입력해 주세요');
+                return true;
+            }
+        }
         const risky = (el.type === 'submit' && el.form) || /\bbtn-(outline-)?danger\b/.test(el.className)
             || el.hasAttribute('data-confirm') || /삭제|제출|취소|승인|반려|탈퇴|철회|비활성화|전달/.test(btnLabel(el));
         if (risky) {

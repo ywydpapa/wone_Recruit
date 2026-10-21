@@ -72,7 +72,7 @@
 
             {% if profile and profile['resume_path'] %}
             <div class="col-12">
-                <p class="mb-0"><a href="/static/uploads/{{ profile['resume_path'] }}" class="btn btn-outline-primary btn-sm" download>이력서 파일 다운로드</a></p>
+                <p class="mb-0"><a href="{{ profile['resume_path'] }}" class="btn btn-outline-primary btn-sm" download>이력서 파일 다운로드</a></p>
             </div>
             {% endif %}
 

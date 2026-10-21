@@ -49,7 +49,9 @@ def init():
         deleted_at TEXT,
         accessibility_settings TEXT NOT NULL DEFAULT '{}',
         notify_settings TEXT NOT NULL DEFAULT '{}',
-        must_change_password INTEGER NOT NULL DEFAULT 0
+        must_change_password INTEGER NOT NULL DEFAULT 0,
+        login_fails INTEGER NOT NULL DEFAULT 0,
+        locked_until TEXT
     );
     CREATE TABLE IF NOT EXISTS disability_types (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2070,6 +2072,8 @@ def migrate():
         ("companies", "shared_office_ok", "ALTER TABLE companies ADD COLUMN shared_office_ok INTEGER NOT NULL DEFAULT 0"),
         ("companies", "work_env_note", "ALTER TABLE companies ADD COLUMN work_env_note TEXT NOT NULL DEFAULT ''"),
         ("users", "agreed_age_at", "ALTER TABLE users ADD COLUMN agreed_age_at TEXT"),
+        ("users", "login_fails", "ALTER TABLE users ADD COLUMN login_fails INTEGER NOT NULL DEFAULT 0"),
+        ("users", "locked_until", "ALTER TABLE users ADD COLUMN locked_until TEXT"),
     ]
     _col_cache = {}
     for tbl, col, ddl in _COLUMN_MIGRATIONS:

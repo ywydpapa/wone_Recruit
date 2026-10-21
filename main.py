@@ -1,5 +1,6 @@
 import asyncio
 import json
+import mimetypes
 import os
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
@@ -17,6 +18,11 @@ from core.csrf import ensure_token, verify_csrf
 
 dotenv.load_dotenv()
 
+# 서버 OS mime.types에 .mjs 미등록 시 text/plain 응답. 브라우저 VAD 모듈 로드 차단
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("application/wasm", ".wasm")
+mimetypes.add_type("application/octet-stream", ".onnx")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +37,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan, dependencies=[Depends(check_idle), Depends(verify_csrf)],
               docs_url=None, redoc_url=None, openapi_url=None)
+
+
+@app.get("/healthz")
+async def healthz():
+    conn = get_sqlite()
+    try:
+        conn.execute("SELECT 1 FROM users LIMIT 1")
+    finally:
+        conn.close()
+    return {"ok": True}
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -145,7 +161,7 @@ app.add_middleware(
 os.makedirs("static/css", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages, inquiry, accessibility, refs, notice, consult, status, nlu
+from routers import auth, dashboard, company, seeker, info, operator, resume, community, manager, messages, inquiry, accessibility, refs, notice, consult, status, nlu, files
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(company.router)
@@ -164,3 +180,4 @@ app.include_router(notice.router)
 app.include_router(consult.router)
 app.include_router(status.router)
 app.include_router(nlu.router)
+app.include_router(files.router)

@@ -20,6 +20,9 @@ from core.security import check_password, hash_password, verify_password
 router = APIRouter()
 
 RESET_TTL_MIN = 30
+# IP 제한은 IP를 바꿔 가며 시도하면 우회되므로 계정 단위로도 잠금
+LOCK_FAILS = 10
+LOCK_MIN = 30
 USERNAME_RE = re.compile(r"^[a-z][a-z0-9]{3,19}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -49,11 +52,26 @@ async def login_check(request: Request, username: str = Form(...), password: str
     conn = get_sqlite()
     try:
         row = conn.execute(
-            "SELECT * FROM users WHERE username=?", (username,)
+            "SELECT *, locked_until > datetime('now','localtime') AS locked FROM users WHERE username=?",
+            (username,),
         ).fetchone()
+        if row and row["locked"]:
+            return RedirectResponse(url=f"/login?error=locked{extra}", status_code=303)
+        ok = row and verify_password(password, row["password"])
+        if row and not ok:
+            conn.execute(
+                "UPDATE users SET login_fails = CASE WHEN login_fails+1 >= ? THEN 0 ELSE login_fails+1 END, "
+                "locked_until = CASE WHEN login_fails+1 >= ? THEN datetime('now','localtime',?) ELSE locked_until END "
+                "WHERE id=?",
+                (LOCK_FAILS, LOCK_FAILS, f"+{LOCK_MIN} minutes", row["id"]),
+            )
+            conn.commit()
+        elif ok and row["login_fails"]:
+            conn.execute("UPDATE users SET login_fails=0 WHERE id=?", (row["id"],))
+            conn.commit()
     finally:
         conn.close()
-    if row and verify_password(password, row["password"]):
+    if ok:
         if row["is_deleted"]:
             return RedirectResponse(url=f"/login?error=deleted{extra}", status_code=303)
         clear_login_attempts(ip)

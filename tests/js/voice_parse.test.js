@@ -90,6 +90,8 @@ test('받아쓰기 명령', () => {
     assert.strictEqual(V.dictCmd('다음 칸'), 'next');
     assert.strictEqual(V.dictCmd('문장지우기'), 'sentence');
     assert.strictEqual(V.dictCmd('마지막 문장 지우기'), 'sentence');
+    assert.strictEqual(V.dictCmd('완료'), 'end');
+    assert.strictEqual(V.dictCmd('작업 완료'), null);
     assert.strictEqual(V.dictCmd('전부지우기'), 'clear');
     assert.strictEqual(V.dictCmd('다 지우기'), 'clear');
     assert.strictEqual(V.dictCmd('줄바꿈'), 'newline');

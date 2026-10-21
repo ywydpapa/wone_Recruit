@@ -176,6 +176,8 @@
             <div class="alert alert-warning py-2 small mb-3">탈퇴한 계정입니다. 같은 아이디로 재가입할 수 없습니다.</div>
             {% elif error == 'timeout' %}
             <div class="alert alert-warning py-2 small mb-3">오랫동안 사용하지 않아 자동으로 로그아웃되었습니다. 다시 로그인해주세요.</div>
+            {% elif error == 'locked' %}
+            <div class="alert alert-danger py-2 small mb-3">비밀번호를 10회 잘못 입력해 30분간 로그인이 제한됩니다. 비밀번호가 기억나지 않으면 비밀번호 찾기를 이용해주세요.</div>
             {% elif error == 'rate_limit' %}
             <div class="alert alert-danger py-2 small mb-3">로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.</div>
             {% elif error %}

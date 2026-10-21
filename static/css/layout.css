@@ -396,6 +396,7 @@ button.topbar-icon { background: none; border: none; padding: 0; }
     }
     dl.row dd[class*="col-sm-"] {
         margin-bottom: 12px;
+        overflow-wrap: anywhere;
     }
     .navbar-brand {
         font-size: 1.2rem;

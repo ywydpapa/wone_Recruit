@@ -355,8 +355,10 @@ body.theme-high-contrast .badge { background-color: #000 !important; color: #fff
 }
 .profile-field-value {
     flex: 1;
+    min-width: 0;
     font-size: 0.9rem;
     color: var(--text);
+    overflow-wrap: anywhere;
 }
 .profile-tag {
     display: inline-block;

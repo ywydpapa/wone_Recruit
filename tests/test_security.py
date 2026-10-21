@@ -46,3 +46,28 @@ def test_poll_keeps_idle(client, monkeypatch):
     monkeypatch.setattr(deps.time, "time", lambda: now + deps.IDLE_TIMEOUT + 1)
     assert client.get("/", follow_redirects=False).status_code == 303
 
+
+def test_account_lock(client, monkeypatch):
+    monkeypatch.setattr("routers.auth.check_login_rate", lambda ip: False)
+    for _ in range(10):
+        r = login(client, "seeker1", "wrong-password")
+    assert r.headers["location"] == "/login?error=1"
+    r = login(client, "seeker1")
+    assert r.headers["location"] == "/login?error=locked"
+
+
+def test_fails_reset(client, monkeypatch):
+    monkeypatch.setattr("routers.auth.check_login_rate", lambda ip: False)
+    for _ in range(9):
+        login(client, "seeker1", "wrong-password")
+    assert login(client, "seeker1").headers["location"] == "/"
+    client.get("/logout")
+    for _ in range(9):
+        login(client, "seeker1", "wrong-password")
+    assert login(client, "seeker1").headers["location"] == "/"
+
+
+def test_healthz(client):
+    r = client.get("/healthz")
+    assert r.status_code == 200
+    assert r.json() == {"ok": True}

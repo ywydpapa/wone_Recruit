@@ -12,6 +12,7 @@ test_main.http
 .DS_Store
 .dev/
 static/uploads/
+var/
 
 models/
 static/vendor/

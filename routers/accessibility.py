@@ -43,14 +43,20 @@ def get_whisper():
     return _whisper
 
 
+# 서버 VAD(onnxruntime) 실패 시 VAD 없이 재시도. 브라우저 VAD에서 이미 발화 구간 절단
 def transcribe(model, data):
-    segs, _ = model.transcribe(
-        io.BytesIO(data),
-        language="ko",
-        beam_size=1,
-        vad_filter=True,
-        initial_prompt=STT_PROMPT,
-    )
+    try:
+        segs, _ = model.transcribe(
+            io.BytesIO(data),
+            language="ko",
+            beam_size=1,
+            vad_filter=True,
+            initial_prompt=STT_PROMPT,
+        )
+        return "".join(s.text for s in segs).strip()
+    except Exception as e:
+        log.warning("서버 VAD 실패, VAD 없이 재시도: %s: %s", type(e).__name__, e)
+    segs, _ = model.transcribe(io.BytesIO(data), language="ko", beam_size=1, initial_prompt=STT_PROMPT)
     return "".join(s.text for s in segs).strip()
 
 
@@ -68,8 +74,8 @@ async def stt(request: Request, audio: UploadFile = File(...)):
         return JSONResponse({"error": "지금은 음성 인식을 쓸 수 없어요"}, status_code=503)
     try:
         text = await run_in_threadpool(transcribe, model, data)
-    except Exception:
-        log.warning("음성 디코딩 실패")
+    except Exception as e:
+        log.warning("음성 디코딩 실패: %s: %s", type(e).__name__, e)
         return JSONResponse({"error": "음성을 처리하지 못했어요"}, status_code=400)
     return {"text": text}
 
