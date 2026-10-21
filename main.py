@@ -141,6 +141,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if request.url.path.startswith("/static"):
+            resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+            if request.url.path.endswith(".mjs"):
+                resp.headers["Content-Type"] = "text/javascript; charset=utf-8"
+            elif request.url.path.endswith(".wasm"):
+                resp.headers["Content-Type"] = "application/wasm"
+            elif request.url.path.endswith(".onnx"):
+                resp.headers["Content-Type"] = "application/octet-stream"
         if os.getenv("ENVIRONMENT") == "production":
             resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
         return resp

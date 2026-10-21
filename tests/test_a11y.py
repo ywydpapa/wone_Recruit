@@ -50,3 +50,13 @@ def test_seeker_voice_only_for_seeker(client):
     r = client.get("/mgr/")
     assert r.status_code == 200 and "voice.js" in r.text
     assert "seeker-voice.js" not in r.text
+
+
+
+
+def test_tts_success(client):
+    login(client, "seeker1")
+    r = client.post("/api/tts", data={"text": "안녕하세요", "voice": "F1", "speed": "normal"})
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "audio/wav"
+    assert len(r.content) > 1000

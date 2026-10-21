@@ -18,6 +18,10 @@
     const mic = document.getElementById('a11yMic');
 
     ort.env.wasm.numThreads = 1;
+    ort.env.wasm.wasmPaths = {
+        mjs: '/static/vendor/vad/ort-wasm-simd-threaded.mjs?v=20261021',
+        wasm: '/static/vendor/vad/ort-wasm-simd-threaded.wasm?v=20261021',
+    };
 
     let playing = false;
     let audioEl = null, endPlay = null;
@@ -231,7 +235,17 @@
                 audioContext: actx,
                 model: 'v5',
                 baseAssetPath: '/static/vendor/vad/',
-                onnxWASMBasePath: '/static/vendor/vad/',
+                onnxWASMBasePath: {
+                    mjs: '/static/vendor/vad/ort-wasm-simd-threaded.mjs?v=20261021',
+                    wasm: '/static/vendor/vad/ort-wasm-simd-threaded.wasm?v=20261021',
+                },
+                ortConfig: (ortInstance) => {
+                    ortInstance.env.wasm.numThreads = 1;
+                    ortInstance.env.wasm.wasmPaths = {
+                        mjs: '/static/vendor/vad/ort-wasm-simd-threaded.mjs?v=20261021',
+                        wasm: '/static/vendor/vad/ort-wasm-simd-threaded.wasm?v=20261021',
+                    };
+                },
                 redemptionMs: 1000,
                 preSpeechPadMs: 300,
                 minSpeechMs: 300,
